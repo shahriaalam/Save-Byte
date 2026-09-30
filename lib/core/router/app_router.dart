@@ -10,6 +10,11 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/restaurant_register_screen.dart';
 import '../../features/customer/home/customer_home_screen.dart';
+import '../../features/customer/offers/presentation/customer_offer_details_screen.dart';
+import '../../features/customer/profile/customer_profile_screen.dart';
+import '../../features/customer/restaurants/presentation/customer_restaurant_details_screen.dart';
+import '../../features/customer/search/customer_search_screen.dart';
+import '../../features/customer/shell/customer_shell_screen.dart';
 import '../../features/restaurant/dashboard/restaurant_dashboard_screen.dart';
 import '../../features/shared/presentation/splash_screen.dart';
 import 'app_routes.dart';
@@ -57,7 +62,8 @@ class AppRouterNotifier extends ChangeNotifier {
       return AppRoutes.customerHome;
     }
 
-    if (profile.isRestaurant && location.startsWith('/admin')) {
+    if (profile.isRestaurant &&
+        (location.startsWith('/admin') || location.startsWith('/customer'))) {
       return AppRoutes.restaurantDashboard;
     }
 
@@ -99,16 +105,69 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'forgotPassword',
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
-      GoRoute(
-        path: AppRoutes.customerHome,
-        name: 'customerHome',
-        builder: (context, state) => const CustomerHomeScreen(),
+
+      // Customer Navigation Shell (Section 19: Home, Search, Profile)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return CustomerShellScreen(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.customerHome,
+                name: 'customerHome',
+                builder: (context, state) => const CustomerHomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.customerSearch,
+                name: 'customerSearch',
+                builder: (context, state) => const CustomerSearchScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.customerProfile,
+                name: 'customerProfile',
+                builder: (context, state) => const CustomerProfileScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
+
+      // Customer stack details routes
+      GoRoute(
+        path: AppRoutes.customerOfferDetails,
+        name: 'customerOfferDetails',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return CustomerOfferDetailsScreen(offerId: id);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.customerRestaurantDetails,
+        name: 'customerRestaurantDetails',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return CustomerRestaurantDetailsScreen(restaurantId: id);
+        },
+      ),
+
+      // Restaurant routes
       GoRoute(
         path: AppRoutes.restaurantDashboard,
         name: 'restaurantDashboard',
         builder: (context, state) => const RestaurantDashboardScreen(),
       ),
+
+      // Admin routes
       GoRoute(
         path: AppRoutes.adminDashboard,
         name: 'adminDashboard',

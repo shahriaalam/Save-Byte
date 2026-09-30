@@ -5,7 +5,9 @@ import 'package:save_bite/core/theme/app_theme.dart';
 
 void main() {
   group('AppTheme', () {
-    test('provides Material 3 theme with emerald primary and warm orange secondary', () {
+    test(
+        'provides Material 3 theme with crimson red primary, black secondary, and white background',
+        () {
       final theme = AppTheme.lightTheme;
 
       expect(theme.useMaterial3, isTrue);

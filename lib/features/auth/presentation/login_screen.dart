@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/food_loading_animation.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../domain/auth_state.dart';
 import 'auth_controller.dart';
@@ -76,157 +77,157 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Brand Icon & Title
-                    Center(
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(16),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Brand Icon & Title
+                        const Center(
+                          child: AppLogo(
+                            size: 64,
+                            showText: true,
+                            showTagline: false,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.eco_rounded,
-                          color: Colors.white,
-                          size: 36,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Welcome to ${AppConstants.appName}',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Welcome to SaveBite',
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Log in to discover and save surplus food',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: AppColors.textSecondary),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Email Field
-                    AppTextField(
-                      label: 'Email',
-                      hint: 'name@example.com',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!value.contains('@') || !value.contains('.')) {
-                          return 'Please enter a valid email address';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Password Field
-                    AppTextField(
-                      label: 'Password',
-                      hint: '••••••••',
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          size: 20,
+                          textAlign: TextAlign.center,
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Log in to discover and save surplus food',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
 
-                    // Forgot Password Link
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () => context.push(AppRoutes.forgotPassword),
-                        child: const Text('Forgot Password?'),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                        // Email Field
+                        AppTextField(
+                          label: 'Email',
+                          hint: 'name@example.com',
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@') || !value.contains('.')) {
+                              return 'Please enter a valid email address';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                    // Submit Button
-                    PrimaryButton(
-                      text: 'Log In',
-                      isLoading: isLoading,
-                      onPressed: _handleLogin,
-                    ),
-                    const SizedBox(height: 28),
+                        // Password Field
+                        AppTextField(
+                          label: 'Password',
+                          hint: '••••••••',
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 8),
 
-                    // Sign up switchers
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'NEW TO SAVEBITE?',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: AppColors.textMuted,
-                                  letterSpacing: 0.5,
-                                ),
+                        // Forgot Password Link
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => context.push(AppRoutes.forgotPassword),
+                            child: const Text('Forgot Password?'),
                           ),
                         ),
-                        const Expanded(child: Divider()),
+                        const SizedBox(height: 16),
+
+                        // Submit Button
+                        PrimaryButton(
+                          text: 'Log In',
+                          isLoading: isLoading,
+                          onPressed: _handleLogin,
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Sign up switchers
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'NEW TO SAVEBITE?',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: AppColors.textMuted,
+                                      letterSpacing: 0.5,
+                                    ),
+                              ),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Register Buttons
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.person_add_outlined, size: 18),
+                          label: const Text('Sign Up as Customer'),
+                          onPressed: () => context.push(AppRoutes.customerRegister),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.storefront_outlined, size: 18),
+                          label: const Text('Register as Restaurant'),
+                          onPressed: () =>
+                              context.push(AppRoutes.restaurantRegister),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Register Buttons
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.person_add_outlined, size: 18),
-                      label: const Text('Sign Up as Customer'),
-                      onPressed: () => context.push(AppRoutes.customerRegister),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.storefront_outlined, size: 18),
-                      label: const Text('Register as Restaurant'),
-                      onPressed: () =>
-                          context.push(AppRoutes.restaurantRegister),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+
+          // Food animation screen overlay when login takes time
+          FoodLoginLoadingOverlay(isLoading: isLoading),
+        ],
       ),
     );
   }

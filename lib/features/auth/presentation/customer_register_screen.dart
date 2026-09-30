@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/utils/validators.dart';
+import '../../../core/widgets/account_created_dialog.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../domain/auth_state.dart';
@@ -20,16 +23,20 @@ class CustomerRegisterScreen extends ConsumerStatefulWidget {
 class _CustomerRegisterScreenState
     extends ConsumerState<CustomerRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
+  String? _selectedGender;
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
@@ -40,20 +47,27 @@ class _CustomerRegisterScreenState
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final email = _emailController.text.trim();
     final success = await ref
         .read(authControllerProvider.notifier)
         .signUpCustomer(
-          email: _emailController.text,
+          email: email,
           password: _passwordController.text,
-          fullName: _nameController.text,
-          phone: _phoneController.text.isNotEmpty
-              ? _phoneController.text
-              : null,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          gender: _selectedGender,
+          phone: _phoneController.text.trim(),
         );
 
     if (!mounted) return;
 
-    if (!success) {
+    if (success) {
+      await AccountCreatedDialog.show(
+        context: context,
+        email: email,
+        role: AppConstants.roleCustomer,
+      );
+    } else {
       final authState = ref.read(authControllerProvider);
       if (authState is AuthError) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -79,7 +93,7 @@ class _CustomerRegisterScreenState
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: const BoxConstraints(maxWidth: 440),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -101,47 +115,104 @@ class _CustomerRegisterScreenState
                     ),
                     const SizedBox(height: 24),
 
-                    // Full Name
-                    AppTextField(
-                      label: 'Full Name',
-                      hint: 'Rahim Ahmed',
-                      controller: _nameController,
-                      prefixIcon: const Icon(Icons.person_outline, size: 20),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your name';
-                        }
-                        return null;
-                      },
+                    // First Name & Last Name in Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: AppTextField(
+                            label: 'First Name',
+                            hint: 'Rahim',
+                            controller: _firstNameController,
+                            prefixIcon: const Icon(Icons.person_outline, size: 20),
+                            validator: (value) =>
+                                AppValidators.validateRequired(value, 'first name'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: AppTextField(
+                            label: 'Last Name',
+                            hint: 'Ahmed',
+                            controller: _lastNameController,
+                            prefixIcon: const Icon(Icons.person_outline, size: 20),
+                            validator: (value) =>
+                                AppValidators.validateRequired(value, 'last name'),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 14),
 
-                    // Email
+                    // Gender Selector
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedGender,
+                      decoration: InputDecoration(
+                        labelText: 'Gender',
+                        hintText: 'Select your gender',
+                        prefixIcon: const Icon(Icons.wc_outlined, size: 20),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      dropdownColor: Colors.white,
+                      items: const [
+                        DropdownMenuItem(value: 'Male', child: Text('Male')),
+                        DropdownMenuItem(value: 'Female', child: Text('Female')),
+                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                        DropdownMenuItem(
+                          value: 'Prefer not to say',
+                          child: Text('Prefer not to say'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedGender = val;
+                        });
+                      },
+                      validator: (val) =>
+                          val == null ? 'Please select your gender' : null,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Email Address with strict format validation
                     AppTextField(
                       label: 'Email',
                       hint: 'name@example.com',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!value.contains('@') || !value.contains('.')) {
-                          return 'Please enter a valid email address';
-                        }
-                        return null;
-                      },
+                      validator: AppValidators.validateEmail,
                     ),
                     const SizedBox(height: 14),
 
-                    // Phone (Optional)
+                    // Phone Number with strict validation
                     AppTextField(
-                      label: 'Phone Number (Optional)',
+                      label: 'Phone Number',
                       hint: '017XXXXXXXX',
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                      validator: (value) =>
+                          AppValidators.validatePhone(value, isRequired: true),
                     ),
                     const SizedBox(height: 14),
 
@@ -165,15 +236,7 @@ class _CustomerRegisterScreenState
                           });
                         },
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
-                        }
-                        if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
+                      validator: AppValidators.validatePassword,
                     ),
                     const SizedBox(height: 14),
 
@@ -185,6 +248,9 @@ class _CustomerRegisterScreenState
                       obscureText: _obscurePassword,
                       prefixIcon: const Icon(Icons.lock_outline, size: 20),
                       validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
                         if (value != _passwordController.text) {
                           return 'Passwords do not match';
                         }
@@ -201,7 +267,7 @@ class _CustomerRegisterScreenState
                     ),
                     const SizedBox(height: 16),
 
-                    // Already have an account
+                    // Already have an account link
                     Wrap(
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,

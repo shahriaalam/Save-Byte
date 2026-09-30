@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/utils/validators.dart';
+import '../../../core/widgets/account_created_dialog.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../domain/auth_state.dart';
@@ -53,22 +56,29 @@ class _RestaurantRegisterScreenState
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final email = _emailController.text.trim();
     final success = await ref
         .read(authControllerProvider.notifier)
         .signUpRestaurant(
-          email: _emailController.text,
+          email: email,
           password: _passwordController.text,
-          fullName: _ownerNameController.text,
-          phone: _phoneController.text,
-          restaurantName: _restaurantNameController.text,
-          description: _descriptionController.text,
-          address: _addressController.text,
-          cuisineType: _cuisineController.text,
+          fullName: _ownerNameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          restaurantName: _restaurantNameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          address: _addressController.text.trim(),
+          cuisineType: _cuisineController.text.trim(),
         );
 
     if (!mounted) return;
 
-    if (!success) {
+    if (success) {
+      await AccountCreatedDialog.show(
+        context: context,
+        email: email,
+        role: AppConstants.roleRestaurant,
+      );
+    } else {
       final authState = ref.read(authControllerProvider);
       if (authState is AuthError) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -166,9 +176,8 @@ class _RestaurantRegisterScreenState
                       hint: 'Rahman Khan',
                       controller: _ownerNameController,
                       prefixIcon: const Icon(Icons.person_outline, size: 20),
-                      validator: (value) => value?.trim().isEmpty == true
-                          ? 'Enter owner name'
-                          : null,
+                      validator: (value) =>
+                          AppValidators.validateRequired(value, 'owner name'),
                     ),
                     const SizedBox(height: 12),
 
@@ -178,9 +187,7 @@ class _RestaurantRegisterScreenState
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                      validator: (value) => value?.contains('@') == false
-                          ? 'Enter valid email'
-                          : null,
+                      validator: AppValidators.validateEmail,
                     ),
                     const SizedBox(height: 12),
 
@@ -190,9 +197,8 @@ class _RestaurantRegisterScreenState
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       prefixIcon: const Icon(Icons.phone_outlined, size: 20),
-                      validator: (value) => value?.trim().isEmpty == true
-                          ? 'Enter phone number'
-                          : null,
+                      validator: (value) =>
+                          AppValidators.validatePhone(value, isRequired: true),
                     ),
                     const SizedBox(height: 12),
 
@@ -215,8 +221,7 @@ class _RestaurantRegisterScreenState
                           });
                         },
                       ),
-                      validator: (value) =>
-                          (value?.length ?? 0) < 6 ? 'Min 6 characters' : null,
+                      validator: AppValidators.validatePassword,
                     ),
                     const SizedBox(height: 12),
 
@@ -226,9 +231,15 @@ class _RestaurantRegisterScreenState
                       controller: _confirmPasswordController,
                       obscureText: _obscurePassword,
                       prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                      validator: (value) => value != _passwordController.text
-                          ? 'Passwords do not match'
-                          : null,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 24),
 
@@ -250,9 +261,8 @@ class _RestaurantRegisterScreenState
                         Icons.storefront_outlined,
                         size: 20,
                       ),
-                      validator: (value) => value?.trim().isEmpty == true
-                          ? 'Enter restaurant name'
-                          : null,
+                      validator: (value) =>
+                          AppValidators.validateRequired(value, 'restaurant name'),
                     ),
                     const SizedBox(height: 12),
 
@@ -261,9 +271,8 @@ class _RestaurantRegisterScreenState
                       hint: 'Traditional Bengali cuisine and snacks',
                       controller: _descriptionController,
                       maxLines: 2,
-                      validator: (value) => value?.trim().isEmpty == true
-                          ? 'Enter description'
-                          : null,
+                      validator: (value) =>
+                          AppValidators.validateRequired(value, 'description'),
                     ),
                     const SizedBox(height: 12),
 
@@ -275,9 +284,8 @@ class _RestaurantRegisterScreenState
                         Icons.location_on_outlined,
                         size: 20,
                       ),
-                      validator: (value) => value?.trim().isEmpty == true
-                          ? 'Enter address'
-                          : null,
+                      validator: (value) =>
+                          AppValidators.validateRequired(value, 'address'),
                     ),
                     const SizedBox(height: 12),
 
@@ -289,9 +297,8 @@ class _RestaurantRegisterScreenState
                         Icons.restaurant_outlined,
                         size: 20,
                       ),
-                      validator: (value) => value?.trim().isEmpty == true
-                          ? 'Enter cuisine type'
-                          : null,
+                      validator: (value) =>
+                          AppValidators.validateRequired(value, 'cuisine type'),
                     ),
                     const SizedBox(height: 28),
 

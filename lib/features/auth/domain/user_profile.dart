@@ -6,6 +6,9 @@ class UserProfile {
     required this.id,
     required this.email,
     required this.role,
+    this.firstName,
+    this.lastName,
+    this.gender,
     this.fullName,
     this.phone,
     this.avatarUrl,
@@ -17,6 +20,9 @@ class UserProfile {
   final String id;
   final String email;
   final String role; // 'customer', 'restaurant', 'admin'
+  final String? firstName;
+  final String? lastName;
+  final String? gender;
   final String? fullName;
   final String? phone;
   final String? avatarUrl;
@@ -29,11 +35,23 @@ class UserProfile {
   bool get isAdmin => role == AppConstants.roleAdmin;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final firstName = json['first_name'] as String?;
+    final lastName = json['last_name'] as String?;
+    final rawFullName = json['full_name'] as String?;
+    final resolvedFullName = (rawFullName != null && rawFullName.trim().isNotEmpty)
+        ? rawFullName.trim()
+        : [firstName, lastName]
+            .where((s) => s != null && s.trim().isNotEmpty)
+            .join(' ');
+
     return UserProfile(
       id: json['id'] as String,
       email: (json['email'] as String?) ?? '',
       role: (json['role'] as String?) ?? AppConstants.roleCustomer,
-      fullName: json['full_name'] as String?,
+      firstName: firstName,
+      lastName: lastName,
+      gender: json['gender'] as String?,
+      fullName: resolvedFullName.isNotEmpty ? resolvedFullName : null,
       phone: json['phone'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       isActive: (json['is_active'] as bool?) ?? true,
@@ -47,11 +65,19 @@ class UserProfile {
   }
 
   Map<String, dynamic> toJson() {
+    final computedFullName = fullName ??
+        [firstName, lastName]
+            .where((s) => s != null && s.trim().isNotEmpty)
+            .join(' ');
+
     return {
       'id': id,
       'email': email,
       'role': role,
-      'full_name': fullName,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
+      if (gender != null) 'gender': gender,
+      if (computedFullName.isNotEmpty) 'full_name': computedFullName,
       'phone': phone,
       'avatar_url': avatarUrl,
       'is_active': isActive,
@@ -64,6 +90,9 @@ class UserProfile {
     String? id,
     String? email,
     String? role,
+    String? firstName,
+    String? lastName,
+    String? gender,
     String? fullName,
     String? phone,
     String? avatarUrl,
@@ -75,6 +104,9 @@ class UserProfile {
       id: id ?? this.id,
       email: email ?? this.email,
       role: role ?? this.role,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      gender: gender ?? this.gender,
       fullName: fullName ?? this.fullName,
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,

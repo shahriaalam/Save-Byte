@@ -1,11 +1,11 @@
 {
-    "name": "save_bite",
-    "short_name": "save_bite",
+    "name": "SaveBite",
+    "short_name": "SaveBite",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F9F9FA",
+    "theme_color": "#E23744",
+    "description": "SaveBite - Surplus Food Discovery Platform",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

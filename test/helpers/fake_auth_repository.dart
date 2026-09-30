@@ -43,14 +43,25 @@ class FakeAuthRepository implements AuthRepository {
   Future<UserProfile> signUpCustomer({
     required String email,
     required String password,
-    required String fullName,
+    String? firstName,
+    String? lastName,
+    String? gender,
+    String? fullName,
     String? phone,
   }) async {
+    final effectiveFullName = (fullName != null && fullName.trim().isNotEmpty)
+        ? fullName.trim()
+        : [firstName, lastName]
+            .where((s) => s != null && s.trim().isNotEmpty)
+            .join(' ');
     final profile = UserProfile(
       id: 'test-customer-id',
       email: email,
       role: AppConstants.roleCustomer,
-      fullName: fullName,
+      firstName: firstName,
+      lastName: lastName,
+      gender: gender,
+      fullName: effectiveFullName.isNotEmpty ? effectiveFullName : 'Test User',
       phone: phone,
       isActive: true,
     );
@@ -83,6 +94,30 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> sendPasswordResetEmail({required String email}) async {}
+
+  @override
+  Future<UserProfile> updateProfile({
+    required String id,
+    required String fullName,
+    String? phone,
+    String? avatarUrl,
+  }) async {
+    final updated = (initialProfile ??
+            UserProfile(
+              id: id,
+              email: 'test@savebite.com',
+              role: AppConstants.roleCustomer,
+              fullName: fullName,
+              isActive: true,
+            ))
+        .copyWith(
+      fullName: fullName,
+      phone: phone,
+      avatarUrl: avatarUrl,
+    );
+    initialProfile = updated;
+    return updated;
+  }
 
   @override
   Future<void> signOut() async {

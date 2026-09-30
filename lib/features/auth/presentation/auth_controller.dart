@@ -109,19 +109,27 @@ class AuthController extends Notifier<AppAuthState> {
   Future<bool> signUpCustomer({
     required String email,
     required String password,
-    required String fullName,
+    required String firstName,
+    required String lastName,
+    String? gender,
     String? phone,
+    String? fullName,
   }) async {
     state = const AuthLoading();
     try {
-      final profile = await _repository.signUpCustomer(
+      await _repository.signUpCustomer(
         email: email,
         password: password,
+        firstName: firstName,
+        lastName: lastName,
+        gender: gender,
         fullName: fullName,
         phone: phone,
       );
-      _userNotifier.setProfile(profile);
-      state = Authenticated(profile);
+      // Sign out to ensure session is cleared so user can explicitly log in
+      await _repository.signOut();
+      _userNotifier.setProfile(null);
+      state = const Unauthenticated();
       return true;
     } on AppException catch (e) {
       state = AuthError(e.message);
@@ -145,7 +153,7 @@ class AuthController extends Notifier<AppAuthState> {
   }) async {
     state = const AuthLoading();
     try {
-      final profile = await _repository.signUpRestaurant(
+      await _repository.signUpRestaurant(
         email: email,
         password: password,
         fullName: fullName,
@@ -155,8 +163,10 @@ class AuthController extends Notifier<AppAuthState> {
         address: address,
         cuisineType: cuisineType,
       );
-      _userNotifier.setProfile(profile);
-      state = Authenticated(profile);
+      // Sign out to ensure session is cleared so user can explicitly log in
+      await _repository.signOut();
+      _userNotifier.setProfile(null);
+      state = const Unauthenticated();
       return true;
     } on AppException catch (e) {
       state = AuthError(e.message);
@@ -173,6 +183,33 @@ class AuthController extends Notifier<AppAuthState> {
     try {
       await _repository.sendPasswordResetEmail(email: email);
       state = const Unauthenticated();
+      return true;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
+
+  /// Update user profile (Section 26)
+  Future<bool> updateProfile({
+    required String id,
+    required String fullName,
+    String? phone,
+    String? avatarUrl,
+  }) async {
+    state = const AuthLoading();
+    try {
+      final updated = await _repository.updateProfile(
+        id: id,
+        fullName: fullName,
+        phone: phone,
+        avatarUrl: avatarUrl,
+      );
+      _userNotifier.setProfile(updated);
+      state = Authenticated(updated);
       return true;
     } on AppException catch (e) {
       state = AuthError(e.message);

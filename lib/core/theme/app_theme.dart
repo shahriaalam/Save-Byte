@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 
-/// Centralized Material 3 Theme for SaveBite.
+/// Centralized Material 3 Theme for SaveBite (Red, White, and Black Palette).
 abstract final class AppTheme {
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
@@ -22,7 +22,8 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: null, // Use system font with clean fallbacks
+      fontFamily: null,
+
       // App bar theme
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
@@ -34,7 +35,7 @@ abstract final class AppTheme {
         titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
         ),
       ),
 
@@ -49,7 +50,7 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // Elevated button theme (Primary Action)
+      // Elevated button theme (Primary Action - Crimson Red)
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -59,15 +60,15 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
 
-      // Outlined button theme (Secondary Action)
+      // Outlined button theme (Secondary Action - Dark/Black outline)
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.5),
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.border, width: 1.5),
           minimumSize: const Size.fromHeight(48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -80,7 +81,7 @@ abstract final class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),
 
@@ -122,7 +123,7 @@ abstract final class AppTheme {
       // Chip theme
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariant,
-        selectedColor: AppColors.primary.withValues(alpha: 0.15),
+        selectedColor: AppColors.primary.withValues(alpha: 0.12),
         labelStyle: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 13,
