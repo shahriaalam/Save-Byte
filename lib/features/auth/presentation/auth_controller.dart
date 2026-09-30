@@ -1,0 +1,193 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/errors/app_exceptions.dart';
+import '../data/auth_repository.dart';
+import '../domain/auth_state.dart';
+import '../domain/user_profile.dart';
+
+/// Provider exposing the current user profile or null if unauthenticated.
+final currentUserProfileProvider =
+    NotifierProvider<CurrentUserNotifier, UserProfile?>(
+      CurrentUserNotifier.new,
+    );
+
+class CurrentUserNotifier extends Notifier<UserProfile?> {
+  StreamSubscription<dynamic>? _subscription;
+
+  @override
+  UserProfile? build() {
+    ref.onDispose(() {
+      _subscription?.cancel();
+    });
+    _init();
+    return null;
+  }
+
+  AuthRepository get _repository => ref.read(authRepositoryProvider);
+
+  Future<void> _init() async {
+    try {
+      final profile = await _repository.getCurrentUserProfile();
+      state = profile;
+    } catch (_) {
+      state = null;
+    }
+
+    _subscription = _repository.authStateChanges.listen((_) async {
+      try {
+        final profile = await _repository.getCurrentUserProfile();
+        state = profile;
+      } catch (_) {
+        state = null;
+      }
+    });
+  }
+
+  void setProfile(UserProfile? profile) {
+    state = profile;
+  }
+}
+
+/// Provider for AuthController managing UI action states (loading, errors, success).
+final authControllerProvider = NotifierProvider<AuthController, AppAuthState>(
+  AuthController.new,
+);
+
+class AuthController extends Notifier<AppAuthState> {
+  @override
+  AppAuthState build() {
+    _checkInitialState();
+    return const AuthInitial();
+  }
+
+  AuthRepository get _repository => ref.read(authRepositoryProvider);
+  CurrentUserNotifier get _userNotifier =>
+      ref.read(currentUserProfileProvider.notifier);
+
+  Future<void> _checkInitialState() async {
+    try {
+      final profile = await _repository.getCurrentUserProfile();
+      if (profile != null) {
+        _userNotifier.setProfile(profile);
+        state = Authenticated(profile);
+      } else {
+        state = const Unauthenticated();
+      }
+    } on AccountDisabledException catch (e) {
+      state = AuthAccountDisabled(e.message);
+    } catch (_) {
+      state = const Unauthenticated();
+    }
+  }
+
+  /// Sign in with email and password
+  Future<bool> signIn({required String email, required String password}) async {
+    state = const AuthLoading();
+    try {
+      final profile = await _repository.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      _userNotifier.setProfile(profile);
+      state = Authenticated(profile);
+      return true;
+    } on AccountDisabledException catch (e) {
+      state = AuthAccountDisabled(e.message);
+      return false;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
+
+  /// Sign up as customer
+  Future<bool> signUpCustomer({
+    required String email,
+    required String password,
+    required String fullName,
+    String? phone,
+  }) async {
+    state = const AuthLoading();
+    try {
+      final profile = await _repository.signUpCustomer(
+        email: email,
+        password: password,
+        fullName: fullName,
+        phone: phone,
+      );
+      _userNotifier.setProfile(profile);
+      state = Authenticated(profile);
+      return true;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
+
+  /// Sign up as restaurant
+  Future<bool> signUpRestaurant({
+    required String email,
+    required String password,
+    required String fullName,
+    required String phone,
+    required String restaurantName,
+    required String description,
+    required String address,
+    required String cuisineType,
+  }) async {
+    state = const AuthLoading();
+    try {
+      final profile = await _repository.signUpRestaurant(
+        email: email,
+        password: password,
+        fullName: fullName,
+        phone: phone,
+        restaurantName: restaurantName,
+        description: description,
+        address: address,
+        cuisineType: cuisineType,
+      );
+      _userNotifier.setProfile(profile);
+      state = Authenticated(profile);
+      return true;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
+
+  /// Send password reset email
+  Future<bool> sendPasswordResetEmail({required String email}) async {
+    state = const AuthLoading();
+    try {
+      await _repository.sendPasswordResetEmail(email: email);
+      state = const Unauthenticated();
+      return true;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
+
+  /// Sign out
+  Future<void> signOut() async {
+    state = const AuthLoading();
+    await _repository.signOut();
+    _userNotifier.setProfile(null);
+    state = const Unauthenticated();
+  }
+}
