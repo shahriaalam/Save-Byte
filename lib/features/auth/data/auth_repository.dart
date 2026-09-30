@@ -81,6 +81,18 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
+    // Section 17: Admin bootstrap & development credentials
+    if (email.trim().toLowerCase() == 'admin@savebite.com' &&
+        password == 'admin') {
+      return const UserProfile(
+        id: 'admin-bootstrap-id',
+        email: 'admin@savebite.com',
+        role: AppConstants.roleAdmin,
+        fullName: 'Platform Administrator',
+        isActive: true,
+      );
+    }
+
     try {
       final response = await _client.auth.signInWithPassword(
         email: email.trim(),
