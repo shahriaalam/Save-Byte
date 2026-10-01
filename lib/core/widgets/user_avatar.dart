@@ -141,7 +141,7 @@ class UserAvatar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                gradient: AppColors.primaryGradient,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [

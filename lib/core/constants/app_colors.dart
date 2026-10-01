@@ -6,7 +6,12 @@ abstract final class AppColors {
   // Brand colors (Core Red, White, Black)
   static const Color primary = Color(0xFFE23744); // Appetizing Signature Red
   static const Color primaryLight = Color(0xFFFF5252);
-  static const Color primaryDark = Color(0xFFB71C1C);
+  static const Color primaryDark = Color(0xFF8B0000); // Pure Dark Red
+
+  // Dark Red brand accents
+  static const Color darkRed = Color(0xFF8B0000);
+  static const Color darkRedLight = Color(0xFFC62828);
+  static const Color darkRedDark = Color(0xFF6B0000);
 
   static const Color secondary = Color(0xFF0F0F10); // Sleek Obsidian Black
   static const Color secondaryLight = Color(0xFF27272A);
@@ -18,7 +23,7 @@ abstract final class AppColors {
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFFE23744), Color(0xFFB71C1C)],
+    colors: [Color(0xFFC62828), Color(0xFF8B0000)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

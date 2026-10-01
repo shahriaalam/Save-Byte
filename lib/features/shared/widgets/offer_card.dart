@@ -219,15 +219,19 @@ class OfferCard extends StatelessWidget {
                         color: AppColors.secondary,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        'Available until ${_formatTime(offer.availableUntil)}',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                      Expanded(
+                        child: Text(
+                          'Available until ${_formatTime(offer.availableUntil)}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       Text(
                         '${offer.quantity} left',
                         style:

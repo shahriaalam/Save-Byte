@@ -125,11 +125,15 @@ class CustomerHomeScreen extends ConsumerWidget {
                         size: 20,
                       ),
                       SizedBox(width: 10),
-                      Text(
-                        'Search food or restaurant...',
-                        style: TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 14,
+                      Expanded(
+                        child: Text(
+                          'Search food or restaurant...',
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -181,20 +185,18 @@ class CustomerHomeScreen extends ConsumerWidget {
                     );
                   }
 
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: offers.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final offer = offers[index];
-                      return OfferCard(
-                        offer: offer,
-                        onTap: () {
-                          context.push('/customer/offers/${offer.id}');
-                        },
-                      );
-                    },
+                  return Column(
+                    children: [
+                      for (int i = 0; i < offers.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 12),
+                        OfferCard(
+                          offer: offers[i],
+                          onTap: () {
+                            context.push('/customer/offers/${offers[i].id}');
+                          },
+                        ),
+                      ],
+                    ],
                   );
                 },
                 loading: () => const Padding(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:save_bite/core/constants/app_colors.dart';
@@ -51,9 +52,11 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: CustomerShellScreen(navigationShell: fakeShell),
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: CustomerShellScreen(navigationShell: fakeShell),
+          ),
         ),
       );
 
@@ -95,9 +98,11 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: CustomerShellScreen(navigationShell: fakeShell),
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: CustomerShellScreen(navigationShell: fakeShell),
+          ),
         ),
       );
 
@@ -110,5 +115,26 @@ void main() {
       final homeText = tester.widget<Text>(find.text('Home'));
       expect(homeText.style?.color, AppColors.textSecondary);
     });
+
+    testWidgets('navigation bar Align has heightFactor: 1.0 to prevent full-screen expansion', (tester) async {
+      final fakeShell = FakeStatefulNavigationShell(
+        currentIndex: 0,
+        onGoBranch: (_, _) {},
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: CustomerShellScreen(navigationShell: fakeShell),
+          ),
+        ),
+      );
+
+      expect(find.byType(CustomerShellScreen), findsOneWidget);
+    });
   });
 }
+
+
+

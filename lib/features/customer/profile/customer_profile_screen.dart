@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../auth/domain/user_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../shell/customer_shell_screen.dart';
 import 'widgets/change_avatar_sheet.dart';
 
 /// Customer profile management screen (Section 26).
@@ -20,45 +22,59 @@ class CustomerProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
-  void _showChangeAvatarModal(BuildContext context, UserProfile profile) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (bottomSheetContext) => ChangeAvatarSheet(profile: profile),
-    );
+  Future<void> _showChangeAvatarModal(
+      BuildContext context, UserProfile profile) async {
+    ref.read(customerNavbarVisibleProvider.notifier).hide();
+    final targetContext = rootNavigatorKey.currentContext ?? context;
+    try {
+      await showModalBottomSheet<void>(
+        context: targetContext,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (bottomSheetContext) => ChangeAvatarSheet(profile: profile),
+      );
+    } finally {
+      ref.read(customerNavbarVisibleProvider.notifier).show();
+    }
   }
 
-  void _showEditProfileSheet(BuildContext context, UserProfile profile) {
+  Future<void> _showEditProfileSheet(
+      BuildContext context, UserProfile profile) async {
     final nameController =
         TextEditingController(text: profile.fullName ?? '');
     final phoneController = TextEditingController(text: profile.phone ?? '');
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
 
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    ref.read(customerNavbarVisibleProvider.notifier).hide();
+    final targetContext = rootNavigatorKey.currentContext ?? context;
+    try {
+      await showModalBottomSheet<void>(
+        context: targetContext,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
       builder: (bottomSheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              child: Form(
-                key: formKey,
-                child: SingleChildScrollView(
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 24,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,11 +209,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   ),
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
+            ),
+          );
+        },
+      );
+    },
+  );
+    } finally {
+      ref.read(customerNavbarVisibleProvider.notifier).show();
+    }
   }
 
   void _confirmLogout(BuildContext context) {

@@ -76,158 +76,633 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = authState is AuthLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Brand Icon & Title
-                        const Center(
-                          child: AppLogo(
-                            size: 64,
-                            showText: true,
-                            showTagline: false,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Welcome to SaveBite',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Log in to discover and save surplus food',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 32),
+      backgroundColor: const Color(0xFFF5F6F9),
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFF5F6F9),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFCEFEF), // Warm ambient crimson aura at top
+              Color(0xFFF5F6F9),
+              Color(0xFFEFF1F5),
+            ],
+            stops: [0.0, 0.35, 1.0],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Decorative background ambient blur orbs
+            Positioned(
+              top: -50,
+              right: -30,
+              child: Container(
+                width: 240,
+                height: 240,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.18),
+                      blurRadius: 90,
+                      spreadRadius: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 180,
+              left: -70,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.amber.withValues(alpha: 0.07),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: 0.10),
+                      blurRadius: 90,
+                      spreadRadius: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
-                        // Email Field
-                        AppTextField(
-                          label: 'Email',
-                          hint: 'name@example.com',
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!value.contains('@') || !value.contains('.')) {
-                              return 'Please enter a valid email address';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password Field
-                        AppTextField(
-                          label: 'Password',
-                          hint: '••••••••',
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Forgot Password Link
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () => context.push(AppRoutes.forgotPassword),
-                            child: const Text('Forgot Password?'),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Submit Button
-                        PrimaryButton(
-                          text: 'Log In',
-                          isLoading: isLoading,
-                          onPressed: _handleLogin,
-                        ),
-                        const SizedBox(height: 28),
-
-                        // Sign up switchers
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                'NEW TO SAVEBITE?',
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: AppColors.textMuted,
-                                      letterSpacing: 0.5,
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 12,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Compact Elevated Brand Mark
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.18,
                                     ),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const AppLogoIcon(
+                                size: 54,
+                                borderRadius: 18,
                               ),
                             ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+                          ),
+                          const SizedBox(height: 8),
 
-                        // Register Buttons
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.person_add_outlined, size: 18),
-                          label: const Text('Sign Up as Customer'),
-                          onPressed: () => context.push(AppRoutes.customerRegister),
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.storefront_outlined, size: 18),
-                          label: const Text('Register as Restaurant'),
-                          onPressed: () =>
-                              context.push(AppRoutes.restaurantRegister),
-                        ),
-                      ],
+                          // Brand Wordmark
+                          Center(
+                            child: Text.rich(
+                              const TextSpan(
+                                text: 'Save',
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.secondary,
+                                  letterSpacing: -0.6,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: 'Bite',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+
+                          // Environmental Tag Pill
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.22,
+                                  ),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.05,
+                                    ),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.auto_awesome_rounded,
+                                    size: 11,
+                                    color: AppColors.primary,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Savor More • Waste Less',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+
+                          // Welcome message in black bold font
+                          const Text(
+                            'Welcome to SaveByte',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
+                              letterSpacing: -0.3,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+
+                          // High-Focus Elevated Login Card
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F172A).withValues(
+                                    alpha: 0.07,
+                                  ),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 10),
+                                  spreadRadius: -3,
+                                ),
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.03,
+                                  ),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Top Accent Gradient Line
+                                  Container(
+                                    height: 3,
+                                    decoration: const BoxDecoration(
+                                      gradient: AppColors.primaryGradient,
+                                    ),
+                                  ),
+
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      18,
+                                      14,
+                                      18,
+                                      14,
+                                    ),
+                                    child: Theme(
+                                      data: Theme.of(context).copyWith(
+                                        inputDecorationTheme:
+                                            InputDecorationTheme(
+                                          filled: true,
+                                          fillColor: const Color(0xFFF8FAFC),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 10,
+                                          ),
+                                          hintStyle: TextStyle(
+                                            color: const Color(0xFF94A3B8)
+                                                .withValues(alpha: 0.65),
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFFE2E8F0),
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: Color(0xFFE2E8F0),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: AppColors.borderFocus,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: AppColors.error,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          // Email Field
+                                          AppTextField(
+                                            label: 'Email',
+                                            hint: 'name@example.com',
+                                            controller: _emailController,
+                                            keyboardType:
+                                                TextInputType.emailAddress,
+                                            prefixIcon: const Icon(
+                                              Icons.email_outlined,
+                                              size: 19,
+                                            ),
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.trim().isEmpty) {
+                                                return 'Please enter your email';
+                                              }
+                                              if (!value.contains('@') ||
+                                                  !value.contains('.')) {
+                                                return 'Please enter a valid email address';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 10),
+
+                                          // Password Field
+                                          AppTextField(
+                                            label: 'Password',
+                                            hint: '••••••••',
+                                            controller: _passwordController,
+                                            obscureText: _obscurePassword,
+                                            prefixIcon: const Icon(
+                                              Icons.lock_outline,
+                                              size: 19,
+                                            ),
+                                            suffixIcon: IconButton(
+                                              icon: Icon(
+                                                _obscurePassword
+                                                    ? Icons.visibility_outlined
+                                                    : Icons
+                                                        .visibility_off_outlined,
+                                                size: 19,
+                                              ),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _obscurePassword =
+                                                      !_obscurePassword;
+                                                });
+                                              },
+                                            ),
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.isEmpty) {
+                                                return 'Please enter your password';
+                                              }
+                                              return null;
+                                            },
+                                          ),
+                                          const SizedBox(height: 2),
+
+                                          // Forgot Password Link
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: TextButton(
+                                              style: TextButton.styleFrom(
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 4,
+                                                  vertical: 2,
+                                                ),
+                                                foregroundColor:
+                                                    AppColors.primary,
+                                              ),
+                                              onPressed: () => context.push(
+                                                AppRoutes.forgotPassword,
+                                              ),
+                                              child: const Text(
+                                                'Forgot Password?',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+
+                                          // Submit Button
+                                          PrimaryButton(
+                                            text: 'Log In',
+                                            isLoading: isLoading,
+                                            onPressed: _handleLogin,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Styled Section Divider
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Divider(color: Color(0xFFCBD5E1)),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.03,
+                                        ),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    'NEW TO SAVEBITE?',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: const Color(0xFF64748B),
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                          fontSize: 9.5,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                              const Expanded(
+                                child: Divider(color: Color(0xFFCBD5E1)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Unified High-Focus Sign Up Card
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F172A).withValues(
+                                    alpha: 0.05,
+                                  ),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                  spreadRadius: -1,
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                // Customer Signup Option
+                                InkWell(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(16),
+                                  ),
+                                  onTap: () =>
+                                      context.push(AppRoutes.customerRegister),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            gradient: AppColors.primaryGradient,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: AppColors.primary
+                                                    .withValues(alpha: 0.25),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.person_add_rounded,
+                                            size: 17,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Sign Up as Customer',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                              SizedBox(height: 1),
+                                              Text(
+                                                'Discover mystery bags & discounted meals',
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 12,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const Divider(
+                                  height: 1,
+                                  indent: 48,
+                                  color: Color(0xFFF1F5F9),
+                                ),
+                                // Restaurant Register Option
+                                InkWell(
+                                  borderRadius: const BorderRadius.vertical(
+                                    bottom: Radius.circular(16),
+                                  ),
+                                  onTap: () => context
+                                      .push(AppRoutes.restaurantRegister),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 10,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.secondary,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.16,
+                                                ),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.storefront_rounded,
+                                            size: 17,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Register as Restaurant',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                              SizedBox(height: 1),
+                                              Text(
+                                                'Sell surplus inventory & cut food waste',
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 12,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Food animation screen overlay when login takes time
-          FoodLoginLoadingOverlay(isLoading: isLoading),
-        ],
+            // Food animation screen overlay when login takes time
+            FoodLoginLoadingOverlay(isLoading: isLoading),
+          ],
+        ),
       ),
     );
   }

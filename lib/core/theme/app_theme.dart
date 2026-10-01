@@ -113,7 +113,10 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        hintStyle: TextStyle(
+          color: const Color(0xFF94A3B8).withValues(alpha: 0.65),
+          fontSize: 14,
+        ),
         labelStyle: const TextStyle(
           color: AppColors.textSecondary,
           fontSize: 14,

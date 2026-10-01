@@ -94,6 +94,32 @@ void main() {
       expect(find.text('Buy Now'), findsNothing);
       expect(find.text('Add to Cart'), findsNothing);
     });
+
+    testWidgets(
+        'does not have huge gap below last listed item when scrolled to bottom',
+        (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(const CustomerHomeScreen()));
+      await tester.pumpAndSettle();
+
+      final scrollable = find.byType(SingleChildScrollView);
+      await tester.drag(scrollable, const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      final offerCards = find.byType(OfferCard);
+      expect(offerCards, findsWidgets);
+      final lastCard = offerCards.last;
+      final lastCardRect = tester.getRect(lastCard);
+
+      // Verify last card is visible near the bottom, not scrolled far off-screen
+      expect(lastCardRect.bottom, isPositive);
+      expect(lastCardRect.bottom, greaterThan(600));
+      expect(lastCardRect.bottom, lessThanOrEqualTo(800));
+    });
   });
 
   group('Customer Offer Details Screen (Section 22)', () {

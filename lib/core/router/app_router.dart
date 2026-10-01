@@ -71,11 +71,16 @@ class AppRouterNotifier extends ChangeNotifier {
   }
 }
 
+/// Global root navigator key for pushing full-screen dialogs and modal bottom sheets
+/// above the shell navigation routes.
+final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+
 /// Riverpod provider for GoRouter configuration with role-based routing (Section 18).
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = AppRouterNotifier(ref);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: notifier.redirect,
@@ -108,6 +113,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Customer Navigation Shell (Section 19: Home, Search, Profile)
       StatefulShellRoute.indexedStack(
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state, navigationShell) {
           return CustomerShellScreen(navigationShell: navigationShell);
         },
