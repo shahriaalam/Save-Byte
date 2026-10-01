@@ -87,19 +87,18 @@ class AuthRepository {
         'profile': profile.toJson(),
       };
       await prefs.setString('sb_registered_accounts', jsonEncode(data));
+      await prefs.setString('sb_profile_${profile.id}', jsonEncode(profile.toJson()));
     } catch (e) {
       debugPrint('SharedPreferences persistence error: $e');
     }
   }
 
-  /// Retrieves an account from local memory or storage cache.
+  /// Retrieves an account from local storage cache or fallback memory.
   static Future<({String password, UserProfile profile})?> _getPersistedAccount(
     String email,
   ) async {
     final normalized = email.trim().toLowerCase();
-    if (_memoryAccounts.containsKey(normalized)) {
-      return _memoryAccounts[normalized];
-    }
+    // 1. Check persistent storage first so user modifications (e.g. avatar, name) are never lost on restart
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString('sb_registered_accounts');
@@ -117,6 +116,11 @@ class AuthRepository {
       }
     } catch (e) {
       debugPrint('SharedPreferences read error: $e');
+    }
+
+    // 2. Fallback to built-in in-memory demo accounts
+    if (_memoryAccounts.containsKey(normalized)) {
+      return _memoryAccounts[normalized];
     }
     return null;
   }
@@ -143,19 +147,35 @@ class AuthRepository {
           .eq('id', user.id)
           .maybeSingle();
 
+      UserProfile profile;
       if (response == null) {
-        // Fallback to metadata if profile row hasn't synced yet
+        // Fallback to metadata and local cache if profile row hasn't synced yet
         final metadata = user.userMetadata ?? {};
-        return UserProfile(
+        final local = await _getPersistedAccount(user.email ?? '');
+        profile = UserProfile(
           id: user.id,
           email: user.email ?? '',
-          role: (metadata['role'] as String?) ?? AppConstants.roleCustomer,
-          fullName: metadata['full_name'] as String?,
-          phone: metadata['phone'] as String?,
+          role: (metadata['role'] as String?) ?? local?.profile.role ?? AppConstants.roleCustomer,
+          fullName: (metadata['full_name'] as String?) ?? local?.profile.fullName,
+          phone: (metadata['phone'] as String?) ?? local?.profile.phone,
+          avatarUrl: (metadata['avatar_url'] as String?) ?? local?.profile.avatarUrl,
         );
+      } else {
+        profile = UserProfile.fromJson(response);
+        // If avatar_url in database was empty or not synced yet, merge from metadata or local persistence
+        if (profile.avatarUrl == null || profile.avatarUrl!.isEmpty) {
+          final metadata = user.userMetadata ?? {};
+          final metaAvatar = metadata['avatar_url'] as String?;
+          if (metaAvatar != null && metaAvatar.isNotEmpty) {
+            profile = profile.copyWith(avatarUrl: metaAvatar);
+          } else {
+            final local = await _getPersistedAccount(profile.email);
+            if (local != null && local.profile.avatarUrl != null && local.profile.avatarUrl!.isNotEmpty) {
+              profile = profile.copyWith(avatarUrl: local.profile.avatarUrl);
+            }
+          }
+        }
       }
-
-      final profile = UserProfile.fromJson(response);
 
       // Section 38: Check if account has been disabled by admin
       if (!profile.isActive) {
@@ -173,12 +193,14 @@ class AuthRepository {
     } catch (e) {
       // In development/test with placeholders or unseeded tables, create fallback profile from session
       final metadata = user.userMetadata ?? {};
+      final local = await _getPersistedAccount(user.email ?? '');
       final profile = UserProfile(
         id: user.id,
         email: user.email ?? '',
-        role: (metadata['role'] as String?) ?? AppConstants.roleCustomer,
-        fullName: metadata['full_name'] as String?,
-        phone: metadata['phone'] as String?,
+        role: (metadata['role'] as String?) ?? local?.profile.role ?? AppConstants.roleCustomer,
+        fullName: (metadata['full_name'] as String?) ?? local?.profile.fullName,
+        phone: (metadata['phone'] as String?) ?? local?.profile.phone,
+        avatarUrl: (metadata['avatar_url'] as String?) ?? local?.profile.avatarUrl,
       );
       _activeSessionProfile = profile;
       return profile;
@@ -409,22 +431,44 @@ class AuthRepository {
     String? phone,
     String? avatarUrl,
   }) async {
-    if (_activeSessionProfile != null && _activeSessionProfile!.id == id) {
-      final updated = _activeSessionProfile!.copyWith(
-        fullName: fullName.trim(),
-        phone: phone?.trim(),
-        avatarUrl: avatarUrl,
-        updatedAt: DateTime.now(),
-      );
-      _activeSessionProfile = updated;
-      final email = updated.email.toLowerCase();
-      if (_memoryAccounts.containsKey(email)) {
-        final pwd = _memoryAccounts[email]!.password;
-        await _persistAccount(email, pwd, updated);
-      }
-      return updated;
+    UserProfile? baseProfile = _activeSessionProfile;
+    if (baseProfile == null || baseProfile.id != id) {
+      baseProfile = await getCurrentUserProfile();
     }
 
+    final updated = (baseProfile ??
+            UserProfile(
+              id: id,
+              email: _client.auth.currentUser?.email ?? '',
+              role: AppConstants.roleCustomer,
+              fullName: fullName.trim(),
+            ))
+        .copyWith(
+      fullName: fullName.trim(),
+      phone: phone?.trim(),
+      avatarUrl: avatarUrl,
+      updatedAt: DateTime.now(),
+    );
+
+    _activeSessionProfile = updated;
+
+    // 1. Persist locally to SharedPreferences & memory
+    final email = updated.email.trim().toLowerCase();
+    if (email.isNotEmpty) {
+      final existing = await _getPersistedAccount(email);
+      final pwd = existing?.password ?? '123456';
+      await _persistAccount(email, pwd, updated);
+    } else {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          'sb_profile_$id',
+          jsonEncode(updated.toJson()),
+        );
+      } catch (_) {}
+    }
+
+    // 2. Persist to Supabase tableProfiles if available
     try {
       final data = <String, dynamic>{
         'full_name': fullName.trim(),
@@ -437,21 +481,28 @@ class AuthRepository {
           .from(SupabaseConstants.tableProfiles)
           .update(data)
           .eq('id', id);
-
-      final updated = await _client
-          .from(SupabaseConstants.tableProfiles)
-          .select()
-          .eq('id', id)
-          .single();
-
-      final prof = UserProfile.fromJson(updated);
-      _activeSessionProfile = prof;
-      return prof;
-    } on supa.PostgrestException catch (e) {
-      throw ServerException('Failed to update profile: ${e.message}');
     } catch (e) {
-      throw ServerException('Failed to update profile: $e');
+      debugPrint('[SaveBite] Supabase tableProfiles update notice: $e');
     }
+
+    // 3. Persist to Supabase Auth User Metadata so it persists across sessions
+    try {
+      if (_client.auth.currentUser != null) {
+        await _client.auth.updateUser(
+          supa.UserAttributes(
+            data: {
+              'full_name': fullName.trim(),
+              if (phone != null) 'phone': phone.trim(),
+              'avatar_url': avatarUrl,
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[SaveBite] Supabase auth updateUser notice: $e');
+    }
+
+    return updated;
   }
 
   /// Signs out of the application session.

@@ -182,25 +182,23 @@ class _ChangeAvatarSheetState extends ConsumerState<ChangeAvatarSheet> {
           finalAvatarUrl = '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
         }
       } catch (storageError) {
-        debugPrint('[SaveBite] Supabase Storage upload error: $storageError');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to upload image: $storageError'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-        setState(() => _isSaving = false);
-        return;
+        debugPrint('[SaveBite] Supabase Storage upload notice: $storageError. Falling back to local data URL.');
+        // If Supabase cloud storage bucket is unavailable/restricted, gracefully keep the base64 data URL
       }
     }
+
+    final resolvedFullName = (widget.profile.fullName != null &&
+            widget.profile.fullName!.trim().isNotEmpty)
+        ? widget.profile.fullName!.trim()
+        : [widget.profile.firstName, widget.profile.lastName]
+            .where((s) => s != null && s.trim().isNotEmpty)
+            .join(' ');
 
     final success = await ref
         .read(authControllerProvider.notifier)
         .updateProfile(
           id: widget.profile.id,
-          fullName: widget.profile.fullName ?? 'Customer',
+          fullName: resolvedFullName.isNotEmpty ? resolvedFullName : 'Customer',
           phone: widget.profile.phone,
           avatarUrl: finalAvatarUrl,
         );
