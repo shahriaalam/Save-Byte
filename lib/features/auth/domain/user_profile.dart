@@ -12,6 +12,9 @@ class UserProfile {
     this.fullName,
     this.phone,
     this.avatarUrl,
+    this.address,
+    this.city,
+    this.dateOfBirth,
     this.isActive = true,
     this.createdAt,
     this.updatedAt,
@@ -26,6 +29,9 @@ class UserProfile {
   final String? fullName;
   final String? phone;
   final String? avatarUrl;
+  final String? address;
+  final String? city;
+  final String? dateOfBirth;
   final bool isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -54,6 +60,9 @@ class UserProfile {
       fullName: resolvedFullName.isNotEmpty ? resolvedFullName : null,
       phone: json['phone'] as String?,
       avatarUrl: json['avatar_url'] as String?,
+      address: json['address'] as String?,
+      city: json['city'] as String?,
+      dateOfBirth: (json['date_of_birth'] ?? json['dob']) as String?,
       isActive: (json['is_active'] as bool?) ?? true,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
@@ -80,6 +89,9 @@ class UserProfile {
       if (computedFullName.isNotEmpty) 'full_name': computedFullName,
       'phone': phone,
       'avatar_url': avatarUrl,
+      if (address != null) 'address': address,
+      if (city != null) 'city': city,
+      if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
       'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
@@ -96,6 +108,9 @@ class UserProfile {
     String? fullName,
     String? phone,
     String? avatarUrl,
+    String? address,
+    String? city,
+    String? dateOfBirth,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -110,6 +125,9 @@ class UserProfile {
       fullName: fullName ?? this.fullName,
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      address: address ?? this.address,
+      city: city ?? this.city,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

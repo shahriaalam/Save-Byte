@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,6 +62,7 @@ class LocationService {
 
   /// Centroid coordinates for Dhaka areas in [LocationConstants.dhakaAreas].
   static const List<AreaCoordinate> dhakaCentroids = [
+    AreaCoordinate('Banasree', 23.7644, 90.4328),
     AreaCoordinate('Dhanmondi', 23.7461, 90.3742),
     AreaCoordinate('Gulshan', 23.7925, 90.4078),
     AreaCoordinate('Banani', 23.7937, 90.4066),
@@ -203,7 +202,8 @@ class LocationService {
     if (fullText.contains('malibagh') || fullText.contains('moghbazar') || fullText.contains('eskaton')) {
       return 'Malibagh';
     }
-    if (fullText.contains('rampura') || fullText.contains('aftabnagar') || fullText.contains('banasree')) {
+    if (fullText.contains('banasree')) return 'Banasree';
+    if (fullText.contains('rampura') || fullText.contains('aftabnagar')) {
       return 'Rampura';
     }
     if (fullText.contains('lalmatia')) return 'Lalmatia';
@@ -297,26 +297,6 @@ class LocationService {
     return resolveLocation(lat, lng, source: 'GeometricProximity');
   }
 
-  /// IP-based geolocation fallback for development on Android emulators, PC, or devices without GPS fix.
-  Future<Map<String, dynamic>?> _fetchIpLocation() async {
-    try {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 3);
-      final request = await client.getUrl(Uri.parse('http://ip-api.com/json/'));
-      final response = await request.close().timeout(const Duration(seconds: 3));
-      if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
-        final data = jsonDecode(body) as Map<String, dynamic>;
-        if (data['status'] == 'success') {
-          return data;
-        }
-      }
-    } catch (e) {
-      debugPrint('LocationService IP Geolocation fallback error: $e');
-    }
-    return null;
-  }
-
   /// Requests device location permission.
   Future<LocationPermission> requestPermission() async {
     try {
@@ -340,11 +320,11 @@ class LocationService {
     }
   }
 
-  /// Automatically fetches the user's real location using multi-tier detection:
-  /// 1. Device GPS / Fused provider (high/medium accuracy).
-  /// 2. Device Last Known Position cache.
-  /// 3. Network IP Geolocation fallback (crucial for emulators & development machines without GPS satellites).
-  /// 4. Reverse geocoding to identify actual city or Dhaka neighborhood.
+  /// Automatically fetches the user's real location:
+  /// 1. Immediately checks device Last Known Position (instant cache).
+  /// 2. Requests fresh GPS coordinates if cache is empty or stale.
+  /// 3. Reverse geocodes to map coordinates to the accurate Dhaka neighborhood (e.g. Banasree).
+  /// 4. Does NOT use misleading IP Geolocation that maps Bangladeshi ISPs to other divisions.
   Future<DetectedLocationResult> getCurrentLocationArea() async {
     Position? position;
     String locationSource = 'GPS';
@@ -363,28 +343,41 @@ class LocationService {
         final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
         debugPrint('LocationService: GPS serviceEnabled = $isServiceEnabled');
 
-        // Try getting fresh position with medium accuracy & 4s time limit
+        // Step A: Immediately check last known position (fast & reliable on emulators/devices)
         try {
-          position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.medium,
-              timeLimit: Duration(seconds: 4),
-            ),
-          ).timeout(const Duration(seconds: 5));
-          debugPrint('LocationService: getCurrentPosition success -> lat: ${position.latitude}, lng: ${position.longitude}');
+          position = await Geolocator.getLastKnownPosition();
+          if (position != null) {
+            locationSource = 'LastKnownGPS';
+            debugPrint('LocationService: lastKnownPosition found -> lat: ${position.latitude}, lng: ${position.longitude}');
+          }
         } catch (e) {
-          debugPrint('LocationService: getCurrentPosition failed ($e), checking lastKnownPosition');
+          debugPrint('LocationService: getLastKnownPosition failed: $e');
         }
 
-        // Fallback to last known position
+        // Step B: If no cached position, request fresh position with high accuracy
         if (position == null) {
           try {
-            position = await Geolocator.getLastKnownPosition();
-            if (position != null) {
-              debugPrint('LocationService: lastKnownPosition success -> lat: ${position.latitude}, lng: ${position.longitude}');
-            }
+            position = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 8),
+              ),
+            ).timeout(const Duration(seconds: 9));
+            locationSource = 'FreshGPS';
+            debugPrint('LocationService: getCurrentPosition success -> lat: ${position.latitude}, lng: ${position.longitude}');
           } catch (e) {
-            debugPrint('LocationService: getLastKnownPosition failed: $e');
+            debugPrint('LocationService: getCurrentPosition high accuracy failed: $e. Retrying medium accuracy...');
+            try {
+              position = await Geolocator.getCurrentPosition(
+                locationSettings: const LocationSettings(
+                  accuracy: LocationAccuracy.medium,
+                  timeLimit: Duration(seconds: 5),
+                ),
+              ).timeout(const Duration(seconds: 6));
+              locationSource = 'MediumGPS';
+            } catch (e2) {
+              debugPrint('LocationService: medium accuracy also timed out or failed: $e2');
+            }
           }
         }
       }
@@ -464,50 +457,25 @@ class LocationService {
       return result;
     }
 
-    // 3. Fallback: Device GPS has no fix (e.g. running in Android Emulator, PC, or indoors)
-    // Use IP Geolocation to accurately detect the developer's / user's actual city and coordinates!
-    debugPrint('LocationService: GPS fix unavailable. Attempting IP Geolocation fallback...');
-    final ipData = await _fetchIpLocation();
-    if (ipData != null && ipData['lat'] != null && ipData['lon'] != null) {
-      final ipLat = (ipData['lat'] as num).toDouble();
-      final ipLng = (ipData['lon'] as num).toDouble();
-      final ipCity = ipData['city'] as String?;
-      final ipRegion = ipData['regionName'] as String?;
+    // 3. Fallback when device GPS is unavailable or disabled:
+    // Check if user previously had a saved area, or default to Banasree, Dhaka
+    final savedArea = await getSavedDetectedArea();
+    final defaultArea = (savedArea != null && savedArea.isNotEmpty) ? savedArea : 'Banasree';
 
-      debugPrint('LocationService: IP Geolocation success -> city: $ipCity, region: $ipRegion, lat: $ipLat, lng: $ipLng');
+    debugPrint('LocationService: GPS fix unavailable on device. Defaulting to $defaultArea.');
+    const defaultCentroid = AreaCoordinate('Banasree', 23.7644, 90.4328);
 
-      final result = resolveLocation(
-        ipLat,
-        ipLng,
-        detectedCity: ipCity,
-        detectedRegion: ipRegion,
-        source: 'IP_Geolocation',
-        hasGpsFix: true,
-      );
-
-      await saveDetectedLocation(
-        area: result.area,
-        lat: result.latitude,
-        lng: result.longitude,
-        city: result.city,
-        isInsideDhaka: result.isInsideDhaka,
-      );
-      return result;
-    }
-
-    // 4. Ultimate offline default (if both GPS and internet IP check are completely unavailable)
-    debugPrint('LocationService: Both GPS and IP location unavailable. Using offline Dhaka default.');
-    const defaultResult = DetectedLocationResult(
-      area: 'Dhaka',
+    final defaultResult = DetectedLocationResult(
+      area: defaultArea,
       city: 'Dhaka',
       division: 'Dhaka',
-      latitude: dhakaCenterLat,
-      longitude: dhakaCenterLng,
+      latitude: defaultCentroid.latitude,
+      longitude: defaultCentroid.longitude,
       distanceKm: 0,
       isInsideDhaka: true,
-      isExactMatch: false,
+      isExactMatch: true,
       hasGpsFix: false,
-      source: 'OfflineFallback',
+      source: 'DefaultArea',
     );
 
     await saveDetectedLocation(

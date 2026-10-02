@@ -100,22 +100,40 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<UserProfile> updateProfile({
     required String id,
-    required String fullName,
+    String? fullName,
+    String? firstName,
+    String? lastName,
+    String? gender,
     String? phone,
     String? avatarUrl,
+    String? address,
+    String? city,
+    String? dateOfBirth,
   }) async {
+    final resolvedFullName = (fullName != null && fullName.trim().isNotEmpty)
+        ? fullName.trim()
+        : [firstName, lastName]
+            .where((s) => s != null && s.trim().isNotEmpty)
+            .join(' ');
+
     final updated = (initialProfile ??
             UserProfile(
               id: id,
               email: 'test@savebite.com',
               role: AppConstants.roleCustomer,
-              fullName: fullName,
+              fullName: resolvedFullName,
               isActive: true,
             ))
         .copyWith(
-      fullName: fullName,
+      fullName: resolvedFullName.isNotEmpty ? resolvedFullName : null,
+      firstName: firstName,
+      lastName: lastName,
+      gender: gender,
       phone: phone,
       avatarUrl: avatarUrl,
+      address: address,
+      city: city,
+      dateOfBirth: dateOfBirth,
     );
     initialProfile = updated;
     return updated;

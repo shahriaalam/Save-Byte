@@ -90,5 +90,46 @@ void main() {
       );
       expect(otherDivisionOffers, isEmpty);
     });
+
+    test('filters active restaurants by category to only those with matching offers', () async {
+      // In Dhanmondi, Takeout Burgers has burger offers, Rahman's Kitchen does not
+      final burgerShops = await repository.getActiveRestaurants(
+        category: 'Burger',
+        area: 'Dhanmondi',
+      );
+      expect(burgerShops, isNotEmpty);
+      expect(burgerShops.every((r) => r.name.contains('Burger')), isTrue);
+      expect(burgerShops.any((r) => r.id == 'res-1'), isFalse); // Rahman's Kitchen excluded
+
+      // In Dhanmondi, Rahman's Kitchen has biryani/rice, burger shops do not
+      final biryaniShops = await repository.getActiveRestaurants(
+        category: 'Biryani',
+        area: 'Dhanmondi',
+      );
+      expect(biryaniShops, isNotEmpty);
+      expect(biryaniShops.any((r) => r.id == 'res-1'), isTrue); // Rahman's Kitchen included
+      expect(biryaniShops.any((r) => r.name.contains('Burger')), isFalse); // Burger shop excluded
+    });
+
+    test('retrieves active offers and restaurants for Banasree area', () async {
+      final banasreeOffers = await repository.getActiveOffers(
+        area: 'Banasree',
+      );
+      expect(banasreeOffers, isNotEmpty);
+      expect(banasreeOffers.every((o) => o.area == 'Banasree'), isTrue);
+
+      final banasreeShops = await repository.getActiveRestaurants(
+        area: 'Banasree',
+      );
+      expect(banasreeShops, isNotEmpty);
+      expect(banasreeShops.every((r) => r.area == 'Banasree'), isTrue);
+
+      final banasreeBurgerShops = await repository.getActiveRestaurants(
+        category: 'Burger',
+        area: 'Banasree',
+      );
+      expect(banasreeBurgerShops.length, 1);
+      expect(banasreeBurgerShops.first.name, 'Banasree Burger Hub');
+    });
   });
 }

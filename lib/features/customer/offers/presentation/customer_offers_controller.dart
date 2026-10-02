@@ -96,10 +96,13 @@ final activeOffersProvider = FutureProvider<List<FoodOffer>>((ref) async {
 });
 
 /// Nearby offers provider for customer home ("Offers Near You") from restaurants in the area.
+/// Filters by both selectedCategory and homeArea.
 final nearbyOffersProvider = FutureProvider<List<FoodOffer>>((ref) async {
   final repository = ref.watch(customerOfferRepositoryProvider);
+  final category = ref.watch(selectedCategoryProvider);
   final area = ref.watch(homeAreaProvider);
   final offers = await repository.getActiveOffers(
+    category: category == 'All' ? null : category,
     division: 'Dhaka',
     area: area == 'All' ? null : area,
   );
@@ -139,14 +142,32 @@ final allDhakaHotDealsProvider = FutureProvider<List<FoodOffer>>((ref) async {
   return hotDeals;
 });
 
-/// Nearby restaurants provider for customer home that have active surplus listings right now.
+/// Nearby restaurants provider for customer home ("Shops Near You") that have active surplus listings right now.
+/// Filters by both selectedCategory and homeArea to only display shops offering the selected category.
 final activeRestaurantsProvider = FutureProvider<List<Restaurant>>((ref) async {
   final repository = ref.watch(customerOfferRepositoryProvider);
+  final category = ref.watch(selectedCategoryProvider);
   final area = ref.watch(homeAreaProvider);
   return repository.getActiveRestaurants(
+    category: category == 'All' ? null : category,
     division: 'Dhaka',
     area: area == 'All' ? null : area,
   );
+});
+
+/// Provider for the bottom "All Restaurants" section on Customer Home.
+/// Does NOT filter by category ("and dont filter all restaurants portion. bcz the portion is set to see all the offers"),
+/// only filters by the selected/detected home area, sorted by highest discount % first.
+final allHomeOffersProvider = FutureProvider<List<FoodOffer>>((ref) async {
+  final repository = ref.watch(customerOfferRepositoryProvider);
+  final area = ref.watch(homeAreaProvider);
+  final offers = await repository.getActiveOffers(
+    division: 'Dhaka',
+    area: area == 'All' ? null : area,
+  );
+  // Ranked by highest discount percentage first
+  offers.sort((a, b) => b.discountPercentage.compareTo(a.discountPercentage));
+  return offers;
 });
 
 /// Search results provider for Customer Search screen with division and area filters (Section 24).

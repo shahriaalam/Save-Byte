@@ -108,7 +108,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final scrollable = find.byType(SingleChildScrollView);
-      await tester.drag(scrollable, const Offset(0, -3000));
+      await tester.drag(scrollable, const Offset(0, -8000));
       await tester.pumpAndSettle();
 
       final offerCards = find.byType(OfferCard);
@@ -251,7 +251,9 @@ void main() {
 
       // Verify bottom sheet appears with editable fields
       expect(find.text('Save Changes'), findsOneWidget);
-      expect(find.text('Full Name *'), findsOneWidget);
+      expect(find.text('First Name *'), findsOneWidget);
+      expect(find.text('Last Name'), findsOneWidget);
+      expect(find.text('Gender'), findsOneWidget);
       expect(find.text('Phone Number'), findsWidgets);
     });
 

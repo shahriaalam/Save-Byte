@@ -200,17 +200,29 @@ class AuthController extends Notifier<AppAuthState> {
   /// Update user profile (Section 26)
   Future<bool> updateProfile({
     required String id,
-    required String fullName,
+    String? fullName,
+    String? firstName,
+    String? lastName,
+    String? gender,
     String? phone,
     String? avatarUrl,
+    String? address,
+    String? city,
+    String? dateOfBirth,
   }) async {
     state = const AuthLoading();
     try {
       final updated = await _repository.updateProfile(
         id: id,
         fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
+        gender: gender,
         phone: phone,
         avatarUrl: avatarUrl,
+        address: address,
+        city: city,
+        dateOfBirth: dateOfBirth,
       );
       _userNotifier.setProfile(updated);
       state = Authenticated(updated);

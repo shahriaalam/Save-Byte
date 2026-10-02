@@ -44,9 +44,24 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
 
   Future<void> _showEditProfileSheet(
       BuildContext context, UserProfile profile) async {
-    final nameController =
-        TextEditingController(text: profile.fullName ?? '');
+    // Derive initial first and last name
+    String initialFirstName = profile.firstName ?? '';
+    String initialLastName = profile.lastName ?? '';
+    if (initialFirstName.isEmpty && initialLastName.isEmpty && profile.fullName != null) {
+      final parts = profile.fullName!.trim().split(' ');
+      initialFirstName = parts.firstOrNull ?? '';
+      if (parts.length > 1) {
+        initialLastName = parts.sublist(1).join(' ');
+      }
+    }
+
+    final firstNameController = TextEditingController(text: initialFirstName);
+    final lastNameController = TextEditingController(text: initialLastName);
     final phoneController = TextEditingController(text: profile.phone ?? '');
+    final addressController = TextEditingController(text: profile.address ?? '');
+    final cityController = TextEditingController(text: profile.city ?? 'Dhaka');
+    final dobController = TextEditingController(text: profile.dateOfBirth ?? '');
+    String selectedGender = profile.gender ?? 'Male';
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
 
@@ -59,162 +74,294 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         isScrollControlled: true,
         backgroundColor: AppColors.surface,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-      builder: (bottomSheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 20,
-                  right: 20,
-                  top: 24,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-                ),
-                child: Form(
-                  key: formKey,
-                  child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (bottomSheetContext) {
+          return StatefulBuilder(
+            builder: (context, setSheetState) {
+              return SafeArea(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.88,
+                  ),
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: 20,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                  ),
+                  child: Form(
+                    key: formKey,
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Edit Profile',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Edit Profile',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: () => Navigator.pop(bottomSheetContext),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(bottomSheetContext),
+                          const SizedBox(height: 12),
+
+                          // Quick Avatar Preview & Change Photo
+                          Center(
+                            child: Column(
+                              children: [
+                                UserAvatar(
+                                  avatarUrl: profile.avatarUrl,
+                                  name: '${firstNameController.text.trim()} ${lastNameController.text.trim()}'.trim().isNotEmpty
+                                      ? '${firstNameController.text.trim()} ${lastNameController.text.trim()}'.trim()
+                                      : profile.fullName,
+                                  radius: 36,
+                                  showEditBadge: true,
+                                  onTapEdit: () {
+                                    Navigator.pop(bottomSheetContext);
+                                    _showChangeAvatarModal(context, profile);
+                                  },
+                                ),
+                                const SizedBox(height: 6),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    Navigator.pop(bottomSheetContext);
+                                    _showChangeAvatarModal(context, profile);
+                                  },
+                                  icon: const Icon(Icons.photo_camera_outlined,
+                                      size: 15),
+                                  label: const Text('Change Photo'),
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // First Name and Last Name Row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: firstNameController,
+                                  textCapitalization: TextCapitalization.words,
+                                  decoration: const InputDecoration(
+                                    labelText: 'First Name *',
+                                    prefixIcon: Icon(Icons.person_outline_rounded),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: lastNameController,
+                                  textCapitalization: TextCapitalization.words,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Last Name',
+                                    prefixIcon: Icon(Icons.person_outline_rounded),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Gender Selection
+                          const Text(
+                            'Gender',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: ['Male', 'Female', 'Other'].map((gender) {
+                              final isSelected = selectedGender == gender;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: ChoiceChip(
+                                  label: Text(gender),
+                                  selected: isSelected,
+                                  onSelected: (_) {
+                                    setSheetState(() => selectedGender = gender);
+                                  },
+                                  selectedColor: AppColors.primary.withValues(alpha: 0.12),
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  ),
+                                  side: BorderSide(
+                                    color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Date of Birth (DOB)
+                          TextFormField(
+                            controller: dobController,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Date of Birth (DOB)',
+                              hintText: 'Select date of birth',
+                              prefixIcon: Icon(Icons.cake_outlined),
+                              suffixIcon: Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                            ),
+                            onTap: () async {
+                              final now = DateTime.now();
+                              DateTime initialDate = DateTime(2000, 1, 1);
+                              if (dobController.text.isNotEmpty) {
+                                final parsed = DateTime.tryParse(dobController.text);
+                                if (parsed != null) initialDate = parsed;
+                              }
+
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: initialDate,
+                                firstDate: DateTime(1920),
+                                lastDate: now,
+                                helpText: 'Select Date of Birth',
+                              );
+
+                              if (picked != null) {
+                                final formatted =
+                                    '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+                                setSheetState(() {
+                                  dobController.text = formatted;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Phone field
+                          TextFormField(
+                            controller: phoneController,
+                            keyboardType: TextInputType.phone,
+                            decoration: const InputDecoration(
+                              labelText: 'Phone Number',
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Address field
+                          TextFormField(
+                            controller: addressController,
+                            decoration: const InputDecoration(
+                              labelText: 'Address',
+                              hintText: 'House / Road / Area',
+                              prefixIcon: Icon(Icons.home_outlined),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // City field
+                          TextFormField(
+                            controller: cityController,
+                            decoration: const InputDecoration(
+                              labelText: 'City / District',
+                              hintText: 'e.g. Dhaka',
+                              prefixIcon: Icon(Icons.location_city_outlined),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Save button
+                          PrimaryButton(
+                            text: 'Save Changes',
+                            isLoading: isSaving,
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    if (!formKey.currentState!.validate()) return;
+                                    setSheetState(() => isSaving = true);
+
+                                    final fName = firstNameController.text.trim();
+                                    final lName = lastNameController.text.trim();
+                                    final computedFullName = '$fName $lName'.trim();
+
+                                    final success = await ref
+                                        .read(authControllerProvider.notifier)
+                                        .updateProfile(
+                                          id: profile.id,
+                                          firstName: fName,
+                                          lastName: lName,
+                                          fullName: computedFullName,
+                                          gender: selectedGender,
+                                          phone: phoneController.text.trim().isEmpty
+                                              ? null
+                                              : phoneController.text.trim(),
+                                          address: addressController.text.trim().isEmpty
+                                              ? null
+                                              : addressController.text.trim(),
+                                          city: cityController.text.trim().isEmpty
+                                              ? null
+                                              : cityController.text.trim(),
+                                          dateOfBirth: dobController.text.trim().isEmpty
+                                              ? null
+                                              : dobController.text.trim(),
+                                          avatarUrl: profile.avatarUrl,
+                                        );
+
+                                    if (context.mounted) {
+                                      setSheetState(() => isSaving = false);
+                                      if (success) {
+                                        Navigator.pop(bottomSheetContext);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Profile updated successfully!',
+                                            ),
+                                            backgroundColor: AppColors.success,
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Failed to update profile.'),
+                                            backgroundColor: AppColors.error,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-
-                      // Quick Avatar Preview & Change Photo
-                      Center(
-                        child: Column(
-                          children: [
-                            UserAvatar(
-                              avatarUrl: profile.avatarUrl,
-                              name: nameController.text.trim().isNotEmpty
-                                  ? nameController.text.trim()
-                                  : profile.fullName,
-                              radius: 36,
-                              showEditBadge: true,
-                              onTapEdit: () {
-                                Navigator.pop(bottomSheetContext);
-                                _showChangeAvatarModal(context, profile);
-                              },
-                            ),
-                            const SizedBox(height: 6),
-                            TextButton.icon(
-                              onPressed: () {
-                                Navigator.pop(bottomSheetContext);
-                                _showChangeAvatarModal(context, profile);
-                              },
-                              icon: const Icon(Icons.photo_camera_outlined,
-                                  size: 15),
-                              label: const Text('Change Photo'),
-                              style: TextButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Full Name field
-                      TextFormField(
-                        controller: nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Full Name *',
-                          prefixIcon: Icon(Icons.person_outline_rounded),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your full name';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Phone field
-                      TextFormField(
-                        controller: phoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone Number',
-                          prefixIcon: Icon(Icons.phone_outlined),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Changes',
-                        isLoading: isSaving,
-                        onPressed: isSaving
-                            ? null
-                            : () async {
-                                if (!formKey.currentState!.validate()) return;
-                                setSheetState(() => isSaving = true);
-
-                                final success = await ref
-                                    .read(authControllerProvider.notifier)
-                                    .updateProfile(
-                                      id: profile.id,
-                                      fullName: nameController.text.trim(),
-                                      phone: phoneController.text.trim().isEmpty
-                                          ? null
-                                          : phoneController.text.trim(),
-                                      avatarUrl: profile.avatarUrl,
-                                    );
-
-                                if (context.mounted) {
-                                  setSheetState(() => isSaving = false);
-                                  if (success) {
-                                    Navigator.pop(bottomSheetContext);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Profile updated successfully!',
-                                        ),
-                                        backgroundColor: AppColors.success,
-                                      ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Failed to update profile.'),
-                                        backgroundColor: AppColors.error,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       );
-    },
-  );
     } finally {
       ref.read(customerNavbarVisibleProvider.notifier).show();
     }
@@ -418,6 +565,81 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                       ),
                     ),
+                    if (profile.gender != null && profile.gender!.isNotEmpty) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.wc_outlined,
+                          color: AppColors.primary,
+                        ),
+                        title: const Text(
+                          'Gender',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        subtitle: Text(
+                          profile.gender!,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (profile.dateOfBirth != null && profile.dateOfBirth!.isNotEmpty) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.cake_outlined,
+                          color: AppColors.primary,
+                        ),
+                        title: const Text(
+                          'Date of Birth',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        subtitle: Text(
+                          profile.dateOfBirth!,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if ((profile.address != null && profile.address!.isNotEmpty) ||
+                        (profile.city != null && profile.city!.isNotEmpty)) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(
+                          Icons.location_on_outlined,
+                          color: AppColors.primary,
+                        ),
+                        title: const Text(
+                          'Address & City',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        subtitle: Text(
+                          [profile.address, profile.city]
+                              .where((s) => s != null && s.trim().isNotEmpty)
+                              .join(', '),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -1,16 +1,22 @@
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/location_constants.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../auth/domain/user_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../shared/data/promo_banner_controller.dart';
 import '../../shared/models/food_offer.dart';
+import '../../shared/models/promo_banner.dart';
 import '../../shared/models/restaurant.dart';
 import '../../shared/widgets/offer_card.dart';
 import '../location/user_location_controller.dart';
@@ -28,85 +34,71 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   int _currentBannerIndex = 0;
   Timer? _bannerTimer;
 
-  // Curated hero slideshow banners matching 1st screenshot
-  final List<Map<String, String>> _heroBanners = [
-    {
-      'title': 'SUPER SAVER DEALS',
-      'discount': 'Up to 70% OFF',
-      'code': 'Code: SAVE70 • Min order Tk 199',
-      'badge': 'Dhaka Surplus Rescue',
-      'tagline': 'Save delicious food from top restaurants',
-    },
-    {
-      'title': 'FRESH EVENING DROP',
-      'discount': '40% - 60% OFF',
-      'code': 'Code: SURPLUS50 • Instant Pickup',
-      'badge': 'Verified Quality',
-      'tagline': 'Authentic biryani, burgers & bakery surplus',
-    },
-    {
-      'title': 'ZERO FOOD WASTE',
-      'discount': 'Save Wallet & Planet',
-      'code': 'Daily 8 PM - 11 PM Drops',
-      'badge': 'SaveBite Dhaka',
-      'tagline': 'Join 10,000+ happy food savers in Dhaka',
-    },
-  ];
+
 
   // Visual category items with images and icons matching screenshots 1, 2, 3
   final List<Map<String, dynamic>> _visualCategories = [
     {
       'name': 'All',
       'icon': '🍽️',
-      'imageUrl': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200',
       'category': 'All',
     },
     {
       'name': 'Burger',
       'icon': '🍔',
-      'imageUrl': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200',
       'category': 'Burger',
     },
     {
       'name': 'Biryani',
       'icon': '🍲',
-      'imageUrl': 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200',
-      'category': 'Rice',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200',
+      'category': 'Biryani',
     },
     {
       'name': 'Pizza',
       'icon': '🍕',
-      'imageUrl': 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200',
       'category': 'Pizza',
     },
     {
       'name': 'Chicken',
       'icon': '🍗',
-      'imageUrl': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=200',
-      'category': 'Fast Food',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=200',
+      'category': 'Chicken',
     },
     {
       'name': 'Bakery',
       'icon': '🥐',
-      'imageUrl': 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200',
       'category': 'Bakery',
     },
     {
       'name': 'Healthy',
       'icon': '🥗',
-      'imageUrl': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200',
-      'category': 'Vegetarian',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200',
+      'category': 'Healthy',
     },
     {
       'name': 'Drinks',
       'icon': '☕',
-      'imageUrl': 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=200',
-      'category': 'Beverages',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=200',
+      'category': 'Drinks',
     },
     {
       'name': 'Rice',
       'icon': '🍛',
-      'imageUrl': 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=200',
+      'imageUrl':
+          'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=200',
       'category': 'Rice',
     },
   ];
@@ -117,12 +109,15 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     // Auto-advance banner slideshow
     _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (_bannerController.hasClients) {
-        final nextPage = (_currentBannerIndex + 1) % _heroBanners.length;
-        _bannerController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        );
+        final int count = ref.read(promoBannersControllerProvider).asData?.value.length ?? 3;
+        if (count > 0) {
+          final int nextPage = (_currentBannerIndex + 1) % count;
+          _bannerController.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        }
       }
     });
   }
@@ -174,7 +169,11 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 const SizedBox(height: 16),
                 const Row(
                   children: [
-                    Icon(Icons.location_city_rounded, color: AppColors.primary, size: 22),
+                    Icon(
+                      Icons.location_city_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                     SizedBox(width: 8),
                     Text(
                       'Select Dhaka Area',
@@ -189,7 +188,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                 const SizedBox(height: 4),
                 const Text(
                   'Browse surplus food deals close to your neighborhood',
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 ListTile(
@@ -277,18 +279,25 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final selectedArea = ref.watch(homeAreaProvider);
     final locationState = ref.watch(userLocationControllerProvider);
-    final offersAsync = ref.watch(activeOffersProvider);
+    final allOffersAsync = ref.watch(allHomeOffersProvider);
     final nearbyOffersAsync = ref.watch(nearbyOffersProvider);
     final nearbyRestaurantsAsync = ref.watch(activeRestaurantsProvider);
+    final promoBannersAsync = ref.watch(promoBannersControllerProvider);
+    final heroBanners =
+        promoBannersAsync.asData?.value ?? PromoBanner.defaultBanners;
+    final activeBanner = heroBanners.isNotEmpty
+        ? heroBanners[_currentBannerIndex % heroBanners.length]
+        : PromoBanner.defaultBanners.first;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait([
-            ref.refresh(activeOffersProvider.future),
+          await Future.wait<dynamic>([
+            ref.refresh(allHomeOffersProvider.future),
             ref.refresh(nearbyOffersProvider.future),
             ref.refresh(activeRestaurantsProvider.future),
+            ref.read(promoBannersControllerProvider.notifier).loadBanners(),
           ]);
         },
         child: SingleChildScrollView(
@@ -298,22 +307,16 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ==========================================
-              // 1. TOP MAROON HEADER & SLIDESHOW SECTION
-              // (Matches 1st Screenshot - Rich Crimson Theme)
+              // 1. TOP DYNAMIC HEADER & SLIDESHOW SECTION
+              // (Background changes seamlessly according to active banner - SS 2 Burgundy, SS 3 Teal, SS 4 Yellow)
               // ==========================================
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeInOut,
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF880015),
-                      Color(0xFFA80D22),
-                      Color(0xFFBA1A2E),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  borderRadius: BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  gradient: activeBanner.gradient,
+                  borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(32),
                   ),
                 ),
@@ -326,25 +329,19 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                         child: Row(
                           children: [
-                            // Location Icon in frosted circle
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.16),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.location_on_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                            // App Logo Mark
+                            const AppLogoIcon(
+                              size: 38,
+                              borderRadius: 12,
+                              isInverted: true,
                             ),
                             const SizedBox(width: 10),
 
                             // Deliver to + Address
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => _showAreaPickerSheet(context, selectedArea),
+                                onTap: () =>
+                                    _showAreaPickerSheet(context, selectedArea),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -365,8 +362,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                             vertical: 1.5,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(6),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: const Text(
                                             'SaveBite',
@@ -384,11 +385,14 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                       children: [
                                         Flexible(
                                           child: Text(
-                                            !locationState.isInsideDhaka && locationState.detectedArea != null
+                                            !locationState.isInsideDhaka &&
+                                                    locationState
+                                                            .detectedArea !=
+                                                        null
                                                 ? '${locationState.detectedArea} (Dhaka Deals)'
                                                 : (selectedArea == 'All'
-                                                    ? 'Ave 3, Dhaka, Bangladesh'
-                                                    : '$selectedArea, Dhaka, Bangladesh'),
+                                                      ? 'Ave 3, Dhaka, Bangladesh'
+                                                      : '$selectedArea, Dhaka, Bangladesh'),
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 14.5,
@@ -413,10 +417,14 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             GestureDetector(
                               onTap: () async {
                                 final area = await ref
-                                    .read(userLocationControllerProvider.notifier)
+                                    .read(
+                                      userLocationControllerProvider.notifier,
+                                    )
                                     .requestPermissionAndDetect();
                                 if (context.mounted) {
-                                  final loc = ref.read(userLocationControllerProvider);
+                                  final loc = ref.read(
+                                    userLocationControllerProvider,
+                                  );
                                   final msg = !loc.isInsideDhaka
                                       ? '📍 Detected: $area (Outside Dhaka). Showing top Dhaka hot deals!'
                                       : '📍 Location detected: $area! Showing deals near you.';
@@ -444,7 +452,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                         height: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
                                         ),
                                       )
                                     : Icon(
@@ -520,91 +531,36 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Super Saver Promo Slideshow Carousel (1st screenshot)
+                      // Super Saver Promo Slideshow Carousel (Direct Picture Banner)
                       SizedBox(
-                        height: 125,
+                        height: 156,
                         child: PageView.builder(
                           controller: _bannerController,
                           onPageChanged: (idx) {
                             setState(() => _currentBannerIndex = idx);
                           },
-                          itemCount: _heroBanners.length,
+                          itemCount: heroBanners.length,
                           itemBuilder: (context, index) {
-                            final b = _heroBanners[index];
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 16),
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.25),
-                                  width: 1,
+                            final b = heroBanners[index];
+                            return GestureDetector(
+                              onTap: () => context.push(b.targetRoute),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
                                 ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 7,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFDE047),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            b['title']!,
-                                            style: const TextStyle(
-                                              color: Color(0xFF78350F),
-                                              fontSize: 9.5,
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          b['discount']!,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          b['code']!,
-                                          style: TextStyle(
-                                            color: Colors.white.withValues(alpha: 0.85),
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.25),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
-                                  ),
-                                  // Visual rider / badge graphics
-                                  Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.15),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.electric_moped_rounded,
-                                        color: Colors.white,
-                                        size: 42,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: _buildDirectBannerCard(b),
                               ),
                             );
                           },
@@ -616,7 +572,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          _heroBanners.length,
+                          heroBanners.length,
                           (i) => AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -720,7 +676,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         if (selectedCategory != 'All')
                           GestureDetector(
                             onTap: () {
-                              ref.read(selectedCategoryProvider.notifier).setCategory('All');
+                              ref
+                                  .read(selectedCategoryProvider.notifier)
+                                  .setCategory('All');
                             },
                             child: const Text(
                               'Reset Filter',
@@ -741,7 +699,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: _visualCategories.length,
-                        separatorBuilder: (context, index) => const SizedBox(width: 8),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 8),
                         itemBuilder: (context, idx) {
                           final item = _visualCategories[idx];
                           final cat = item['category'] as String;
@@ -752,7 +711,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             showCheckmark: false,
                             padding: EdgeInsets.zero,
                             labelPadding: EdgeInsets.zero,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                             backgroundColor: Colors.transparent,
                             selectedColor: Colors.transparent,
                             disabledColor: Colors.transparent,
@@ -764,7 +724,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             onSelected: (_) {
-                              ref.read(selectedCategoryProvider.notifier).setCategory(
+                              ref
+                                  .read(selectedCategoryProvider.notifier)
+                                  .setCategory(
                                     selectedCategory == cat ? 'All' : cat,
                                   );
                             },
@@ -786,8 +748,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                     boxShadow: [
                                       BoxShadow(
                                         color: isSelected
-                                            ? AppColors.primary.withValues(alpha: 0.25)
-                                            : Colors.black.withValues(alpha: 0.04),
+                                            ? AppColors.primary.withValues(
+                                                alpha: 0.25,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.04,
+                                              ),
                                         blurRadius: isSelected ? 8 : 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -797,12 +763,16 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                     child: Image.network(
                                       item['imageUrl'] as String,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => Center(
-                                        child: Text(
-                                          item['icon'] as String,
-                                          style: const TextStyle(fontSize: 26),
-                                        ),
-                                      ),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Center(
+                                                child: Text(
+                                                  item['icon'] as String,
+                                                  style: const TextStyle(
+                                                    fontSize: 26,
+                                                  ),
+                                                ),
+                                              ),
                                     ),
                                   ),
                                 ),
@@ -811,7 +781,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                   item['name'] as String,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
                                     color: isSelected
                                         ? AppColors.primary
                                         : AppColors.textPrimary,
@@ -866,7 +838,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  selectedArea == 'All' ? 'Dhaka' : selectedArea,
+                                  selectedArea == 'All'
+                                      ? 'Dhaka'
+                                      : selectedArea,
                                   style: const TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -903,10 +877,14 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Text(
-                              'No surplus offer posts in $selectedArea right now. Check back soon!',
+                              selectedCategory != 'All'
+                                  ? 'No surplus $selectedCategory offers in $selectedArea right now. Try another category!'
+                                  : 'No surplus offer posts in $selectedArea right now. Check back soon!',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
@@ -920,7 +898,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: offers.length,
-                            separatorBuilder: (context, index) => const SizedBox(width: 12),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(width: 12),
                             itemBuilder: (context, idx) {
                               final offer = offers[idx];
                               return _buildNearbyOfferCard(offer);
@@ -978,7 +957,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  selectedArea == 'All' ? 'Dhaka' : selectedArea,
+                                  selectedArea == 'All'
+                                      ? 'Dhaka'
+                                      : selectedArea,
                                   style: const TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -1015,10 +996,14 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Text(
-                              'No restaurants listed surplus in $selectedArea yet. Try exploring All Dhaka!',
+                              selectedCategory != 'All'
+                                  ? 'No restaurants offering $selectedCategory in $selectedArea right now.'
+                                  : 'No restaurants listed surplus in $selectedArea yet. Try exploring All Dhaka!',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
@@ -1032,7 +1017,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: restaurants.length,
-                            separatorBuilder: (context, index) => const SizedBox(width: 12),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(width: 12),
                             itemBuilder: (context, idx) {
                               final res = restaurants[idx];
                               return _buildNearbyShopCard(res);
@@ -1091,7 +1077,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
@@ -1110,15 +1099,14 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                     const SizedBox(height: 12),
 
                     // Offers / Restaurants List Sorted by Discount %
-                    offersAsync.when(
+                    allOffersAsync.when(
                       data: (offers) {
                         if (offers.isEmpty) {
                           return const Padding(
                             padding: EdgeInsets.only(top: 24.0),
                             child: EmptyState(
                               title: 'No offers available right now',
-                              message:
-                                  'Check back shortly! Restaurants list surplus food in the evening before closing.',
+                              message: 'Check back shortly! Restaurants list surplus food in the evening before closing.',
                               icon: Icons.fastfood_outlined,
                             ),
                           );
@@ -1131,7 +1119,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                               OfferCard(
                                 offer: offers[i],
                                 onTap: () {
-                                  context.push('/customer/offers/${offers[i].id}');
+                                  context.push(
+                                    '/customer/offers/${offers[i].id}',
+                                  );
                                 },
                               ),
                             ],
@@ -1140,13 +1130,16 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                       },
                       loading: () => const Padding(
                         padding: EdgeInsets.only(top: 48.0),
-                        child: LoadingState(message: 'Loading available food...'),
+                        child: LoadingState(
+                          message: 'Loading available food...',
+                        ),
                       ),
                       error: (error, _) => Padding(
                         padding: const EdgeInsets.only(top: 32.0),
                         child: ErrorState(
-                          message: 'Unable to load food offers. Please try again.',
-                          onRetry: () => ref.refresh(activeOffersProvider),
+                          message:
+                              'Unable to load food offers. Please try again.',
+                          onRetry: () => ref.refresh(allHomeOffersProvider),
                         ),
                       ),
                     ),
@@ -1160,10 +1153,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     );
   }
 
-
   // Nearby Offer Post Card matching user request for "Offers Near You"
   Widget _buildNearbyOfferCard(FoodOffer offer) {
-    final savings = (offer.originalPrice - offer.discountedPrice).clamp(0, double.infinity);
+    final savings = (offer.originalPrice - offer.discountedPrice).clamp(
+      0,
+      double.infinity,
+    );
 
     return GestureDetector(
       onTap: () => context.push('/customer/offers/${offer.id}'),
@@ -1188,7 +1183,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(15),
+                  ),
                   child: Container(
                     height: 108,
                     width: double.infinity,
@@ -1197,12 +1194,21 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         ? Image.network(
                             offer.imageUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Center(
-                              child: Icon(Icons.fastfood_rounded, color: AppColors.primary, size: 28),
-                            ),
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                  child: Icon(
+                                    Icons.fastfood_rounded,
+                                    color: AppColors.primary,
+                                    size: 28,
+                                  ),
+                                ),
                           )
                         : const Center(
-                            child: Icon(Icons.fastfood_rounded, color: AppColors.primary, size: 28),
+                            child: Icon(
+                              Icons.fastfood_rounded,
+                              color: AppColors.primary,
+                              size: 28,
+                            ),
                           ),
                   ),
                 ),
@@ -1211,7 +1217,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2.5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(6),
@@ -1238,7 +1247,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2.5,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(6),
@@ -1325,7 +1337,10 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                       if (savings > 0)
                         Flexible(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFDCFCE7),
                               borderRadius: BorderRadius.circular(4),
@@ -1389,12 +1404,19 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                     ? Image.network(
                         res.imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Center(
-                          child: Icon(Icons.storefront_rounded, color: AppColors.primary),
-                        ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
+                              child: Icon(
+                                Icons.storefront_rounded,
+                                color: AppColors.primary,
+                              ),
+                            ),
                       )
                     : const Center(
-                        child: Icon(Icons.storefront_rounded, color: AppColors.primary),
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          color: AppColors.primary,
+                        ),
                       ),
               ),
             ),
@@ -1445,6 +1467,236 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBannerEmblem(String iconType) {
+    IconData icon;
+    Color accentColor;
+    switch (iconType) {
+      case 'flame':
+        icon = Icons.local_fire_department_rounded;
+        accentColor = const Color(0xFFF97316);
+        break;
+      case 'gift':
+        icon = Icons.card_giftcard_rounded;
+        accentColor = const Color(0xFF10B981);
+        break;
+      case 'bolt':
+        icon = Icons.bolt_rounded;
+        accentColor = const Color(0xFFEAB308);
+        break;
+      case 'food':
+        icon = Icons.restaurant_rounded;
+        accentColor = const Color(0xFFEC4899);
+        break;
+      case 'moped':
+      default:
+        icon = Icons.electric_moped_rounded;
+        accentColor = const Color(0xFF38BDF8);
+        break;
+    }
+
+    return Container(
+      width: 82,
+      height: 82,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.35),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Container(
+          width: 62,
+          height: 62,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.22),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.3),
+                blurRadius: 8,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 38,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDirectBannerCard(PromoBanner b) {
+    if (b.imageUrl != null && b.imageUrl!.trim().isNotEmpty) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: b.startColor,
+        child: _buildBannerImageContent(
+          b.imageUrl!,
+          fit: BoxFit.cover,
+          fallback: _buildFallbackBannerCard(b),
+        ),
+      );
+    }
+    return _buildFallbackBannerCard(b);
+  }
+
+  Widget _buildFallbackBannerCard(PromoBanner b) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: b.gradient,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            b.bannerName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.2,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (b.code != null && b.code!.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                b.code!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBannerHeroImage(String imageUrl, Color startColor) {
+    return Container(
+      width: 86,
+      height: 86,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                colors: [
+                  Colors.white.withValues(alpha: 0.28),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(4),
+            child: _buildBannerImageContent(
+              imageUrl,
+              fit: BoxFit.contain,
+              fallback: const Icon(
+                Icons.local_cafe_rounded,
+                color: Colors.white,
+                size: 38,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBannerImageContent(
+    String url, {
+    BoxFit fit = BoxFit.cover,
+    Widget? fallback,
+  }) {
+    final cleanUrl = url.trim();
+    if (cleanUrl.isEmpty) {
+      return fallback ?? const SizedBox.shrink();
+    }
+
+    if (cleanUrl.startsWith('data:image')) {
+      try {
+        final commaIndex = cleanUrl.indexOf(',');
+        final base64Str =
+            commaIndex != -1 ? cleanUrl.substring(commaIndex + 1) : cleanUrl;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) =>
+              fallback ?? const Icon(Icons.broken_image, color: Colors.white70),
+        );
+      } catch (_) {
+        return fallback ??
+            const Icon(Icons.broken_image, color: Colors.white70);
+      }
+    }
+
+    if (cleanUrl.startsWith('assets/')) {
+      return Image.asset(
+        cleanUrl,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) =>
+            fallback ?? const Icon(Icons.broken_image, color: Colors.white70),
+      );
+    }
+
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) =>
+          fallback ?? const Icon(Icons.broken_image, color: Colors.white70),
     );
   }
 }

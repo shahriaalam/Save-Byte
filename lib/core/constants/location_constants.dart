@@ -17,6 +17,7 @@ abstract final class LocationConstants {
 
   /// Comprehensive list of major areas in Dhaka
   static const List<String> dhakaAreas = [
+    'Banasree',
     'Dhanmondi',
     'Gulshan',
     'Banani',

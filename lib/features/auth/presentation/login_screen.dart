@@ -459,6 +459,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             isLoading: isLoading,
                                             onPressed: _handleLogin,
                                           ),
+                                          const SizedBox(height: 10),
+
+                                          // Quick Demo Credentials for Testing
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                'Quick Fill:',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey.shade500,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              InkWell(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _emailController.text = 'customer@savebite.com';
+                                                    _passwordController.text = 'password';
+                                                  });
+                                                },
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade100,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: Colors.grey.shade300),
+                                                  ),
+                                                  child: const Text(
+                                                    '👤 Customer',
+                                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              InkWell(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _emailController.text = 'admin@savebite.com';
+                                                    _passwordController.text = 'admin';
+                                                  });
+                                                },
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade100,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: Colors.grey.shade300),
+                                                  ),
+                                                  child: const Text(
+                                                    '⚡ Admin',
+                                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ],
                                       ),
                                     ),

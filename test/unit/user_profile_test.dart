@@ -15,6 +15,9 @@ void main() {
         'full_name': 'Rahim Ahmed',
         'phone': '01711111111',
         'avatar_url': 'https://example.com/avatar.jpg',
+        'address': 'House 14, Road 7, Banasree',
+        'city': 'Dhaka',
+        'date_of_birth': '1998-05-15',
         'is_active': true,
       };
 
@@ -29,6 +32,9 @@ void main() {
       expect(profile.fullName, 'Rahim Ahmed');
       expect(profile.phone, '01711111111');
       expect(profile.avatarUrl, 'https://example.com/avatar.jpg');
+      expect(profile.address, 'House 14, Road 7, Banasree');
+      expect(profile.city, 'Dhaka');
+      expect(profile.dateOfBirth, '1998-05-15');
       expect(profile.isActive, isTrue);
       expect(profile.isCustomer, isTrue);
       expect(profile.isRestaurant, isFalse);
@@ -41,6 +47,9 @@ void main() {
       expect(output['last_name'], 'Ahmed');
       expect(output['gender'], 'Male');
       expect(output['full_name'], 'Rahim Ahmed');
+      expect(output['address'], 'House 14, Road 7, Banasree');
+      expect(output['city'], 'Dhaka');
+      expect(output['date_of_birth'], '1998-05-15');
     });
 
     test('derives fullName from firstName and lastName when full_name is omitted', () {

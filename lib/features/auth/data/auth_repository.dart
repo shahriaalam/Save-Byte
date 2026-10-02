@@ -453,26 +453,44 @@ class AuthRepository {
   /// Strictly prevents updating role from customer profile.
   Future<UserProfile> updateProfile({
     required String id,
-    required String fullName,
+    String? fullName,
+    String? firstName,
+    String? lastName,
+    String? gender,
     String? phone,
     String? avatarUrl,
+    String? address,
+    String? city,
+    String? dateOfBirth,
   }) async {
     UserProfile? baseProfile = _activeSessionProfile;
     if (baseProfile == null || baseProfile.id != id) {
       baseProfile = await getCurrentUserProfile();
     }
 
+    final resolvedFullName = (fullName != null && fullName.trim().isNotEmpty)
+        ? fullName.trim()
+        : [firstName, lastName]
+            .where((s) => s != null && s.trim().isNotEmpty)
+            .join(' ');
+
     final updated = (baseProfile ??
             UserProfile(
               id: id,
               email: _client.auth.currentUser?.email ?? '',
               role: AppConstants.roleCustomer,
-              fullName: fullName.trim(),
+              fullName: resolvedFullName,
             ))
         .copyWith(
-      fullName: fullName.trim(),
-      phone: phone?.trim(),
-      avatarUrl: avatarUrl,
+      fullName: resolvedFullName.isNotEmpty ? resolvedFullName : null,
+      firstName: firstName != null ? firstName.trim() : baseProfile?.firstName,
+      lastName: lastName != null ? lastName.trim() : baseProfile?.lastName,
+      gender: gender != null ? gender.trim() : baseProfile?.gender,
+      phone: phone != null ? phone.trim() : baseProfile?.phone,
+      avatarUrl: avatarUrl ?? baseProfile?.avatarUrl,
+      address: address != null ? address.trim() : baseProfile?.address,
+      city: city != null ? city.trim() : baseProfile?.city,
+      dateOfBirth: dateOfBirth != null ? dateOfBirth.trim() : baseProfile?.dateOfBirth,
       updatedAt: DateTime.now(),
     );
 
@@ -497,9 +515,15 @@ class AuthRepository {
     // 2. Persist to Supabase tableProfiles if available
     try {
       final data = <String, dynamic>{
-        'full_name': fullName.trim(),
-        'phone': phone?.trim(),
+        'full_name': updated.fullName,
+        if (updated.firstName != null) 'first_name': updated.firstName,
+        if (updated.lastName != null) 'last_name': updated.lastName,
+        if (updated.gender != null) 'gender': updated.gender,
+        'phone': updated.phone,
         'avatar_url': ?avatarUrl,
+        if (updated.address != null) 'address': updated.address,
+        if (updated.city != null) 'city': updated.city,
+        if (updated.dateOfBirth != null) 'date_of_birth': updated.dateOfBirth,
         'updated_at': DateTime.now().toIso8601String(),
       };
 
@@ -517,8 +541,14 @@ class AuthRepository {
         await _client.auth.updateUser(
           supa.UserAttributes(
             data: {
-              'full_name': fullName.trim(),
-              if (phone != null) 'phone': phone.trim(),
+              if (updated.fullName != null) 'full_name': updated.fullName,
+              if (updated.firstName != null) 'first_name': updated.firstName,
+              if (updated.lastName != null) 'last_name': updated.lastName,
+              if (updated.gender != null) 'gender': updated.gender,
+              if (updated.phone != null) 'phone': updated.phone,
+              if (updated.address != null) 'address': updated.address,
+              if (updated.city != null) 'city': updated.city,
+              if (updated.dateOfBirth != null) 'date_of_birth': updated.dateOfBirth,
               'avatar_url': avatarUrl,
             },
           ),

@@ -16,6 +16,12 @@ void main() {
       expect(dist, lessThan(10.0));
     });
 
+    test('findNearestDhakaArea maps Banasree coordinates to Banasree', () {
+      final result = service.findNearestDhakaArea(23.7644, 90.4328);
+      expect(result.area, equals('Banasree'));
+      expect(result.distanceKm, lessThan(0.2));
+    });
+
     test('findNearestDhakaArea maps Dhanmondi coordinates to Dhanmondi', () {
       final result = service.findNearestDhakaArea(23.7465, 90.3740);
       expect(result.area, equals('Dhanmondi'));
