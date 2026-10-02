@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/location_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/account_created_dialog.dart';
@@ -37,6 +38,9 @@ class _RestaurantRegisterScreenState
   final _addressController = TextEditingController();
   final _cuisineController = TextEditingController();
 
+  String _selectedDivision = 'Dhaka';
+  String? _selectedArea = 'Dhanmondi';
+
   bool _obscurePassword = true;
 
   @override
@@ -56,6 +60,16 @@ class _RestaurantRegisterScreenState
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedArea == null || _selectedArea!.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an Area for your restaurant location.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     final email = _emailController.text.trim();
     final success = await ref
         .read(authControllerProvider.notifier)
@@ -68,6 +82,8 @@ class _RestaurantRegisterScreenState
           description: _descriptionController.text.trim(),
           address: _addressController.text.trim(),
           cuisineType: _cuisineController.text.trim(),
+          division: _selectedDivision,
+          area: _selectedArea?.trim(),
         );
 
     if (!mounted) return;
@@ -622,6 +638,55 @@ class _RestaurantRegisterScreenState
                                                   value,
                                                   'description',
                                                 ),
+                                          ),
+                                          const SizedBox(height: 10),
+
+                                          // Division Selector
+                                          DropdownButtonFormField<String>(
+                                            initialValue: _selectedDivision,
+                                            isExpanded: true,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Division',
+                                              prefixIcon: Icon(Icons.location_city_rounded, size: 19),
+                                            ),
+                                            items: [
+                                              for (final div in LocationConstants.divisions)
+                                                DropdownMenuItem(
+                                                  value: div,
+                                                  child: Text(div, overflow: TextOverflow.ellipsis),
+                                                ),
+                                            ],
+                                            onChanged: (val) {
+                                              if (val != null) {
+                                                setState(() {
+                                                  _selectedDivision = val;
+                                                  _selectedArea = LocationConstants.getAreasForDivision(val).first;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          const SizedBox(height: 10),
+
+                                          // Area Selector
+                                          DropdownButtonFormField<String>(
+                                            initialValue: _selectedArea,
+                                            isExpanded: true,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Area',
+                                              prefixIcon: Icon(Icons.place_rounded, size: 19),
+                                            ),
+                                            items: [
+                                              for (final area in LocationConstants.getAreasForDivision(_selectedDivision))
+                                                DropdownMenuItem(
+                                                  value: area,
+                                                  child: Text(area, overflow: TextOverflow.ellipsis),
+                                                ),
+                                            ],
+                                            onChanged: (val) {
+                                              if (val != null) {
+                                                setState(() => _selectedArea = val);
+                                              }
+                                            },
                                           ),
                                           const SizedBox(height: 10),
 

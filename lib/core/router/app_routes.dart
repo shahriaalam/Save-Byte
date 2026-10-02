@@ -11,6 +11,7 @@ abstract final class AppRoutes {
 
   // Customer routes (Milestone 5)
   static const String customerHome = '/customer';
+  static const String customerHotDeals = '/customer/hot-deals';
   static const String customerSearch = '/customer/search';
   static const String customerOfferDetails = '/customer/offers/:id';
   static const String customerRestaurantDetails = '/customer/restaurants/:id';

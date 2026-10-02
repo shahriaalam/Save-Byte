@@ -35,6 +35,8 @@ class CustomerOfferRepository {
       description: 'Authentic Bengali biryani, tehari and homemade delicacies.',
       phone: '01711223344',
       address: 'House 14, Road 7, Dhanmondi, Dhaka',
+      division: 'Dhaka',
+      area: 'Dhanmondi',
       cuisineType: 'Bengali',
       openingTime: '11:00 AM',
       closingTime: '11:00 PM',
@@ -48,6 +50,8 @@ class CustomerOfferRepository {
       description: 'Gourmet handcrafted burgers, crispy fries and fresh shakes.',
       phone: '01811998877',
       address: 'Plot 25, Block B, Banani, Dhaka',
+      division: 'Dhaka',
+      area: 'Banani',
       cuisineType: 'Burger',
       openingTime: '12:00 PM',
       closingTime: '10:30 PM',
@@ -61,6 +65,8 @@ class CustomerOfferRepository {
       description: 'Wood-fired sourdough pizza and artisanal Italian baking.',
       phone: '01911445566',
       address: 'Gulshan 2 Avenue, Dhaka',
+      division: 'Dhaka',
+      area: 'Gulshan',
       cuisineType: 'Pizza',
       openingTime: '01:00 PM',
       closingTime: '11:00 PM',
@@ -74,6 +80,8 @@ class CustomerOfferRepository {
       description: 'Fresh evening bakery surplus, croissants, rolls and desserts.',
       phone: '01611778899',
       address: 'Mirpur DOHS, Dhaka',
+      division: 'Dhaka',
+      area: 'Mirpur',
       cuisineType: 'Bakery',
       openingTime: '08:00 AM',
       closingTime: '10:00 PM',
@@ -88,6 +96,8 @@ class CustomerOfferRepository {
       restaurantId: 'res-1',
       restaurantName: "Rahman's Kitchen",
       restaurantAddress: 'Dhanmondi, Dhaka',
+      division: 'Dhaka',
+      area: 'Dhanmondi',
       title: 'Chicken Biryani',
       description:
           'Fresh chicken biryani prepared today, packaged safely at discounted price before closing.',
@@ -106,11 +116,13 @@ class CustomerOfferRepository {
       restaurantId: 'res-2',
       restaurantName: 'Burger House',
       restaurantAddress: 'Banani, Dhaka',
+      division: 'Dhaka',
+      area: 'Banani',
       title: 'Beef Burger',
       description:
           'Signature beef burger with cheddar, caramelized onions and special sauce.',
       category: 'Burger',
-      originalPrice: 200,
+      originalPrice: 240,
       discountedPrice: 120,
       quantity: 5,
       availableFrom: DateTime.now().subtract(const Duration(minutes: 30)),
@@ -124,6 +136,8 @@ class CustomerOfferRepository {
       restaurantId: 'res-3',
       restaurantName: 'Bella Italia Pizza',
       restaurantAddress: 'Gulshan 2, Dhaka',
+      division: 'Dhaka',
+      area: 'Gulshan',
       title: 'Margherita Pizza (12 inch)',
       description:
           'Classic wood-fired sourdough pizza with mozzarella, tomato sauce and fresh basil.',
@@ -142,11 +156,13 @@ class CustomerOfferRepository {
       restaurantId: 'res-4',
       restaurantName: 'Sweet Treats Bakery',
       restaurantAddress: 'Mirpur DOHS, Dhaka',
+      division: 'Dhaka',
+      area: 'Mirpur',
       title: 'Assorted Butter Croissants Box (4 pcs)',
       description:
           'Freshly baked flaky butter croissants prepared this afternoon.',
       category: 'Bakery',
-      originalPrice: 320,
+      originalPrice: 360,
       discountedPrice: 180,
       quantity: 6,
       availableFrom: DateTime.now().subtract(const Duration(minutes: 45)),
@@ -160,6 +176,8 @@ class CustomerOfferRepository {
       restaurantId: 'res-1',
       restaurantName: "Rahman's Kitchen",
       restaurantAddress: 'Dhanmondi, Dhaka',
+      division: 'Dhaka',
+      area: 'Dhanmondi',
       title: 'Special Beef Tehari',
       description: 'Aromatic mustard oil cooked beef tehari with fresh spices.',
       category: 'Rice',
@@ -172,12 +190,33 @@ class CustomerOfferRepository {
       isActive: true,
       adminBlocked: false,
     ),
+    FoodOffer(
+      id: 'offer-6',
+      restaurantId: 'res-1',
+      restaurantName: "Rahman's Kitchen",
+      restaurantAddress: 'Dhanmondi, Dhaka',
+      division: 'Dhaka',
+      area: 'Dhanmondi',
+      title: 'Kebab & Naan Platter',
+      description: 'Charcoal grilled seekh kebabs with hot butter naans.',
+      category: 'Fast Food',
+      originalPrice: 400,
+      discountedPrice: 200,
+      quantity: 5,
+      availableFrom: DateTime.now().subtract(const Duration(minutes: 20)),
+      availableUntil: DateTime.now().add(const Duration(hours: 3)),
+      imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600',
+      isActive: true,
+      adminBlocked: false,
+    ),
   ];
 
-  /// Retrieves customer-visible active food offers (Section 13, 44, 61).
+  /// Retrieves customer-visible active food offers (Section 13, 44, 61) with category, search, division and area filters.
   Future<List<FoodOffer>> getActiveOffers({
     String? category,
     String? searchQuery,
+    String? division,
+    String? area,
   }) async {
     if (!_isLocalOnly) {
       try {
@@ -198,6 +237,14 @@ class CustomerOfferRepository {
           queryBuilder = queryBuilder.ilike('title', '%${searchQuery.trim()}%');
         }
 
+        if (division != null && division.isNotEmpty && division != 'All') {
+          queryBuilder = queryBuilder.ilike('restaurants.address', '%$division%');
+        }
+
+        if (area != null && area.isNotEmpty && area != 'All') {
+          queryBuilder = queryBuilder.ilike('restaurants.address', '%$area%');
+        }
+
         final List<dynamic> response = await queryBuilder;
         final offers = response
             .map((row) => FoodOffer.fromJson(row as Map<String, dynamic>))
@@ -216,13 +263,26 @@ class CustomerOfferRepository {
       if (category != null && category.isNotEmpty && category != 'All') {
         if (offer.category.toLowerCase() != category.toLowerCase()) return false;
       }
+      if (division != null && division.isNotEmpty && division != 'All') {
+        final d = division.toLowerCase();
+        final matchesDiv = (offer.division?.toLowerCase() == d) ||
+            (offer.restaurantAddress?.toLowerCase().contains(d) ?? false);
+        if (!matchesDiv) return false;
+      }
+      if (area != null && area.isNotEmpty && area != 'All') {
+        final a = area.toLowerCase();
+        final matchesArea = (offer.area?.toLowerCase() == a) ||
+            (offer.restaurantAddress?.toLowerCase().contains(a) ?? false);
+        if (!matchesArea) return false;
+      }
       if (searchQuery != null && searchQuery.trim().isNotEmpty) {
         final q = searchQuery.trim().toLowerCase();
         final matchesTitle = offer.title.toLowerCase().contains(q);
         final matchesRestaurant =
             offer.restaurantName?.toLowerCase().contains(q) ?? false;
         final matchesCategory = offer.category.toLowerCase().contains(q);
-        if (!matchesTitle && !matchesRestaurant && !matchesCategory) {
+        final matchesArea = offer.area?.toLowerCase().contains(q) ?? false;
+        if (!matchesTitle && !matchesRestaurant && !matchesCategory && !matchesArea) {
           return false;
         }
       }
@@ -292,6 +352,41 @@ class CustomerOfferRepository {
 
     return _seedOffers
         .where((o) => o.restaurantId == restaurantId && o.isVisibleToCustomer())
+        .toList();
+  }
+
+  /// Retrieves active restaurants that have available surplus food offers right now.
+  Future<List<Restaurant>> getActiveRestaurants({
+    String? division,
+    String? area,
+  }) async {
+    final activeOffers = await getActiveOffers(
+      division: division,
+      area: area,
+    );
+    final activeRestaurantIds = activeOffers.map((o) => o.restaurantId).toSet();
+
+    if (!_isLocalOnly) {
+      try {
+        final List<dynamic> response = await _client
+            .from(SupabaseConstants.tableRestaurants)
+            .select()
+            .eq('status', AppConstants.statusApproved);
+
+        final restaurants = response
+            .map((row) => Restaurant.fromJson(row as Map<String, dynamic>))
+            .where((r) => activeRestaurantIds.contains(r.id))
+            .toList();
+
+        if (restaurants.isNotEmpty) return restaurants;
+      } catch (_) {}
+    }
+
+    return _seedRestaurants
+        .where((r) =>
+            activeRestaurantIds.contains(r.id) &&
+            (division == null || r.division == division) &&
+            (area == null || r.area == area))
         .toList();
   }
 

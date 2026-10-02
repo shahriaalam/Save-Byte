@@ -79,6 +79,8 @@ class FakeAuthRepository implements AuthRepository {
     required String description,
     required String address,
     required String cuisineType,
+    String division = 'Dhaka',
+    String? area,
   }) async {
     final profile = UserProfile(
       id: 'test-restaurant-id',

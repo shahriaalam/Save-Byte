@@ -66,5 +66,29 @@ void main() {
         expect(offer.restaurantId, 'res-1');
       }
     });
+
+    test('filters active offers by division and area', () async {
+      final dhakaOffers = await repository.getActiveOffers(division: 'Dhaka');
+      expect(dhakaOffers, isNotEmpty);
+      expect(dhakaOffers.every((o) => o.division == 'Dhaka'), isTrue);
+
+      final dhanmondiOffers = await repository.getActiveOffers(
+        division: 'Dhaka',
+        area: 'Dhanmondi',
+      );
+      expect(dhanmondiOffers, isNotEmpty);
+      expect(dhanmondiOffers.every((o) => o.area == 'Dhanmondi'), isTrue);
+
+      final nonExistentAreaOffers = await repository.getActiveOffers(
+        division: 'Dhaka',
+        area: 'NonExistentArea',
+      );
+      expect(nonExistentAreaOffers, isEmpty);
+
+      final otherDivisionOffers = await repository.getActiveOffers(
+        division: 'Sylhet',
+      );
+      expect(otherDivisionOffers, isEmpty);
+    });
   });
 }

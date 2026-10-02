@@ -10,12 +10,15 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/restaurant_register_screen.dart';
 import '../../features/customer/home/customer_home_screen.dart';
+import '../../features/customer/hot_deals/customer_hot_deals_screen.dart';
 import '../../features/customer/offers/presentation/customer_offer_details_screen.dart';
 import '../../features/customer/profile/customer_profile_screen.dart';
 import '../../features/customer/restaurants/presentation/customer_restaurant_details_screen.dart';
 import '../../features/customer/search/customer_search_screen.dart';
 import '../../features/customer/shell/customer_shell_screen.dart';
 import '../../features/restaurant/dashboard/restaurant_dashboard_screen.dart';
+import '../../features/restaurant/offers/presentation/create_offer_screen.dart';
+import '../../features/restaurant/profile/restaurant_profile_screen.dart';
 import '../../features/shared/presentation/splash_screen.dart';
 import 'app_routes.dart';
 
@@ -145,6 +148,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.customerHotDeals,
+                name: 'customerHotDeals',
+                builder: (context, state) => const CustomerHotDealsScreen(),
+              ),
+            ],
+          ),
         ],
       ),
 
@@ -171,6 +183,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.restaurantDashboard,
         name: 'restaurantDashboard',
         builder: (context, state) => const RestaurantDashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.restaurantProfile,
+        name: 'restaurantProfile',
+        builder: (context, state) => const RestaurantProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.restaurantCreateOffer,
+        name: 'restaurantCreateOffer',
+        builder: (context, state) => const CreateOfferScreen(),
       ),
 
       // Admin routes

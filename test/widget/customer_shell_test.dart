@@ -60,7 +60,8 @@ void main() {
         ),
       );
 
-      // Verify destinations exist
+      // Verify destinations exist including leftmost Hot Deals
+      expect(find.text('Hot Deals'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Search'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
@@ -75,6 +76,12 @@ void main() {
         return false;
       });
       expect(containerFinder, findsOneWidget);
+
+      // Tap on Hot Deals item
+      await tester.tap(find.text('Hot Deals'));
+      await tester.pump();
+
+      expect(navigatedIndex, 3);
 
       // Tap on Search item
       await tester.tap(find.text('Search'));

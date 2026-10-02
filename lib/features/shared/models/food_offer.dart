@@ -21,6 +21,8 @@ class FoodOffer {
     this.updatedAt,
     this.restaurantName,
     this.restaurantAddress,
+    this.division,
+    this.area,
   });
 
   final String id;
@@ -43,6 +45,8 @@ class FoodOffer {
   // Joined presentation fields
   final String? restaurantName;
   final String? restaurantAddress;
+  final String? division;
+  final String? area;
 
   /// Absolute monetary savings in BDT (৳)
   double get savings => PriceCalculator.calculateSavings(
@@ -98,6 +102,15 @@ class FoodOffer {
               ? (json['restaurants'] as Map<String, dynamic>)['address']
                   as String?
               : null),
+      division: json['division'] as String? ??
+          (json['restaurants'] != null
+              ? (json['restaurants'] as Map<String, dynamic>)['division']
+                  as String?
+              : null),
+      area: json['area'] as String? ??
+          (json['restaurants'] != null
+              ? (json['restaurants'] as Map<String, dynamic>)['area'] as String?
+              : null),
     );
   }
 
@@ -116,6 +129,8 @@ class FoodOffer {
       'available_until': availableUntil.toIso8601String(),
       'is_active': isActive,
       'admin_blocked': adminBlocked,
+      if (division != null) 'division': division,
+      if (area != null) 'area': area,
       if (blockedReason != null) 'blocked_reason': blockedReason,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
@@ -141,6 +156,8 @@ class FoodOffer {
     DateTime? updatedAt,
     String? restaurantName,
     String? restaurantAddress,
+    String? division,
+    String? area,
   }) {
     return FoodOffer(
       id: id ?? this.id,
@@ -161,6 +178,8 @@ class FoodOffer {
       updatedAt: updatedAt ?? this.updatedAt,
       restaurantName: restaurantName ?? this.restaurantName,
       restaurantAddress: restaurantAddress ?? this.restaurantAddress,
+      division: division ?? this.division,
+      area: area ?? this.area,
     );
   }
 }

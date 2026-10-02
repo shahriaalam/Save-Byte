@@ -355,6 +355,8 @@ class AuthRepository {
     required String description,
     required String address,
     required String cuisineType,
+    String division = 'Dhaka',
+    String? area,
   }) async {
     String userId = 'res_usr_${DateTime.now().millisecondsSinceEpoch}';
     supa.User? user;
@@ -389,6 +391,28 @@ class AuthRepository {
     // Save into persistent credentials registry
     await _persistAccount(email, password, profile);
 
+    // Persist local restaurant record
+    final initialRestaurant = {
+      'id': 'res_${DateTime.now().millisecondsSinceEpoch}',
+      'owner_id': userId,
+      'name': restaurantName.trim(),
+      'description': description.trim(),
+      'phone': phone.trim(),
+      'address': address.trim(),
+      'division': division.trim(),
+      if (area != null) 'area': area.trim(),
+      'cuisine_type': cuisineType.trim(),
+      'status': AppConstants.statusPending,
+    };
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'sb_restaurant_$userId',
+        jsonEncode(initialRestaurant),
+      );
+    } catch (_) {}
+
     if (user != null) {
       try {
         await _client
@@ -403,6 +427,8 @@ class AuthRepository {
           'description': description.trim(),
           'phone': phone.trim(),
           'address': address.trim(),
+          'division': division.trim(),
+          if (area != null && area.trim().isNotEmpty) 'area': area.trim(),
           'cuisine_type': cuisineType.trim(),
           'status': AppConstants.statusPending,
         });

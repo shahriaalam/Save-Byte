@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/location_constants.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -37,6 +38,15 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
   Widget build(BuildContext context) {
     final searchResultsAsync = ref.watch(searchResultsProvider);
     final selectedCategory = ref.watch(searchCategoryProvider);
+    final selectedDivision = ref.watch(searchDivisionProvider);
+    final selectedArea = ref.watch(searchAreaProvider);
+
+    final availableAreas = LocationConstants.getAreasForDivision(
+      selectedDivision == 'All' ? 'Dhaka' : selectedDivision,
+    );
+
+    final hasLocationFilter =
+        selectedDivision != 'All' || selectedArea != 'All';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -48,7 +58,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
           children: [
             // Search Input Bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
               child: TextField(
                 controller: _searchController,
                 autofocus: false,
@@ -74,6 +84,217 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                         )
                       : null,
                 ),
+              ),
+            ),
+
+            // Location Filters: Division & Area (Dhaka focus)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
+              child: Row(
+                children: [
+                  // Division Selector
+                  Expanded(
+                    flex: 11,
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: selectedDivision != 'All'
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedDivision,
+                          isDense: true,
+                          isExpanded: true,
+                          icon: const Icon(
+                            Icons.arrow_drop_down_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: selectedDivision != 'All'
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: selectedDivision != 'All'
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                          ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'All',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.map_outlined,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'All Divisions',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            for (final div in LocationConstants.divisions)
+                              DropdownMenuItem(
+                                value: div,
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_city_rounded,
+                                      size: 14,
+                                      color: AppColors.primary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        div,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              ref
+                                  .read(searchDivisionProvider.notifier)
+                                  .setDivision(value);
+                              // Reset area if not supported in the new division
+                              ref
+                                  .read(searchAreaProvider.notifier)
+                                  .setArea('All');
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Area Selector (Dhaka Areas)
+                  Expanded(
+                    flex: 12,
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: selectedArea != 'All'
+                              ? AppColors.primary
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: availableAreas.contains(selectedArea)
+                              ? selectedArea
+                              : 'All',
+                          isDense: true,
+                          isExpanded: true,
+                          icon: const Icon(
+                            Icons.arrow_drop_down_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: selectedArea != 'All'
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: selectedArea != 'All'
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                          ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'All',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.place_outlined,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'All Areas',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            for (final area in availableAreas)
+                              DropdownMenuItem(
+                                value: area,
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.place_rounded,
+                                      size: 14,
+                                      color: AppColors.primary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        area,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              ref
+                                  .read(searchAreaProvider.notifier)
+                                  .setArea(value);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Clear Location Filter Button
+                  if (hasLocationFilter) ...[
+                    const SizedBox(width: 6),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Clear location filter',
+                      icon: const Icon(
+                        Icons.filter_alt_off_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        ref
+                            .read(searchDivisionProvider.notifier)
+                            .setDivision('All');
+                        ref
+                            .read(searchAreaProvider.notifier)
+                            .setArea('All');
+                      },
+                    ),
+                  ],
+                ],
               ),
             ),
 

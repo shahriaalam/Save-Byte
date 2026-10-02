@@ -150,6 +150,8 @@ class AuthController extends Notifier<AppAuthState> {
     required String description,
     required String address,
     required String cuisineType,
+    String division = 'Dhaka',
+    String? area,
   }) async {
     state = const AuthLoading();
     try {
@@ -162,6 +164,8 @@ class AuthController extends Notifier<AppAuthState> {
         description: description,
         address: address,
         cuisineType: cuisineType,
+        division: division,
+        area: area,
       );
       // Sign out to ensure session is cleared so user can explicitly log in
       await _repository.signOut();

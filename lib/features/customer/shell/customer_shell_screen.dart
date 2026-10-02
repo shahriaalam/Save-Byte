@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../location/widgets/location_permission_sheet.dart';
 
 /// Controls whether the customer floating bottom navigation bar is visible.
 /// Hidden when modal bottom sheets or overlays are open.
@@ -18,7 +19,7 @@ final customerNavbarVisibleProvider =
 
 /// Navigation shell for Customer role providing a floating bottom navigation bar
 /// across Home, Search, and Profile (Section 19).
-class CustomerShellScreen extends ConsumerWidget {
+class CustomerShellScreen extends ConsumerStatefulWidget {
   const CustomerShellScreen({
     required this.navigationShell,
     super.key,
@@ -26,15 +27,28 @@ class CustomerShellScreen extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
+  @override
+  ConsumerState<CustomerShellScreen> createState() => _CustomerShellScreenState();
+}
+
+class _CustomerShellScreenState extends ConsumerState<CustomerShellScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      LocationPermissionSheet.showIfFirstTime(context, ref);
+    });
+  }
+
   void _onDestinationSelected(int index) {
-    navigationShell.goBranch(
+    widget.navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final isNavVisible = ref.watch(customerNavbarVisibleProvider);
 
@@ -42,7 +56,7 @@ class CustomerShellScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          Positioned.fill(child: navigationShell),
+          Positioned.fill(child: widget.navigationShell),
           if (isNavVisible)
             Positioned(
               left: 20,
@@ -81,6 +95,12 @@ class CustomerShellScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildNavItem(
+                          index: 3,
+                          label: 'Hot Deals',
+                          icon: Icons.local_fire_department_outlined,
+                          selectedIcon: Icons.local_fire_department_rounded,
+                        ),
+                        _buildNavItem(
                           index: 0,
                           label: 'Home',
                           icon: Icons.home_outlined,
@@ -116,7 +136,7 @@ class CustomerShellScreen extends ConsumerWidget {
     required IconData icon,
     required IconData selectedIcon,
   }) {
-    final isSelected = navigationShell.currentIndex == index;
+    final isSelected = widget.navigationShell.currentIndex == index;
 
     return Expanded(
       child: Semantics(
@@ -139,7 +159,7 @@ class CustomerShellScreen extends ConsumerWidget {
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeOutCubic,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 10,
                       vertical: 3.5,
                     ),
                     decoration: BoxDecoration(
@@ -150,7 +170,7 @@ class CustomerShellScreen extends ConsumerWidget {
                     ),
                     child: Icon(
                       isSelected ? selectedIcon : icon,
-                      size: 22,
+                      size: 21,
                       color: isSelected
                           ? AppColors.primary
                           : AppColors.textSecondary,
@@ -160,7 +180,7 @@ class CustomerShellScreen extends ConsumerWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected
@@ -168,6 +188,8 @@ class CustomerShellScreen extends ConsumerWidget {
                           : AppColors.textSecondary,
                       letterSpacing: -0.2,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

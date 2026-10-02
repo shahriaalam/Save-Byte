@@ -8,6 +8,7 @@ import 'package:save_bite/features/auth/data/auth_repository.dart';
 import 'package:save_bite/features/auth/domain/user_profile.dart';
 import 'package:save_bite/features/auth/presentation/auth_controller.dart';
 import 'package:save_bite/features/customer/home/customer_home_screen.dart';
+import 'package:save_bite/features/customer/hot_deals/customer_hot_deals_screen.dart';
 import 'package:save_bite/features/customer/offers/data/customer_offer_repository.dart';
 import 'package:save_bite/features/customer/offers/presentation/customer_offer_details_screen.dart';
 import 'package:save_bite/features/customer/profile/customer_profile_screen.dart';
@@ -193,6 +194,39 @@ void main() {
       // Offers list renders
       expect(find.byType(OfferCard), findsWidgets);
     });
+
+    testWidgets('renders division and area filter dropdowns and filters offers',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget(const CustomerSearchScreen()));
+      await tester.pumpAndSettle();
+
+      // Division and area filters are present
+      expect(find.text('All Divisions'), findsOneWidget);
+      expect(find.text('All Areas'), findsOneWidget);
+
+      // Tap division dropdown and select Dhaka
+      await tester.tap(find.text('All Divisions'));
+      await tester.pumpAndSettle();
+
+      // Select 'Dhaka' from dropdown
+      final dhakaOption = find.text('Dhaka').last;
+      await tester.tap(dhakaOption);
+      await tester.pumpAndSettle();
+
+      // Verify Dhaka is selected
+      expect(find.text('Dhaka'), findsWidgets);
+
+      // Now tap Area dropdown and select Dhanmondi
+      await tester.tap(find.text('All Areas'));
+      await tester.pumpAndSettle();
+
+      final dhanmondiOption = find.text('Dhanmondi').last;
+      await tester.tap(dhanmondiOption);
+      await tester.pumpAndSettle();
+
+      // Verify offers still display
+      expect(find.byType(OfferCard), findsWidgets);
+    });
   });
 
   group('Customer Profile Screen (Section 26)', () {
@@ -288,6 +322,31 @@ void main() {
       // Verify initials "KN"
       expect(find.text('KN'), findsOneWidget);
       expect(find.byIcon(Icons.camera_alt_rounded), findsOneWidget);
+    });
+  });
+
+  group('Customer Hot Deals Screen', () {
+    testWidgets('renders hot deals header, 45%+ OFF badge, and hot deal offers', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget(const CustomerHotDealsScreen()));
+      await tester.pumpAndSettle();
+
+      // Verify header and badge
+      expect(find.text('🔥 Hot Deals Near You'), findsOneWidget);
+      expect(find.text('45%+ OFF'), findsOneWidget);
+
+      // Verify category filter chips
+      expect(find.widgetWithText(FilterChip, 'All'), findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'Burger'), findsOneWidget);
+
+      // Verify offers are rendered with OfferCard
+      expect(find.byType(OfferCard), findsWidgets);
+
+      // Verify strict V1 requirement: NO ORDER BUTTON
+      expect(find.text('Order'), findsNothing);
+      expect(find.text('Buy Now'), findsNothing);
+      expect(find.text('Add to Cart'), findsNothing);
     });
   });
 }

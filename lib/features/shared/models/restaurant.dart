@@ -9,6 +9,8 @@ class Restaurant {
     this.description,
     this.phone,
     this.address,
+    this.division,
+    this.area,
     this.imageUrl,
     this.cuisineType,
     this.openingTime,
@@ -25,6 +27,8 @@ class Restaurant {
   final String? description;
   final String? phone;
   final String? address;
+  final String? division;
+  final String? area;
   final String? imageUrl;
   final String? cuisineType;
   final String? openingTime;
@@ -39,6 +43,31 @@ class Restaurant {
   bool get isSuspended => status == AppConstants.statusSuspended;
   bool get isRejected => status == AppConstants.statusRejected;
 
+  /// Profile completeness check:
+  /// Requires restaurant name, phone, address, division, area, profile picture (imageUrl), and cuisine type.
+  bool get isProfileComplete {
+    return name.trim().isNotEmpty &&
+        (phone != null && phone!.trim().isNotEmpty) &&
+        (address != null && address!.trim().isNotEmpty) &&
+        (division != null && division!.trim().isNotEmpty) &&
+        (area != null && area!.trim().isNotEmpty) &&
+        (imageUrl != null && imageUrl!.trim().isNotEmpty) &&
+        (cuisineType != null && cuisineType!.trim().isNotEmpty);
+  }
+
+  /// Returns missing profile field names for user-facing prompts.
+  List<String> get missingProfileFields {
+    final missing = <String>[];
+    if (name.trim().isEmpty) missing.add('Restaurant Name');
+    if (phone == null || phone!.trim().isEmpty) missing.add('Phone Number');
+    if (division == null || division!.trim().isEmpty) missing.add('Division');
+    if (area == null || area!.trim().isEmpty) missing.add('Area');
+    if (address == null || address!.trim().isEmpty) missing.add('Address');
+    if (imageUrl == null || imageUrl!.trim().isEmpty) missing.add('Restaurant Profile Picture');
+    if (cuisineType == null || cuisineType!.trim().isEmpty) missing.add('Cuisine Type');
+    return missing;
+  }
+
   factory Restaurant.fromJson(Map<String, dynamic> json) {
     return Restaurant(
       id: json['id'] as String,
@@ -47,6 +76,8 @@ class Restaurant {
       description: json['description'] as String?,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
+      division: (json['division'] as String?) ?? 'Dhaka',
+      area: json['area'] as String?,
       imageUrl: json['image_url'] as String?,
       cuisineType: json['cuisine_type'] as String?,
       openingTime: json['opening_time'] as String?,
@@ -70,6 +101,8 @@ class Restaurant {
       'description': description,
       'phone': phone,
       'address': address,
+      'division': division,
+      'area': area,
       'image_url': imageUrl,
       'cuisine_type': cuisineType,
       'opening_time': openingTime,
@@ -88,6 +121,8 @@ class Restaurant {
     String? description,
     String? phone,
     String? address,
+    String? division,
+    String? area,
     String? imageUrl,
     String? cuisineType,
     String? openingTime,
@@ -104,6 +139,8 @@ class Restaurant {
       description: description ?? this.description,
       phone: phone ?? this.phone,
       address: address ?? this.address,
+      division: division ?? this.division,
+      area: area ?? this.area,
       imageUrl: imageUrl ?? this.imageUrl,
       cuisineType: cuisineType ?? this.cuisineType,
       openingTime: openingTime ?? this.openingTime,
