@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../user_location_controller.dart';
+import '../../notifications/notification_controller.dart';
 
 /// Modal bottom sheet requesting location permission on first-time customer entry.
 class LocationPermissionSheet extends ConsumerStatefulWidget {
@@ -64,8 +66,16 @@ class _LocationPermissionSheetState
       if (!mounted) return;
       setState(() => _isRequesting = false);
 
+      // Initialise the notification controller (starts realtime subscription)
+      ref.read(notificationControllerProvider);
+
       Navigator.of(context).pop();
       widget.onCompleted?.call();
+
+      // ── Request OS notification permission right after location ──────────
+      if (mounted) {
+        await _requestNotificationPermission();
+      }
 
       final locState = ref.read(userLocationControllerProvider);
 
@@ -87,26 +97,28 @@ class _LocationPermissionSheetState
         icon = Icons.check_circle_rounded;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            backgroundColor: barColor,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          backgroundColor: barColor,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+        );
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _isRequesting = false);
@@ -114,6 +126,193 @@ class _LocationPermissionSheetState
         widget.onCompleted?.call();
       }
     }
+  }
+
+  /// Requests OS-level notification permission via the native platform channel.
+  /// On Android 13+ (API 33) this triggers the system permission dialog.
+  /// On iOS this triggers the native permission request.
+  /// Falls back gracefully on older Android versions where permission is
+  /// granted by default at install time.
+  Future<void> _requestNotificationPermission() async {
+    try {
+      const channel = MethodChannel('com.savebite/notifications');
+      await channel.invokeMethod<bool>('requestPermission');
+    } on MissingPluginException {
+      // Platform channel not set up yet — show in-app soft-prompt instead
+      if (mounted) {
+        await _showNotificationPermissionDialog();
+      }
+    } catch (_) {
+      if (mounted) {
+        await _showNotificationPermissionDialog();
+      }
+    }
+  }
+
+  /// In-app notification opt-in dialog (soft-prompt before OS dialog).
+  Future<void> _showNotificationPermissionDialog() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE23744), Color(0xFF8B0000)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE23744).withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  color: Colors.white,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Title
+              const Text(
+                'Never Miss a Hot Deal!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Body
+              const Text(
+                'Get instant alerts when nearby restaurants post new surplus food offers with 45%+ discounts.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Benefits
+              _buildPermBenefit(
+                icon: Icons.flash_on_rounded,
+                color: const Color(0xFFF59E0B),
+                text: 'Instant alerts when deals go live near you',
+              ),
+              const SizedBox(height: 8),
+              _buildPermBenefit(
+                icon: Icons.savings_rounded,
+                color: const Color(0xFF16A34A),
+                text: 'Never miss a 50% or more discount again',
+              ),
+              const SizedBox(height: 8),
+              _buildPermBenefit(
+                icon: Icons.lock_outline_rounded,
+                color: AppColors.primary,
+                text: 'No spam — only real nearby surplus offers',
+              ),
+              const SizedBox(height: 24),
+
+              // Allow button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.notifications_active_rounded, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Enable Notifications',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Skip link
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text(
+                  'Maybe later',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPermBenefit({
+    required IconData icon,
+    required Color color,
+    required String text,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override

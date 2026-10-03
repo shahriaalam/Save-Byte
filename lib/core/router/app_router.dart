@@ -14,6 +14,7 @@ import '../../features/customer/hot_deals/customer_hot_deals_screen.dart';
 import '../../features/customer/offers/presentation/customer_offer_details_screen.dart';
 import '../../features/customer/profile/customer_profile_screen.dart';
 import '../../features/customer/restaurants/presentation/customer_restaurant_details_screen.dart';
+import '../../features/customer/notifications/notification_screen.dart';
 import '../../features/customer/search/customer_search_screen.dart';
 import '../../features/customer/shell/customer_shell_screen.dart';
 import '../../features/restaurant/dashboard/restaurant_dashboard_screen.dart';
@@ -158,6 +159,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+
+      // Customer notifications screen (full-screen, above shell)
+      GoRoute(
+        path: AppRoutes.customerNotifications,
+        name: 'customerNotifications',
+        builder: (context, state) => const NotificationScreen(),
       ),
 
       // Customer stack details routes

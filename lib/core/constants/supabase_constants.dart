@@ -18,9 +18,11 @@ abstract final class SupabaseConstants {
   static const String tableProfiles = 'profiles';
   static const String tableRestaurants = 'restaurants';
   static const String tableOffers = 'offers';
+  static const String tablePromoBanners = 'promo_banners';
 
   // Storage buckets (Section 51)
   static const String bucketAvatars = 'avatars';
   static const String bucketRestaurantImages = 'restaurant-images';
   static const String bucketOfferImages = 'offer-images';
+  static const String bucketPromoBanners = 'promo-banners';
 }

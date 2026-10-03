@@ -11,6 +11,7 @@ import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../domain/auth_state.dart';
 import 'auth_controller.dart';
+import 'widgets/email_otp_verification_sheet.dart';
 
 class CustomerRegisterScreen extends ConsumerStatefulWidget {
   const CustomerRegisterScreen({super.key});
@@ -48,6 +49,25 @@ class _CustomerRegisterScreenState
     if (!_formKey.currentState!.validate()) return;
 
     final email = _emailController.text.trim();
+
+    // 1. Send OTP to email before creating account
+    final otp = await ref
+        .read(authControllerProvider.notifier)
+        .sendRegistrationOtp(email);
+
+    if (!mounted) return;
+
+    // 2. Open OTP verification bottom sheet
+    final isVerified = await EmailOtpVerificationSheet.show(
+      context: context,
+      email: email,
+      initialOtp: otp,
+    );
+
+    if (!mounted) return;
+    if (!isVerified) return; // User closed sheet without verifying
+
+    // 3. Complete customer account creation
     final success = await ref
         .read(authControllerProvider.notifier)
         .signUpCustomer(

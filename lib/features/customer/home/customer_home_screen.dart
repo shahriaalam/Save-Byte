@@ -20,6 +20,7 @@ import '../../shared/models/promo_banner.dart';
 import '../../shared/models/restaurant.dart';
 import '../../shared/widgets/offer_card.dart';
 import '../location/user_location_controller.dart';
+import '../notifications/notification_controller.dart';
 import '../offers/presentation/customer_offers_controller.dart';
 
 class CustomerHomeScreen extends ConsumerStatefulWidget {
@@ -469,34 +470,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             ),
 
                             // Notification Bell
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.16),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Stack(
-                                children: [
-                                  const Icon(
-                                    Icons.notifications_none_rounded,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  Positioned(
-                                    right: 0,
-                                    top: 0,
-                                    child: Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFFDE047),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            _NotificationBell(unreadCount: ref.watch(unreadNotificationCountProvider)),
                           ],
                         ),
                       ),
@@ -1578,3 +1552,69 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     );
   }
 }
+
+/// Animated notification bell button with live unread badge.
+/// Tapping navigates to the [NotificationScreen].
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.unreadCount});
+
+  final int unreadCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.customerNotifications),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(
+              unreadCount > 0
+                  ? Icons.notifications_rounded
+                  : Icons.notifications_none_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDE047),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      unreadCount > 99 ? '99+' : '$unreadCount',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF78350F),
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

@@ -6,6 +6,12 @@
 	<string>Save Bite uses your location to discover 45%+ hot deals and nearby surplus food offers from restaurants in Dhaka.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Save Bite uses your location to discover 45%+ hot deals and nearby surplus food offers from restaurants in Dhaka.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Save Bite needs access to your photo library so you can upload a profile picture or food offer image.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save Bite needs permission to save photos to your library.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Save Bite uses your camera so you can take a photo for your profile or food offer.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

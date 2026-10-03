@@ -515,7 +515,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         OutlinedButton.icon(
                           onPressed: () async {
-                            final dataUrl = await pickImageFromDevice();
+                            final dataUrl = await pickImageWithPermission(context);
                             if (dataUrl != null) {
                               imageUrlController.text = dataUrl;
                               setSheetState(() {});

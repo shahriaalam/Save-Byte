@@ -140,6 +140,16 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<String> sendRegistrationOtp(String email) async => '123456';
+
+  @override
+  Future<bool> verifyRegistrationOtp({
+    required String email,
+    required String otp,
+  }) async =>
+      otp.trim() == '123456';
+
+  @override
   Future<void> signOut() async {
     initialProfile = null;
   }

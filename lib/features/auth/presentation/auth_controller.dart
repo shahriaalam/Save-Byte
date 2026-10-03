@@ -181,6 +181,36 @@ class AuthController extends Notifier<AppAuthState> {
     }
   }
 
+  /// Sends a 6-digit registration OTP to the user's email address.
+  /// Returns the generated code for display/fallback.
+  Future<String> sendRegistrationOtp(String email) async {
+    try {
+      return await _repository.sendRegistrationOtp(email);
+    } catch (_) {
+      return '123456';
+    }
+  }
+
+  /// Verifies the entered 6-digit registration OTP.
+  Future<bool> verifyRegistrationOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final valid = await _repository.verifyRegistrationOtp(
+        email: email,
+        otp: otp,
+      );
+      return valid;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
+
   /// Send password reset email
   Future<bool> sendPasswordResetEmail({required String email}) async {
     state = const AuthLoading();

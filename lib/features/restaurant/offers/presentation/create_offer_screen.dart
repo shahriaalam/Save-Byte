@@ -49,7 +49,7 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
   Future<void> _handleDeviceUpload() async {
     setState(() => _isPickingFile = true);
     try {
-      final dataUrl = await pickImageFromDevice();
+      final dataUrl = await pickImageWithPermission(context);
       if (mounted && dataUrl != null) {
         setState(() {
           _imageUrl = dataUrl;

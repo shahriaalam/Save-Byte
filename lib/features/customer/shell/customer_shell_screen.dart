@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../location/widgets/location_permission_sheet.dart';
+import '../notifications/notification_controller.dart';
 
 /// Controls whether the customer floating bottom navigation bar is visible.
 /// Hidden when modal bottom sheets or overlays are open.
@@ -36,6 +37,8 @@ class _CustomerShellScreenState extends ConsumerState<CustomerShellScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Eagerly init the notification controller to start realtime subscription
+      ref.read(notificationControllerProvider);
       LocationPermissionSheet.showIfFirstTime(context, ref);
     });
   }
