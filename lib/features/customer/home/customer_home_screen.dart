@@ -1470,78 +1470,6 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     );
   }
 
-  Widget _buildBannerEmblem(String iconType) {
-    IconData icon;
-    Color accentColor;
-    switch (iconType) {
-      case 'flame':
-        icon = Icons.local_fire_department_rounded;
-        accentColor = const Color(0xFFF97316);
-        break;
-      case 'gift':
-        icon = Icons.card_giftcard_rounded;
-        accentColor = const Color(0xFF10B981);
-        break;
-      case 'bolt':
-        icon = Icons.bolt_rounded;
-        accentColor = const Color(0xFFEAB308);
-        break;
-      case 'food':
-        icon = Icons.restaurant_rounded;
-        accentColor = const Color(0xFFEC4899);
-        break;
-      case 'moped':
-      default:
-        icon = Icons.electric_moped_rounded;
-        accentColor = const Color(0xFF38BDF8);
-        break;
-    }
-
-    return Container(
-      width: 82,
-      height: 82,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.35),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Container(
-          width: 62,
-          height: 62,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.22),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: accentColor.withValues(alpha: 0.3),
-                blurRadius: 8,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          child: Center(
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 38,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDirectBannerCard(PromoBanner b) {
     if (b.imageUrl != null && b.imageUrl!.trim().isNotEmpty) {
       return Container(
@@ -1600,56 +1528,6 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBannerHeroImage(String imageUrl, Color startColor) {
-    return Container(
-      width: 86,
-      height: 86,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.35),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                colors: [
-                  Colors.white.withValues(alpha: 0.28),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(4),
-            child: _buildBannerImageContent(
-              imageUrl,
-              fit: BoxFit.contain,
-              fallback: const Icon(
-                Icons.local_cafe_rounded,
-                color: Colors.white,
-                size: 38,
-              ),
-            ),
-          ),
         ],
       ),
     );

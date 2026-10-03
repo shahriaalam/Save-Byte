@@ -887,24 +887,4 @@ class AdminDashboardScreen extends ConsumerWidget {
       child: imageWidget,
     );
   }
-
-  Widget _buildIconChoice(
-    String key,
-    String label,
-    String current,
-    ValueChanged<String> onSelected,
-  ) {
-    final isSelected = key == current;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      selectedColor: AppColors.primary.withValues(alpha: 0.15),
-      labelStyle: TextStyle(
-        fontSize: 12,
-        fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
-        color: isSelected ? AppColors.primary : Colors.black87,
-      ),
-      onSelected: (_) => onSelected(key),
-    );
-  }
 }
