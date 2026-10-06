@@ -404,6 +404,38 @@ void main() {
       expect(find.text('KN'), findsOneWidget);
       expect(find.byIcon(Icons.camera_alt_rounded), findsOneWidget);
     });
+
+    testWidgets(
+      'double pull on CustomerProfileScreen reloads in place and stays on Profile screen without navigating away',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget(const CustomerProfileScreen()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Rahim Ahmed'), findsOneWidget);
+
+        // 1. First pull down at top
+        await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 80));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(find.text('Pull down once more to reload'), findsOneWidget);
+        expect(find.text('Rahim Ahmed'), findsOneWidget);
+
+        // 2. Second pull down within 2 seconds
+        await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 80));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(find.text('Reloading...'), findsOneWidget);
+        // Verify we are STILL firmly on the Profile screen, not navigated away to Home
+        expect(find.text('Rahim Ahmed'), findsOneWidget);
+        expect(find.text('Become a Super Saver'), findsWidgets);
+
+        // Let snackbars and timers finish
+        await tester.pump(const Duration(seconds: 3));
+        expect(find.text('Rahim Ahmed'), findsOneWidget);
+      },
+    );
   });
 
   group('Customer Hot Deals Screen', () {

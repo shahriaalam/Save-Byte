@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/price_calculator.dart';
+import '../../../../core/widgets/double_pull_reload.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -41,8 +42,14 @@ class CustomerOfferDetailsScreen extends ConsumerWidget {
             );
           }
 
-          return SingleChildScrollView(
-            child: Column(
+          return DoublePullReload(
+            onReload: () async {
+              ref.invalidate(offerDetailsProvider(offerId));
+              await ref.read(offerDetailsProvider(offerId).future);
+            },
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Food Image
@@ -300,8 +307,9 @@ class CustomerOfferDetailsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-          );
-        },
+          ),
+        );
+      },
         loading: () => const LoadingState(message: 'Loading offer details...'),
         error: (_, _) => ErrorState(
           message: 'Unable to load offer details.',

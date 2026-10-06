@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/colors/account_colors.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/confirm_dialog.dart';
+import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/user_avatar.dart';
@@ -204,7 +206,7 @@ class _RestaurantDashboardScreenState
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,7 +449,7 @@ class _RestaurantDashboardScreenState
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -998,6 +1000,8 @@ class _RestaurantDashboardScreenState
     return Scaffold(
       backgroundColor: Colors.white,
       body: restaurantAsync.when(
+        skipLoadingOnReload: true,
+        skipLoadingOnRefresh: true,
         data: (restaurant) {
           if (restaurant == null) {
             return const Center(child: Text('Restaurant account not found.'));
@@ -1014,15 +1018,23 @@ class _RestaurantDashboardScreenState
               // Index 3: Info (Top selling posts leaderboard & impact)
               // Index 4: Account (Organized like user account + owner profile)
               Positioned.fill(
-                child: IndexedStack(
-                  index: _navIndex,
-                  children: [
-                    _buildPostsTab(context, restaurant, offers),
-                    _buildOffersTab(context, restaurant, offers),
-                    _buildHomeTab(context, restaurant, offers),
-                    _buildInfoTab(context, restaurant, offers),
-                    _buildAccountTab(context, restaurant, userProfile),
-                  ],
+                child: DoublePullReload(
+                  onReload: () async {
+                    await Future.wait<dynamic>([
+                      ref.refresh(currentRestaurantProvider.future),
+                      ref.refresh(currentRestaurantOffersProvider.future),
+                    ]);
+                  },
+                  child: IndexedStack(
+                    index: _navIndex,
+                    children: [
+                      _buildPostsTab(context, restaurant, offers),
+                      _buildOffersTab(context, restaurant, offers),
+                      _buildHomeTab(context, restaurant, offers),
+                      _buildInfoTab(context, restaurant, offers),
+                      _buildAccountTab(context, restaurant, userProfile),
+                    ],
+                  ),
                 ),
               ),
 
@@ -1200,13 +1212,9 @@ class _RestaurantDashboardScreenState
     final isComplete = restaurant.isProfileComplete;
 
     return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(currentRestaurantOffersProvider);
-        },
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1262,7 +1270,7 @@ class _RestaurantDashboardScreenState
               // Filter Chips Row
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 child: Row(
                   children: [
                     _buildFilterChip(
@@ -1321,8 +1329,7 @@ class _RestaurantDashboardScreenState
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   // ==========================================
@@ -1332,7 +1339,7 @@ class _RestaurantDashboardScreenState
       BuildContext context, Restaurant restaurant, List<FoodOffer> offers) {
     return SafeArea(
       child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1810,14 +1817,9 @@ class _RestaurantDashboardScreenState
         ? restaurant.area!
         : 'Banasree';
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(currentRestaurantProvider);
-        ref.invalidate(currentRestaurantOffersProvider);
-      },
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 110),
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 110),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2356,8 +2358,7 @@ class _RestaurantDashboardScreenState
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   // ==========================================
@@ -2367,7 +2368,7 @@ class _RestaurantDashboardScreenState
       BuildContext context, Restaurant restaurant, List<FoodOffer> offers) {
     return SafeArea(
       child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2587,7 +2588,7 @@ class _RestaurantDashboardScreenState
                   const SizedBox(height: 12),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const ClampingScrollPhysics(),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -2690,10 +2691,12 @@ class _RestaurantDashboardScreenState
             ? userEmail
             : 'partner@savebite.com');
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 110),
+    return Container(
+      color: AccountColors.background,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 110),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3245,8 +3248,9 @@ class _RestaurantDashboardScreenState
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ==========================================
   // ABOUT SAVEBITE MODAL (Directly Following Customer Account About)
@@ -3264,7 +3268,7 @@ class _RestaurantDashboardScreenState
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

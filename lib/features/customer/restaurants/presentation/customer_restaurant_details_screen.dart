@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/double_pull_reload.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
@@ -34,8 +35,16 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
             );
           }
 
-          return CustomScrollView(
-            slivers: [
+          return DoublePullReload(
+            onReload: () async {
+              await Future.wait<dynamic>([
+                ref.refresh(restaurantDetailsProvider(restaurantId).future),
+                ref.refresh(restaurantActiveOffersProvider(restaurantId).future),
+              ]);
+            },
+            child: CustomScrollView(
+              physics: const ClampingScrollPhysics(),
+              slivers: [
               // Collapsible banner app bar
               SliverAppBar(
                 expandedHeight: 200,
@@ -369,8 +378,9 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                 child: SizedBox(height: 32),
               ),
             ],
-          );
-        },
+          ),
+        );
+      },
         loading: () => const Scaffold(
           body: LoadingState(message: 'Loading restaurant...'),
         ),

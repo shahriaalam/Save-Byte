@@ -50,6 +50,9 @@ class AppRouterNotifier extends ChangeNotifier {
 
     // Unauthenticated user
     if (profile == null) {
+      if (authState is Authenticated || authState is AuthLoading) {
+        return null;
+      }
       return isAuthRoute ? null : AppRoutes.login;
     }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/location_constants.dart';
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -145,7 +146,12 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: Column(
+      body: DoublePullReload(
+        onReload: () async {
+          ref.invalidate(searchResultsProvider);
+          await ref.read(searchResultsProvider.future);
+        },
+        child: Column(
         children: [
           // 1. TOP BRANDED GRADIENT HERO HEADER WITH INTEGRATED SEARCH BAR
           Container(
@@ -878,6 +884,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                     // Offers List
                     Expanded(
                       child: ListView.separated(
+                        physics: const ClampingScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(16, 6, 16, 110),
                         itemCount: offers.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
@@ -905,8 +912,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildActiveFilterChip({
     required String label,

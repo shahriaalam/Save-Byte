@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/colors/account_colors.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../auth/domain/user_profile.dart';
@@ -110,7 +112,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   child: Form(
                     key: formKey,
                     child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
+                      physics: const ClampingScrollPhysics(),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1655,7 +1657,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               maxHeight: MediaQuery.of(ctx).size.height * 0.88,
             ),
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -2096,11 +2098,15 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     final email = profile?.email ?? 'bmshahria02@gmail.com';
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 110),
-        child: Column(
+      backgroundColor: AccountColors.background,
+      body: DoublePullReload(
+        onReload: () async {
+          await ref.read(currentUserProfileProvider.notifier).refreshProfile();
+        },
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 110),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ==========================================
@@ -2455,7 +2461,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
   // ==========================================

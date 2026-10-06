@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/location_constants.dart';
+import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../shared/widgets/offer_card.dart';
@@ -213,14 +214,15 @@ class _CustomerHotDealsScreenState extends ConsumerState<CustomerHotDealsScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(hotDealsProvider);
-          ref.invalidate(allDhakaHotDealsProvider);
-          await ref.read(hotDealsProvider.future);
+      body: DoublePullReload(
+        onReload: () async {
+          await Future.wait<dynamic>([
+            ref.refresh(hotDealsProvider.future),
+            ref.refresh(allDhakaHotDealsProvider.future),
+          ]);
         },
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           slivers: [
             // Top Fiery Hot Deals Header
             SliverToBoxAdapter(

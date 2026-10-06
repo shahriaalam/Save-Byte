@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
@@ -161,8 +162,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: RefreshIndicator(
-        onRefresh: () async {
+      body: DoublePullReload(
+        onReload: () async {
           await Future.wait<dynamic>([
             ref.refresh(allHomeOffersProvider.future),
             ref.refresh(nearbyOffersProvider.future),
@@ -171,7 +172,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
           ]);
         },
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 80),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

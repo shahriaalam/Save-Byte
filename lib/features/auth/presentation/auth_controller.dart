@@ -48,6 +48,19 @@ class CurrentUserNotifier extends Notifier<UserProfile?> {
   void setProfile(UserProfile? profile) {
     state = profile;
   }
+
+  /// Reloads user profile from repository in place without resetting state to null
+  /// or triggering router redirection to login/home.
+  Future<void> refreshProfile() async {
+    try {
+      final profile = await _repository.getCurrentUserProfile();
+      if (profile != null) {
+        state = profile;
+      }
+    } catch (_) {
+      // Retain current profile state on transient error
+    }
+  }
 }
 
 /// Provider for AuthController managing UI action states (loading, errors, success).

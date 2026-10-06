@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/location_constants.dart';
 import '../../../core/constants/supabase_constants.dart';
 import '../../../core/utils/platform_file_picker.dart';
+import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../shared/models/restaurant.dart';
 import '../presentation/restaurant_controller.dart';
@@ -294,8 +295,14 @@ class _RestaurantProfileScreenState
           final isComplete = restaurant.isProfileComplete;
 
           return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+            child: DoublePullReload(
+              onReload: () async {
+                ref.invalidate(currentRestaurantProvider);
+                await ref.read(currentRestaurantProvider.future);
+              },
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -787,8 +794,9 @@ class _RestaurantProfileScreenState
                 ),
               ),
             ),
-          );
-        },
+          ),
+        );
+      },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error loading profile: $err')),
       ),
