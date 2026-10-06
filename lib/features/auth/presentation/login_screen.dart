@@ -10,6 +10,7 @@ import '../../../core/widgets/food_loading_animation.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../domain/auth_state.dart';
 import 'auth_controller.dart';
+import 'widgets/google_sign_in_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -23,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isGoogleSigningIn = false;
 
   @override
   void dispose() {
@@ -66,6 +68,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             backgroundColor: AppColors.error,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isGoogleSigningIn = true);
+
+    try {
+      final success = await ref
+          .read(authControllerProvider.notifier)
+          .signInWithGoogle();
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Welcome! Signed in with Google as Customer.',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        final authState = ref.read(authControllerProvider);
+        if (authState is AuthAccountDisabled) {
+          showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Account Deactivated'),
+              content: Text(authState.email),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        } else if (authState is AuthError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authState.message),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleSigningIn = false);
       }
     }
   }
@@ -456,8 +523,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           // Submit Button
                                           PrimaryButton(
                                             text: 'Log In',
-                                            isLoading: isLoading,
-                                            onPressed: _handleLogin,
+                                            isLoading: isLoading && !_isGoogleSigningIn,
+                                            onPressed: _isGoogleSigningIn ? null : _handleLogin,
                                           ),
                                           const SizedBox(height: 10),
 
@@ -580,7 +647,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 10),
 
-                          // Unified High-Focus Sign Up Card
+                          // Customer Subsection (Google Login + Sign Up as Customer)
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
@@ -594,30 +661,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   color: const Color(0xFF0F172A).withValues(
                                     alpha: 0.05,
                                   ),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 4),
-                                  spreadRadius: -1,
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                // Customer Signup Option
+                                // Option 1: Continue with Google (Customer Social Sign-In)
+                                GoogleSignInButton(
+                                  isLoading: _isGoogleSigningIn,
+                                  onPressed: _handleGoogleLogin,
+                                  subtitle: 'Instant one-tap login for customers',
+                                ),
+
+                                // Inset Divider inside Customer Subsection
+                                const Divider(
+                                  height: 1,
+                                  indent: 62,
+                                  color: Color(0xFFF1F5F9),
+                                ),
+
+                                // Option 2: Customer Registration Action Tile
                                 InkWell(
                                   borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
+                                    bottom: Radius.circular(16),
                                   ),
                                   onTap: () =>
                                       context.push(AppRoutes.customerRegister),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 14,
-                                      vertical: 10,
+                                      vertical: 11,
                                     ),
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.all(8),
+                                          width: 36,
+                                          height: 36,
                                           decoration: BoxDecoration(
                                             gradient: AppColors.primaryGradient,
                                             borderRadius:
@@ -631,9 +713,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               ),
                                             ],
                                           ),
+                                          alignment: Alignment.center,
                                           child: const Icon(
                                             Icons.person_add_rounded,
-                                            size: 17,
+                                            size: 18,
                                             color: Colors.white,
                                           ),
                                         ),
@@ -672,54 +755,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   ),
                                 ),
-                                const Divider(
-                                  height: 1,
-                                  indent: 48,
-                                  color: Color(0xFFF1F5F9),
-                                ),
-                                // Restaurant Register Option
-                                InkWell(
-                                  borderRadius: const BorderRadius.vertical(
-                                    bottom: Radius.circular(16),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Register as Restaurant Section (arrives at the end)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F172A).withValues(
+                                    alpha: 0.04,
                                   ),
-                                  onTap: () => context
-                                      .push(AppRoutes.restaurantRegister),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 10,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.secondary,
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.16,
-                                                ),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Icon(
-                                            Icons.storefront_rounded,
-                                            size: 17,
-                                            color: Colors.white,
-                                          ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () => context
+                                  .push(AppRoutes.restaurantRegister),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 11,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFFF59E0B),
+                                            Color(0xFFD97706),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
                                         ),
-                                        const SizedBox(width: 12),
-                                        const Expanded(
-                                          child: Column(
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFD97706)
+                                                .withValues(alpha: 0.30),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: const Icon(
+                                        Icons.storefront_rounded,
+                                        size: 18,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Wrap(
                                             crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                                WrapCrossAlignment.center,
+                                            spacing: 6,
+                                            runSpacing: 2,
                                             children: [
-                                              Text(
+                                              const Text(
                                                 'Register as Restaurant',
                                                 style: TextStyle(
                                                   fontSize: 13,
@@ -727,28 +840,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                   color: AppColors.textPrimary,
                                                 ),
                                               ),
-                                              SizedBox(height: 1),
-                                              Text(
-                                                'Sell surplus inventory & cut food waste',
-                                                style: TextStyle(
-                                                  fontSize: 10.5,
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 5,
+                                                  vertical: 1.5,
+                                                ),
+                                                decoration: BoxDecoration(
                                                   color:
-                                                      AppColors.textSecondary,
+                                                      const Color(0xFFFEF3C7),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                  border: Border.all(
+                                                    color:
+                                                        const Color(0xFFFDE68A),
+                                                    width: 0.8,
+                                                  ),
+                                                ),
+                                                child: const Text(
+                                                  'PARTNER',
+                                                  style: TextStyle(
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Color(0xFFB45309),
+                                                    letterSpacing: 0.4,
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        const Icon(
-                                          Icons.arrow_forward_ios_rounded,
-                                          size: 12,
-                                          color: Color(0xFF94A3B8),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 1),
+                                          const Text(
+                                            'Sell surplus inventory & cut food waste',
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 12,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ],

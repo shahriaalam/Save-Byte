@@ -40,6 +40,19 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<UserProfile> signInWithGoogle({bool forceDevDemo = false}) async {
+    const profile = UserProfile(
+      id: 'test-google-customer-id',
+      email: 'customer.google@savebite.com',
+      role: AppConstants.roleCustomer,
+      fullName: 'Alex Google (Customer)',
+      isActive: true,
+    );
+    initialProfile = profile;
+    return profile;
+  }
+
+  @override
   Future<UserProfile> signUpCustomer({
     required String email,
     required String password,

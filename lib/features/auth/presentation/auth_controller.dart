@@ -105,6 +105,26 @@ class AuthController extends Notifier<AppAuthState> {
     }
   }
 
+  /// Sign in with Google (Customer role only)
+  Future<bool> signInWithGoogle({bool forceDevDemo = false}) async {
+    state = const AuthLoading();
+    try {
+      final profile = await _repository.signInWithGoogle(forceDevDemo: forceDevDemo);
+      _userNotifier.setProfile(profile);
+      state = Authenticated(profile);
+      return true;
+    } on AccountDisabledException catch (e) {
+      state = AuthAccountDisabled(e.message);
+      return false;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
+
   /// Sign up as customer
   Future<bool> signUpCustomer({
     required String email,

@@ -60,6 +60,9 @@ class _EmailOtpVerificationSheetState
   void initState() {
     super.initState();
     _currentOtpCode = widget.initialOtp;
+    if (_currentOtpCode != null && _currentOtpCode!.isNotEmpty) {
+      _otpController.text = _currentOtpCode!;
+    }
     _startResendTimer();
   }
 

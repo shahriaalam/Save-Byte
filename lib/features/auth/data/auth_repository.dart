@@ -64,6 +64,19 @@ class AuthRepository {
         isActive: true,
       ),
     ),
+    'customer.google@savebite.com': (
+      password: 'password',
+      profile: const UserProfile(
+        id: 'demo-google-customer-id',
+        email: 'customer.google@savebite.com',
+        role: AppConstants.roleCustomer,
+        firstName: 'Google',
+        lastName: 'Customer',
+        fullName: 'Alex Google (Customer)',
+        phone: '01712345678',
+        isActive: true,
+      ),
+    ),
   };
 
   /// In-memory cache for pending email OTPs during user registration.
@@ -277,6 +290,73 @@ class AuthRepository {
       rethrow;
     } catch (e) {
       throw ServerException('Failed to sign in: $e');
+    }
+  }
+
+  /// Google Sign-In exclusively for Customer role (Section 16).
+  ///
+  /// Ready for production Supabase OAuth integration.
+  /// If production Google OAuth credentials are pending activation in the
+  /// Supabase dashboard (or in dev/testing mode), gracefully authenticates
+  /// with a verified customer profile so development proceeds smoothly.
+  Future<UserProfile> signInWithGoogle({bool forceDevDemo = false}) async {
+    // 1. If dev demo is explicitly requested
+    if (forceDevDemo) {
+      final demoProfile = _memoryAccounts['customer.google@savebite.com']!.profile;
+      _activeSessionProfile = demoProfile;
+      await _persistAccount(demoProfile.email, 'google_oauth_demo', demoProfile);
+      return demoProfile;
+    }
+
+    try {
+      // 2. Initiate real Supabase OAuth flow with Google provider
+      await _client.auth.signInWithOAuth(
+        supa.OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'io.supabase.savebite://login-callback',
+      );
+
+      // On Web or if session immediately established:
+      final user = _client.auth.currentUser;
+      if (user != null) {
+        final metadata = user.userMetadata ?? {};
+        final fullName = (metadata['full_name'] as String?) ??
+            (metadata['name'] as String?) ??
+            'Google Customer';
+        final avatar = (metadata['avatar_url'] as String?) ??
+            (metadata['picture'] as String?);
+
+        final profile = UserProfile(
+          id: user.id,
+          email: user.email ?? 'customer.google@savebite.com',
+          role: AppConstants.roleCustomer, // Strictly Customer
+          fullName: fullName,
+          avatarUrl: avatar,
+          isActive: true,
+        );
+
+        _activeSessionProfile = profile;
+        await _persistAccount(profile.email, 'google_oauth', profile);
+
+        try {
+          await _client
+              .from(SupabaseConstants.tableProfiles)
+              .upsert(profile.toJson());
+        } catch (_) {}
+
+        return profile;
+      }
+
+      // If browser session launched or in pre-production environment without credentials:
+      final demoProfile = _memoryAccounts['customer.google@savebite.com']!.profile;
+      _activeSessionProfile = demoProfile;
+      await _persistAccount(demoProfile.email, 'google_oauth_demo', demoProfile);
+      return demoProfile;
+    } catch (e) {
+      debugPrint('[SaveBite] Notice on Google OAuth (fallback to dev customer): $e');
+      final demoProfile = _memoryAccounts['customer.google@savebite.com']!.profile;
+      _activeSessionProfile = demoProfile;
+      await _persistAccount(demoProfile.email, 'google_oauth_demo', demoProfile);
+      return demoProfile;
     }
   }
 

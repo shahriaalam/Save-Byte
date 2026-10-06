@@ -33,6 +33,7 @@ void main() {
       expect(find.text('Password'), findsOneWidget);
       expect(find.text('Log In'), findsOneWidget);
       expect(find.text('Forgot Password?'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsOneWidget);
       expect(find.text('Sign Up as Customer'), findsOneWidget);
       expect(find.text('Register as Restaurant'), findsOneWidget);
 
@@ -42,6 +43,22 @@ void main() {
 
       expect(find.text('Please enter your email'), findsOneWidget);
       expect(find.text('Please enter your password'), findsOneWidget);
+    });
+
+    testWidgets('LoginScreen allows Customer to sign in using Google', (
+      tester,
+    ) async {
+      final fakeRepo = FakeAuthRepository();
+      await tester.pumpWidget(createTestScope(const LoginScreen(), repo: fakeRepo));
+
+      expect(find.text('Continue with Google'), findsOneWidget);
+      await tester.ensureVisible(find.text('Continue with Google'));
+      await tester.tap(find.text('Continue with Google'));
+      await tester.pumpAndSettle();
+
+      // Verify customer Google profile was loaded
+      expect(fakeRepo.initialProfile?.isCustomer, isTrue);
+      expect(fakeRepo.initialProfile?.email, 'customer.google@savebite.com');
     });
 
     testWidgets('CustomerRegisterScreen renders form fields and validation', (
@@ -114,7 +131,15 @@ void main() {
         // Tap Create Account
         await tester.ensureVisible(find.text('Create Account'));
         await tester.tap(find.text('Create Account'));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        // Bottom sheet is now open; tap Verify & Activate Account
+        expect(find.text('Verify & Activate Account'), findsOneWidget);
+        await tester.tap(find.text('Verify & Activate Account'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pump(const Duration(milliseconds: 400));
 
         // Verify AccountCreatedDialog is shown
         expect(find.byType(AccountCreatedDialog), findsOneWidget);
@@ -207,7 +232,16 @@ void main() {
 
         await tester.ensureVisible(find.text('Create Restaurant Account'));
         await tester.tap(find.text('Create Restaurant Account'));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        // If EmailOtpVerificationSheet appears, verify OTP
+        if (find.text('Verify & Activate Account').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Verify & Activate Account'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          await tester.pump(const Duration(milliseconds: 400));
+        }
 
         // Verify dialog
         expect(find.byType(AccountCreatedDialog), findsOneWidget);
