@@ -27,6 +27,7 @@ class LocationPermissionSheet extends ConsumerStatefulWidget {
         isDismissible: true,
         enableDrag: true,
         isScrollControlled: true,
+        useRootNavigator: true,
         backgroundColor: Colors.transparent,
         builder: (_) => const LocationPermissionSheet(),
       );
@@ -40,6 +41,7 @@ class LocationPermissionSheet extends ConsumerStatefulWidget {
       isDismissible: true,
       enableDrag: true,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const LocationPermissionSheet(),
     );

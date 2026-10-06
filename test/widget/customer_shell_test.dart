@@ -64,7 +64,7 @@ void main() {
       expect(find.text('Hot Deals'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Search'), findsOneWidget);
-      expect(find.text('Profile'), findsOneWidget);
+      expect(find.text('Account'), findsOneWidget);
 
       // Verify floating pill styling: Container with borderRadius 33
       final containerFinder = find.byWidgetPredicate((widget) {
@@ -89,8 +89,8 @@ void main() {
 
       expect(navigatedIndex, 1);
 
-      // Tap on Profile item
-      await tester.tap(find.text('Profile'));
+      // Tap on Account item
+      await tester.tap(find.text('Account'));
       await tester.pump();
 
       expect(navigatedIndex, 2);

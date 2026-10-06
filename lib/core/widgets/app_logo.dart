@@ -9,6 +9,7 @@ class AppLogoIcon extends StatelessWidget {
     this.borderRadius,
     this.iconSize,
     this.isInverted = false,
+    this.icon = Icons.restaurant_rounded,
     super.key,
   });
 
@@ -16,6 +17,7 @@ class AppLogoIcon extends StatelessWidget {
   final double? borderRadius;
   final double? iconSize;
   final bool isInverted;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +45,7 @@ class AppLogoIcon extends StatelessWidget {
         ),
         child: Center(
           child: Icon(
-            Icons.restaurant_rounded,
+            icon,
             color: AppColors.primary,
             size: calculatedIconSize,
           ),
@@ -67,7 +69,7 @@ class AppLogoIcon extends StatelessWidget {
       ),
       child: Center(
         child: Icon(
-          Icons.restaurant_rounded,
+          icon,
           color: Colors.white,
           size: calculatedIconSize,
         ),

@@ -85,6 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
+    observers: [CustomerModalRouteObserver(ref)],
     initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: notifier.redirect,
@@ -123,6 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
         branches: [
           StatefulShellBranch(
+            observers: [CustomerModalRouteObserver(ref)],
             routes: [
               GoRoute(
                 path: AppRoutes.customerHome,
@@ -132,6 +134,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            observers: [CustomerModalRouteObserver(ref)],
             routes: [
               GoRoute(
                 path: AppRoutes.customerSearch,
@@ -141,6 +144,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            observers: [CustomerModalRouteObserver(ref)],
             routes: [
               GoRoute(
                 path: AppRoutes.customerProfile,
@@ -150,6 +154,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            observers: [CustomerModalRouteObserver(ref)],
             routes: [
               GoRoute(
                 path: AppRoutes.customerHotDeals,

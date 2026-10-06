@@ -293,4 +293,21 @@ class AuthController extends Notifier<AppAuthState> {
     _userNotifier.setProfile(null);
     state = const Unauthenticated();
   }
+
+  /// Delete current user account permanently
+  Future<bool> deleteAccount() async {
+    state = const AuthLoading();
+    try {
+      await _repository.deleteAccount();
+      _userNotifier.setProfile(null);
+      state = const Unauthenticated();
+      return true;
+    } on AppException catch (e) {
+      state = AuthError(e.message);
+      return false;
+    } catch (e) {
+      state = AuthError(e.toString());
+      return false;
+    }
+  }
 }

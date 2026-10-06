@@ -5,6 +5,7 @@ import 'package:save_bite/core/constants/app_constants.dart';
 import 'package:save_bite/core/router/app_router.dart';
 import 'package:save_bite/core/router/app_routes.dart';
 import 'package:save_bite/core/theme/app_theme.dart';
+import 'package:save_bite/core/widgets/user_avatar.dart';
 import 'package:save_bite/features/auth/data/auth_repository.dart';
 import 'package:save_bite/features/auth/domain/user_profile.dart';
 import 'package:save_bite/features/auth/presentation/auth_controller.dart';
@@ -73,18 +74,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Navigate to profile
+    // Navigate to profile / account
     final router = ProviderScope.containerOf(tester.element(find.byType(MaterialApp))).read(routerProvider);
     router.go(AppRoutes.customerProfile);
     await tester.pumpAndSettle();
 
-    // Verify on profile screen
-    expect(find.text('My Profile'), findsOneWidget);
+    // Verify on account screen
+    expect(find.byType(UserAvatar), findsWidgets);
 
-    // Tap "Change Profile Picture"
-    final changeAvatarButton = find.text('Change Profile Picture');
-    expect(changeAvatarButton, findsOneWidget);
-    await tester.tap(changeAvatarButton);
+    // Tap UserAvatar to open ChangeAvatarSheet
+    await tester.tap(find.byType(UserAvatar).first);
     await tester.pumpAndSettle();
 
     // Verify modal sheet is displayed
@@ -127,10 +126,10 @@ void main() {
     // Verify pill has reappeared on the screen!
     expect(pillFinder, findsOneWidget);
 
-    // Now test Edit Profile modal sheet
-    final editProfileButton = find.text('Edit Profile');
-    expect(editProfileButton, findsOneWidget);
-    await tester.tap(editProfileButton);
+    // Now test View / Edit Profile modal sheet
+    final viewProfileButton = find.text('View Profile');
+    expect(viewProfileButton, findsOneWidget);
+    await tester.tap(viewProfileButton);
     await tester.pumpAndSettle();
 
     // Verify Edit Profile sheet is open
@@ -147,5 +146,50 @@ void main() {
 
     // Verify pill is visible again
     expect(pillFinder, findsOneWidget);
+
+    // Test Orders modal sheet in Account section
+    final ordersButton = find.text('Orders');
+    expect(ordersButton, findsOneWidget);
+    await tester.tap(ordersButton);
+    await tester.pumpAndSettle();
+
+    // Verify Orders sheet is open and pill is hidden
+    expect(find.text('My Food Rescue Orders'), findsOneWidget);
+    expect(pillFinder, findsNothing);
+
+    // Close Orders sheet
+    final ordersCloseButton = find.byIcon(Icons.close_rounded);
+    if (ordersCloseButton.evaluate().isNotEmpty) {
+      await tester.tap(ordersCloseButton.first);
+      await tester.pumpAndSettle();
+    } else {
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+    }
+    expect(pillFinder, findsOneWidget);
+
+    // Navigate to Home screen
+    router.go(AppRoutes.customerHome);
+    await tester.pumpAndSettle();
+    expect(pillFinder, findsOneWidget);
+
+    // Tap on the Deliver to location header on Home screen
+    final deliverToFinder = find.text('Current location');
+    expect(deliverToFinder, findsOneWidget);
+    await tester.tap(deliverToFinder);
+    await tester.pumpAndSettle();
+
+    // Verify CustomerLocationSheet opened and pill is hidden
+    expect(find.text('Use my current location'), findsOneWidget);
+    expect(pillFinder, findsNothing);
+
+    // Close CustomerLocationSheet by tapping outside/barrier
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+
+    // Verify CustomerLocationSheet closed and pill is visible
+    expect(find.text('Use my current location'), findsNothing);
+    expect(pillFinder, findsOneWidget);
   });
 }
+

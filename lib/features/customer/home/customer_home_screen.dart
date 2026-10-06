@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/location_constants.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -19,7 +18,8 @@ import '../../shared/models/food_offer.dart';
 import '../../shared/models/promo_banner.dart';
 import '../../shared/models/restaurant.dart';
 import '../../shared/widgets/offer_card.dart';
-import '../location/user_location_controller.dart';
+import '../location/customer_address_controller.dart';
+import '../location/widgets/customer_location_sheet.dart';
 import '../notifications/notification_controller.dart';
 import '../offers/presentation/customer_offers_controller.dart';
 
@@ -142,144 +142,13 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     return '$timeGreeting 👋';
   }
 
-  void _showAreaPickerSheet(BuildContext context, String currentArea) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.location_city_rounded,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Select Dhaka Area',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Browse surplus food deals close to your neighborhood',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.my_location_rounded,
-                      color: Color(0xFF2563EB),
-                      size: 20,
-                    ),
-                  ),
-                  title: const Text(
-                    'Auto-detect My Location (GPS)',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E40AF),
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Automatically pinpoint nearest Dhaka area',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    final area = await ref
-                        .read(userLocationControllerProvider.notifier)
-                        .requestPermissionAndDetect();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '📍 Location detected: $area! Showing deals near you.',
-                          ),
-                          backgroundColor: const Color(0xFF15803D),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const Divider(height: 16),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('All Dhaka Areas'),
-                          selected: currentArea == 'All',
-                          onSelected: (_) {
-                            ref.read(homeAreaProvider.notifier).setArea('All');
-                            Navigator.pop(ctx);
-                          },
-                        ),
-                        for (final area in LocationConstants.dhakaAreas)
-                          ChoiceChip(
-                            label: Text(area),
-                            selected: currentArea == area,
-                            onSelected: (_) {
-                              ref.read(homeAreaProvider.notifier).setArea(area);
-                              Navigator.pop(ctx);
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(currentUserProfileProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final selectedArea = ref.watch(homeAreaProvider);
-    final locationState = ref.watch(userLocationControllerProvider);
+    final addressState = ref.watch(customerAddressNotifierProvider);
+    final activeAddress = addressState.selectedAddress;
     final allOffersAsync = ref.watch(allHomeOffersProvider);
     final nearbyOffersAsync = ref.watch(nearbyOffersProvider);
     final nearbyRestaurantsAsync = ref.watch(activeRestaurantsProvider);
@@ -330,70 +199,30 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                         child: Row(
                           children: [
-                            // App Logo Mark
-                            const AppLogoIcon(
-                              size: 38,
-                              borderRadius: 12,
-                              isInverted: true,
+                            // App Logo Mark with Location Symbol
+                            GestureDetector(
+                              onTap: () => CustomerLocationSheet.show(context),
+                              child: const AppLogoIcon(
+                                size: 38,
+                                borderRadius: 12,
+                                isInverted: true,
+                                icon: Icons.location_on_rounded,
+                              ),
                             ),
                             const SizedBox(width: 10),
 
                             // Deliver to + Address
                             Expanded(
                               child: GestureDetector(
-                                onTap: () =>
-                                    _showAreaPickerSheet(context, selectedArea),
+                                onTap: () => CustomerLocationSheet.show(context),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        const Text(
-                                          'Deliver to',
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 1.5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'SaveBite',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 9.5,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 1),
-                                    Row(
-                                      children: [
                                         Flexible(
                                           child: Text(
-                                            !locationState.isInsideDhaka &&
-                                                    locationState
-                                                            .detectedArea !=
-                                                        null
-                                                ? '${locationState.detectedArea} (Dhaka Deals)'
-                                                : (selectedArea == 'All'
-                                                      ? 'Ave 3, Dhaka, Bangladesh'
-                                                      : '$selectedArea, Dhaka, Bangladesh'),
+                                            activeAddress.label,
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 14.5,
@@ -402,6 +231,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
+                                        const SizedBox(width: 4),
                                         const Icon(
                                           Icons.keyboard_arrow_down_rounded,
                                           color: Colors.white,
@@ -409,63 +239,21 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                         ),
                                       ],
                                     ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      activeAddress.addressLine,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.85,
+                                        ),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
                                   ],
                                 ),
-                              ),
-                            ),
-
-                            // GPS Locate Quick Action
-                            GestureDetector(
-                              onTap: () async {
-                                final area = await ref
-                                    .read(
-                                      userLocationControllerProvider.notifier,
-                                    )
-                                    .requestPermissionAndDetect();
-                                if (context.mounted) {
-                                  final loc = ref.read(
-                                    userLocationControllerProvider,
-                                  );
-                                  final msg = !loc.isInsideDhaka
-                                      ? '📍 Detected: $area (Outside Dhaka). Showing top Dhaka hot deals!'
-                                      : '📍 Location detected: $area! Showing deals near you.';
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(msg),
-                                      backgroundColor: loc.isInsideDhaka
-                                          ? const Color(0xFF15803D)
-                                          : const Color(0xFF1E293B),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.16),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: locationState.isDetecting
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                    : Icon(
-                                        locationState.isAutoDetected
-                                            ? Icons.my_location_rounded
-                                            : Icons.near_me_outlined,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
                               ),
                             ),
 

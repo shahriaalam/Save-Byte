@@ -33,6 +33,7 @@ class _CustomerHotDealsScreenState extends ConsumerState<CustomerHotDealsScreen>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return Container(

@@ -7,6 +7,7 @@ import 'package:save_bite/core/widgets/user_avatar.dart';
 import 'package:save_bite/features/auth/data/auth_repository.dart';
 import 'package:save_bite/features/auth/domain/user_profile.dart';
 import 'package:save_bite/features/auth/presentation/auth_controller.dart';
+import 'package:save_bite/core/widgets/app_logo.dart';
 import 'package:save_bite/features/customer/home/customer_home_screen.dart';
 import 'package:save_bite/features/customer/hot_deals/customer_hot_deals_screen.dart';
 import 'package:save_bite/features/customer/offers/data/customer_offer_repository.dart';
@@ -120,6 +121,27 @@ void main() {
       expect(lastCardRect.bottom, isPositive);
       expect(lastCardRect.bottom, greaterThan(600));
       expect(lastCardRect.bottom, lessThanOrEqualTo(800));
+    });
+
+    testWidgets(
+        'renders redesigned header with location symbol logo, Banasree location, and no right GPS button',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget(const CustomerHomeScreen()));
+      await tester.pumpAndSettle();
+
+      // Verify app logo is rendered with location symbol
+      expect(find.byType(AppLogoIcon), findsWidgets);
+      expect(find.byIcon(Icons.location_on_rounded), findsWidgets);
+
+      // Verify current location is set to Banasree, Dhaka
+      expect(find.text('Current location'), findsOneWidget);
+      expect(find.text('Banasree, Dhaka'), findsWidgets);
+
+      // Verify right-side GPS location buttons are removed
+      expect(find.byIcon(Icons.my_location_rounded), findsNothing);
+      expect(find.byIcon(Icons.near_me_outlined), findsNothing);
+      expect(find.byIcon(Icons.menu_rounded), findsNothing);
+      expect(find.byType(Drawer), findsNothing);
     });
   });
 
@@ -235,21 +257,48 @@ void main() {
       await tester.pumpWidget(createTestWidget(const CustomerProfileScreen()));
       await tester.pumpAndSettle();
 
-      // Verify customer info
+      // Verify customer info & header
       expect(find.text('Rahim Ahmed'), findsWidgets);
       expect(find.text('customer@savebite.com'), findsOneWidget);
-      expect(find.text('01700112233'), findsOneWidget);
-      expect(find.text('Customer Account'), findsOneWidget);
+      expect(find.text('View Profile'), findsOneWidget);
 
-      // Verify Edit Profile and Logout buttons
-      expect(find.text('Edit Profile'), findsWidgets);
-      expect(find.text('Log Out'), findsOneWidget);
+      // Verify Super Saver card & action tiles
+      expect(find.text('Become a Super Saver'), findsWidgets);
+      expect(find.text('Orders'), findsOneWidget);
+      expect(find.text('Addresses'), findsOneWidget);
+      expect(find.text('Favourites'), findsOneWidget);
+      expect(find.text('Vouchers'), findsOneWidget);
+      expect(find.text('Rewards'), findsOneWidget);
+      expect(find.text('Help center'), findsOneWidget);
+      expect(find.text('Contact us'), findsOneWidget);
 
-      // Tap Edit Profile button in AppBar
-      await tester.tap(find.byIcon(Icons.edit_outlined));
+      // Verify menu options list
+      expect(find.text('Refund policy'), findsOneWidget);
+      expect(find.text('Privacy policy'), findsOneWidget);
+      expect(find.text('Join group order'), findsOneWidget);
+      expect(find.text('About'), findsOneWidget);
+      expect(find.text('Log out'), findsOneWidget);
+
+      // Scroll to About and tap it to verify About modal sheet opens and contains Version 1.1.0
+      await tester.ensureVisible(find.text('About'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('About'));
+      await tester.pumpAndSettle();
+      expect(find.text('About SaveBite'), findsOneWidget);
+      expect(find.text('Version 1.1.0 (Build 110)'), findsOneWidget);
+
+      // Close About modal by tapping outside
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+
+      // Tap View Profile
+      await tester.ensureVisible(find.text('View Profile'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('View Profile'));
       await tester.pumpAndSettle();
 
       // Verify bottom sheet appears with editable fields
+      expect(find.text('My Profile'), findsOneWidget);
       expect(find.text('Save Changes'), findsOneWidget);
       expect(find.text('First Name *'), findsOneWidget);
       expect(find.text('Last Name'), findsOneWidget);
@@ -263,12 +312,11 @@ void main() {
         await tester.pumpWidget(createTestWidget(const CustomerProfileScreen()));
         await tester.pumpAndSettle();
 
-        // Verify UserAvatar and change picture button
+        // Verify UserAvatar
         expect(find.byType(UserAvatar), findsWidgets);
-        expect(find.text('Change Profile Picture'), findsOneWidget);
 
-        // Tap Change Profile Picture button
-        await tester.tap(find.text('Change Profile Picture'));
+        // Tap UserAvatar directly on account screen
+        await tester.tap(find.byType(UserAvatar).first);
         await tester.pumpAndSettle();
 
         // Verify ChangeAvatarSheet modal appears
@@ -300,6 +348,37 @@ void main() {
           find.text('Profile picture updated successfully!'),
           findsOneWidget,
         );
+      },
+    );
+
+    testWidgets(
+      'tapping Delete account displays confirmation dialog and triggers deletion',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget(const CustomerProfileScreen()));
+        await tester.pumpAndSettle();
+
+        // Find and tap Delete account option
+        final deleteOption = find.text('Delete account');
+        expect(deleteOption, findsOneWidget);
+        await tester.ensureVisible(deleteOption);
+        await tester.tap(deleteOption);
+        await tester.pumpAndSettle();
+
+        // Verify confirmation dialog appears with warning
+        expect(find.text('Delete Account?'), findsOneWidget);
+        expect(
+          find.text('Are you sure you want to permanently delete your SaveBite account?'),
+          findsOneWidget,
+        );
+        expect(find.text('Cancel'), findsOneWidget);
+        expect(find.text('Delete Account'), findsOneWidget);
+
+        // Tap Delete Account in dialog to confirm
+        await tester.tap(find.widgetWithText(FilledButton, 'Delete Account'));
+        await tester.pumpAndSettle();
+
+        // Verify success snackbar appears
+        expect(find.text('Your account has been deleted.'), findsOneWidget);
       },
     );
 

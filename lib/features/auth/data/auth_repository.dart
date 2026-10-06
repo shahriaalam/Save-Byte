@@ -713,4 +713,33 @@ class AuthRepository {
       await _client.auth.signOut();
     } catch (_) {}
   }
+
+  /// Permanently deletes the currently authenticated user's account and associated session data.
+  Future<void> deleteAccount() async {
+    final currentProfile = _activeSessionProfile;
+    if (currentProfile != null) {
+      _memoryAccounts.remove(currentProfile.email.toLowerCase().trim());
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString('savebite_mock_accounts_v2');
+        if (raw != null) {
+          final decoded = jsonDecode(raw) as Map<String, dynamic>;
+          decoded.remove(currentProfile.email.toLowerCase().trim());
+          await prefs.setString('savebite_mock_accounts_v2', jsonEncode(decoded));
+        }
+      } catch (_) {}
+    }
+
+    try {
+      final user = _client.auth.currentUser;
+      if (user != null) {
+        try {
+          await _client.from(SupabaseConstants.tableProfiles).delete().eq('id', user.id);
+        } catch (_) {}
+      }
+      await _client.auth.signOut();
+    } catch (_) {}
+
+    _activeSessionProfile = null;
+  }
 }
