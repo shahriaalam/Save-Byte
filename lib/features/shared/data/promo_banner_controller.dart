@@ -30,6 +30,14 @@ class PromoBannersNotifier extends AsyncNotifier<List<PromoBanner>> {
     });
   }
 
+  /// Premium restaurant or Admin operation: adds or updates a promo banner.
+  Future<void> upsertBanner(PromoBanner banner) async {
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(promoBannerRepositoryProvider);
+      return repo.upsertBanner(banner);
+    });
+  }
+
   /// Admin operation: resets all 3 banners to default configurations.
   Future<void> resetToDefaults() async {
     state = await AsyncValue.guard(() async {

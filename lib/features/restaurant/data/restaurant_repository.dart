@@ -80,17 +80,24 @@ class RestaurantRepository {
       const demoRes = Restaurant(
         id: 'res-1',
         ownerId: 'demo-restaurant-id',
-        name: "Rahman's Kitchen",
-        description: 'Authentic Bengali biryani, tehari and homemade delicacies.',
-        phone: '01711223344',
-        address: 'House 14, Road 7, Dhanmondi, Dhaka',
+        name: 'Blue Bell Café',
+        description:
+            'Artisanal Coffee Roastery & Italian Bistro crafted with premium coffee beans, fresh pasta, and European pastries in Banasree.',
+        phone: '01711234567',
+        address: 'House 14, Road 4, Block D, Banasree, Dhaka 1219',
         division: 'Dhaka',
-        area: 'Dhanmondi',
-        cuisineType: 'Bengali',
-        openingTime: '11:00 AM',
+        area: 'Banasree',
+        cuisineType: 'Specialty Coffee & Italian Bistro',
+        openingTime: '07:30 AM',
         closingTime: '11:00 PM',
         status: AppConstants.statusApproved,
-        imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600',
+        imageUrl:
+            'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600',
+        isPremium: true,
+        subscriptionPlan: 'gold',
+        boostCredits: 5,
+        hasActiveBanner: true,
+        activeBannerId: 'banner_blue_bell',
       );
       _memoryRestaurants[ownerId] = demoRes;
       await _persistRestaurant(demoRes);
@@ -101,10 +108,20 @@ class RestaurantRepository {
     final newRes = Restaurant(
       id: 'res_${DateTime.now().millisecondsSinceEpoch}',
       ownerId: ownerId,
-      name: defaultName ?? 'My Restaurant',
-      phone: defaultPhone,
+      name: defaultName ?? 'Blue Bell Café',
+      phone: defaultPhone ?? '01711234567',
+      address: 'House 14, Road 4, Block D, Banasree, Dhaka 1219',
       division: 'Dhaka',
-      status: AppConstants.statusPending,
+      area: 'Banasree',
+      cuisineType: 'Specialty Coffee & Italian Bistro',
+      openingTime: '07:30 AM',
+      closingTime: '11:00 PM',
+      status: AppConstants.statusApproved,
+      imageUrl:
+          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600',
+      isPremium: true,
+      subscriptionPlan: 'gold',
+      boostCredits: 5,
     );
     _memoryRestaurants[ownerId] = newRes;
     await _persistRestaurant(newRes);
@@ -140,6 +157,32 @@ class RestaurantRepository {
     return restaurant;
   }
 
+  /// Upgrades or manages restaurant subscription (e.g. SaveBite Gold Merchant).
+  Future<Restaurant> updateSubscription(
+    String ownerId, {
+    required bool isPremium,
+    String? plan,
+    int? boostCredits,
+    bool? hasActiveBanner,
+    String? activeBannerId,
+  }) async {
+    final current = await getRestaurantByOwnerId(ownerId);
+    final updated = current.copyWith(
+      isPremium: isPremium,
+      subscriptionPlan: plan ?? (isPremium ? 'gold' : null),
+      subscriptionExpiresAt: isPremium
+          ? DateTime.now().add(const Duration(days: 30))
+          : null,
+      boostCredits: boostCredits ?? (isPremium ? 5 : 0),
+      hasActiveBanner: hasActiveBanner ?? current.hasActiveBanner,
+      activeBannerId: activeBannerId ?? current.activeBannerId,
+    );
+    return updateRestaurantProfile(updated);
+  }
+
+  /// In-memory map for overrides on default seed offers (for toggling boost or active status).
+  static final Map<String, FoodOffer> _seedOfferOverrides = {};
+
   /// Retrieves all food offers posted by this restaurant.
   Future<List<FoodOffer>> getRestaurantOffers(String restaurantId) async {
     final List<FoodOffer> results = [];
@@ -166,51 +209,196 @@ class RestaurantRepository {
       }
     }
 
-    // Fallback seed offers if this is demo restaurant res-1
-    if (results.isEmpty && (restaurantId == 'res-1' || restaurantId.contains('demo'))) {
-      results.addAll([
+    // Fallback seed offers for Blue Bell Café (res-1 or demo)
+    if (results.isEmpty &&
+        (restaurantId == 'res-1' || restaurantId.contains('demo'))) {
+      final defaultSeed = [
         FoodOffer(
-          id: 'offer-1',
+          id: 'offer-bb-1',
           restaurantId: restaurantId,
-          restaurantName: "Rahman's Kitchen",
-          restaurantAddress: 'Dhanmondi, Dhaka',
+          restaurantName: 'Blue Bell Café',
+          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
           division: 'Dhaka',
-          area: 'Dhanmondi',
-          title: 'Chicken Biryani',
-          description: 'Fresh chicken biryani prepared today, packaged safely before closing.',
-          category: 'Rice',
-          originalPrice: 250,
-          discountedPrice: 150,
+          area: 'Banasree',
+          title: 'Tuscan Slow-Baked Lasagna',
+          description:
+              'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner surplus discovery.',
+          category: 'Italian',
+          originalPrice: 750,
+          discountedPrice: 420,
+          quantity: 6,
+          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+          availableUntil: DateTime.now().add(const Duration(hours: 4)),
+          imageUrl:
+              'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600',
+          isActive: true,
+          adminBlocked: false,
+          isBoosted: true,
+          boostedUntil: DateTime.now().add(const Duration(hours: 24)),
+        ),
+        FoodOffer(
+          id: 'offer-bb-2',
+          restaurantId: restaurantId,
+          restaurantName: 'Blue Bell Café',
+          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+          division: 'Dhaka',
+          area: 'Banasree',
+          title: 'Artisan Café Club Sandwich',
+          description:
+              'Triple-decker sourdough bread layered with smoked chicken, organic fried egg, crisp lettuce, cheddar, and Dijon mayo.',
+          category: 'Snacks',
+          originalPrice: 380,
+          discountedPrice: 220,
           quantity: 8,
           availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
           availableUntil: DateTime.now().add(const Duration(hours: 3)),
-          imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600',
+          imageUrl:
+              'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600',
           isActive: true,
           adminBlocked: false,
+          isBoosted: true,
+          boostedUntil: DateTime.now().add(const Duration(hours: 18)),
         ),
         FoodOffer(
-          id: 'offer-5',
+          id: 'offer-bb-3',
           restaurantId: restaurantId,
-          restaurantName: "Rahman's Kitchen",
-          restaurantAddress: 'Dhanmondi, Dhaka',
+          restaurantName: 'Blue Bell Café',
+          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
           division: 'Dhaka',
-          area: 'Dhanmondi',
-          title: 'Special Beef Tehari',
-          description: 'Aromatic mustard oil cooked beef tehari with fresh spices.',
-          category: 'Rice',
-          originalPrice: 280,
-          discountedPrice: 180,
-          quantity: 3,
-          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
-          availableUntil: DateTime.now().add(const Duration(hours: 3)),
-          imageUrl: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600',
+          area: 'Banasree',
+          title: 'Pistachio Flaky Brioche',
+          description:
+              'Golden French brioche swirl infused with Bronte pistachio cream and white chocolate crumble, baked fresh this afternoon.',
+          category: 'Bakery',
+          originalPrice: 290,
+          discountedPrice: 160,
+          quantity: 10,
+          availableFrom: DateTime.now().subtract(const Duration(hours: 2)),
+          availableUntil: DateTime.now().add(const Duration(hours: 5)),
+          imageUrl:
+              'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600',
           isActive: true,
           adminBlocked: false,
+          isBoosted: false,
         ),
-      ]);
+        FoodOffer(
+          id: 'offer-bb-4',
+          restaurantId: restaurantId,
+          restaurantName: 'Blue Bell Café',
+          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+          division: 'Dhaka',
+          area: 'Banasree',
+          title: 'Truffle Fettuccine Alfredo',
+          description:
+              'Handcrafted bronze-cut fettuccine tossed in aromatic black truffle butter, heavy cream, garlic, and freshly cracked black pepper.',
+          category: 'Italian',
+          originalPrice: 850,
+          discountedPrice: 480,
+          quantity: 4,
+          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+          availableUntil: DateTime.now().add(const Duration(hours: 3)),
+          imageUrl:
+              'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600',
+          isActive: true,
+          adminBlocked: false,
+          isBoosted: false,
+        ),
+        FoodOffer(
+          id: 'offer-bb-5',
+          restaurantId: restaurantId,
+          restaurantName: 'Blue Bell Café',
+          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+          division: 'Dhaka',
+          area: 'Banasree',
+          title: 'Venetian Espresso Tiramisu',
+          description:
+              'Traditional savoiardi ladyfingers soaked in single-origin Blue Bell espresso roast, whipped mascarpone, and Valrhona cocoa.',
+          category: 'Dessert',
+          originalPrice: 420,
+          discountedPrice: 240,
+          quantity: 7,
+          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+          availableUntil: DateTime.now().add(const Duration(hours: 4)),
+          imageUrl:
+              'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600',
+          isActive: true,
+          adminBlocked: false,
+          isBoosted: false,
+        ),
+      ];
+
+      for (final seed in defaultSeed) {
+        if (_seedOfferOverrides.containsKey(seed.id)) {
+          results.add(_seedOfferOverrides[seed.id]!);
+        } else {
+          results.add(seed);
+        }
+      }
     }
 
     return results;
+  }
+
+  /// Boosts a food offer for 24 hours (increases discovery ranking).
+  Future<void> boostOffer(String offerId) async {
+    final idx = _createdOffers.indexWhere((o) => o.id == offerId);
+    if (idx != -1) {
+      _createdOffers[idx] = _createdOffers[idx].copyWith(
+        isBoosted: true,
+        boostedUntil: DateTime.now().add(const Duration(hours: 24)),
+      );
+    } else {
+      // Check in seeded offers
+      final current = (await getRestaurantOffers('res-1'))
+          .where((o) => o.id == offerId)
+          .firstOrNull;
+      if (current != null) {
+        _seedOfferOverrides[offerId] = current.copyWith(
+          isBoosted: true,
+          boostedUntil: DateTime.now().add(const Duration(hours: 24)),
+        );
+      }
+    }
+
+    if (!_isLocalOnly) {
+      try {
+        await _client.from(SupabaseConstants.tableOffers).update({
+          'is_boosted': true,
+          'boosted_until':
+              DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+        }).eq('id', offerId);
+      } catch (_) {}
+    }
+  }
+
+  /// Removes boost from an offer.
+  Future<void> unboostOffer(String offerId) async {
+    final idx = _createdOffers.indexWhere((o) => o.id == offerId);
+    if (idx != -1) {
+      _createdOffers[idx] = _createdOffers[idx].copyWith(
+        isBoosted: false,
+        boostedUntil: null,
+      );
+    } else {
+      final current = (await getRestaurantOffers('res-1'))
+          .where((o) => o.id == offerId)
+          .firstOrNull;
+      if (current != null) {
+        _seedOfferOverrides[offerId] = current.copyWith(
+          isBoosted: false,
+          boostedUntil: null,
+        );
+      }
+    }
+
+    if (!_isLocalOnly) {
+      try {
+        await _client.from(SupabaseConstants.tableOffers).update({
+          'is_boosted': false,
+          'boosted_until': null,
+        }).eq('id', offerId);
+      } catch (_) {}
+    }
   }
 
   /// Places a new food offer post.
@@ -233,7 +421,7 @@ class RestaurantRepository {
       restaurantName: restaurant.name,
       restaurantAddress: restaurant.address,
       division: restaurant.division ?? 'Dhaka',
-      area: restaurant.area,
+      area: restaurant.area ?? 'Banasree',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -256,6 +444,7 @@ class RestaurantRepository {
   /// Deletes an offer.
   Future<void> deleteOffer(String offerId) async {
     _createdOffers.removeWhere((o) => o.id == offerId);
+    _seedOfferOverrides.remove(offerId);
 
     if (!_isLocalOnly) {
       try {
@@ -274,6 +463,13 @@ class RestaurantRepository {
     final idx = _createdOffers.indexWhere((o) => o.id == offerId);
     if (idx != -1) {
       _createdOffers[idx] = _createdOffers[idx].copyWith(isActive: isActive);
+    } else {
+      final current = (await getRestaurantOffers('res-1'))
+          .where((o) => o.id == offerId)
+          .firstOrNull;
+      if (current != null) {
+        _seedOfferOverrides[offerId] = current.copyWith(isActive: isActive);
+      }
     }
 
     if (!_isLocalOnly) {

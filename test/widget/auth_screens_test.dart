@@ -366,5 +366,18 @@ void main() {
       expect(find.byType(FoodLoadingAnimation), findsOneWidget);
       expect(find.text('Logging in to SaveBite...'), findsOneWidget);
     });
+
+    testWidgets('LoginScreen Quick Fill Restaurant populates restaurant credentials', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createTestScope(const LoginScreen()));
+
+      expect(find.text('🍽️ Restaurant'), findsOneWidget);
+      await tester.ensureVisible(find.text('🍽️ Restaurant'));
+      await tester.tap(find.text('🍽️ Restaurant'));
+      await tester.pump();
+
+      expect(find.text('restaurant@savebite.com'), findsOneWidget);
+    });
   });
 }

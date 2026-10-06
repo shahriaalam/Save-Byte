@@ -173,6 +173,28 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
     }
   }
 
+  void _quickFillSampleOffer() {
+    setState(() {
+      _titleController.text = 'Truffle Beef Lasagna (Surplus Box)';
+      _descriptionController.text =
+          'Artisan layered lasagna with slow-cooked beef ragu, parmesan béchamel, and truffle aroma. Prepared fresh today at Blue Bell Café.';
+      _selectedCategory = 'Bakery';
+      _originalPriceController.text = '850';
+      _discountedPriceController.text = '420';
+      _quantityController.text = '5';
+      _selectedHoursUntilExpiry = 3;
+      _imageUrl =
+          'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600&auto=format&fit=crop&q=80';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⚡ Filled sample surplus food offer!'),
+        backgroundColor: Color(0xFFC2410C),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final restaurantAsync = ref.watch(currentRestaurantProvider);
@@ -263,7 +285,33 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
+
+                    // Quick Fill Sample Offer Button
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          foregroundColor: const Color(0xFFC2410C),
+                          backgroundColor: const Color(0xFFFFF7ED),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: const BorderSide(color: Color(0xFFFDBA74)),
+                          ),
+                        ),
+                        icon: const Icon(Icons.flash_on_rounded, size: 16),
+                        label: const Text(
+                          'Quick Fill Sample Offer',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onPressed: _quickFillSampleOffer,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
                     // Offer Title
                     TextFormField(

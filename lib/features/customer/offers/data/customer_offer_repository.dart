@@ -210,9 +210,143 @@ class CustomerOfferRepository {
       status: AppConstants.statusApproved,
       imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600',
     ),
+    Restaurant(
+      id: 'res-blue-bell',
+      ownerId: 'demo-restaurant-id',
+      name: 'Blue Bell Café',
+      description:
+          'Artisanal Coffee Roastery & Italian Bistro crafted with premium coffee beans, fresh pasta, and European pastries in Banasree.',
+      phone: '01711234567',
+      address: 'House 14, Road 4, Block D, Banasree, Dhaka 1219',
+      division: 'Dhaka',
+      area: 'Banasree',
+      cuisineType: 'Specialty Coffee & Italian Bistro',
+      openingTime: '07:30 AM',
+      closingTime: '11:00 PM',
+      status: AppConstants.statusApproved,
+      imageUrl:
+          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600',
+      isPremium: true,
+      subscriptionPlan: 'gold',
+      boostCredits: 5,
+      hasActiveBanner: true,
+      activeBannerId: 'banner_blue_bell',
+    ),
   ];
 
   static final List<FoodOffer> _seedOffers = [
+    FoodOffer(
+      id: 'offer-bb-1',
+      restaurantId: 'res-blue-bell',
+      restaurantName: 'Blue Bell Café',
+      restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+      division: 'Dhaka',
+      area: 'Banasree',
+      title: 'Tuscan Slow-Baked Lasagna',
+      description:
+          'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner surplus discovery.',
+      category: 'Italian',
+      originalPrice: 750,
+      discountedPrice: 420,
+      quantity: 6,
+      availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+      availableUntil: DateTime.now().add(const Duration(hours: 4)),
+      imageUrl:
+          'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600',
+      isActive: true,
+      adminBlocked: false,
+      isBoosted: true,
+      boostedUntil: DateTime.now().add(const Duration(hours: 24)),
+    ),
+    FoodOffer(
+      id: 'offer-bb-2',
+      restaurantId: 'res-blue-bell',
+      restaurantName: 'Blue Bell Café',
+      restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+      division: 'Dhaka',
+      area: 'Banasree',
+      title: 'Artisan Café Club Sandwich',
+      description:
+          'Triple-decker sourdough bread layered with smoked chicken, organic fried egg, crisp lettuce, cheddar, and Dijon mayo.',
+      category: 'Snacks',
+      originalPrice: 380,
+      discountedPrice: 220,
+      quantity: 8,
+      availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+      availableUntil: DateTime.now().add(const Duration(hours: 3)),
+      imageUrl:
+          'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600',
+      isActive: true,
+      adminBlocked: false,
+      isBoosted: true,
+      boostedUntil: DateTime.now().add(const Duration(hours: 18)),
+    ),
+    FoodOffer(
+      id: 'offer-bb-3',
+      restaurantId: 'res-blue-bell',
+      restaurantName: 'Blue Bell Café',
+      restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+      division: 'Dhaka',
+      area: 'Banasree',
+      title: 'Pistachio Flaky Brioche',
+      description:
+          'Golden French brioche swirl infused with Bronte pistachio cream and white chocolate crumble, baked fresh this afternoon.',
+      category: 'Bakery',
+      originalPrice: 290,
+      discountedPrice: 160,
+      quantity: 10,
+      availableFrom: DateTime.now().subtract(const Duration(hours: 2)),
+      availableUntil: DateTime.now().add(const Duration(hours: 5)),
+      imageUrl:
+          'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600',
+      isActive: true,
+      adminBlocked: false,
+      isBoosted: false,
+    ),
+    FoodOffer(
+      id: 'offer-bb-4',
+      restaurantId: 'res-blue-bell',
+      restaurantName: 'Blue Bell Café',
+      restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+      division: 'Dhaka',
+      area: 'Banasree',
+      title: 'Truffle Fettuccine Alfredo',
+      description:
+          'Handcrafted bronze-cut fettuccine tossed in aromatic black truffle butter, heavy cream, garlic, and freshly cracked black pepper.',
+      category: 'Italian',
+      originalPrice: 850,
+      discountedPrice: 480,
+      quantity: 4,
+      availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+      availableUntil: DateTime.now().add(const Duration(hours: 3)),
+      imageUrl:
+          'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600',
+      isActive: true,
+      adminBlocked: false,
+      isBoosted: false,
+    ),
+    FoodOffer(
+      id: 'offer-bb-5',
+      restaurantId: 'res-blue-bell',
+      restaurantName: 'Blue Bell Café',
+      restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+      division: 'Dhaka',
+      area: 'Banasree',
+      title: 'Venetian Espresso Tiramisu',
+      description:
+          'Traditional savoiardi ladyfingers soaked in single-origin Blue Bell espresso roast, whipped mascarpone, and Valrhona cocoa.',
+      category: 'Dessert',
+      originalPrice: 420,
+      discountedPrice: 240,
+      quantity: 7,
+      availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+      availableUntil: DateTime.now().add(const Duration(hours: 4)),
+      imageUrl:
+          'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600',
+      isActive: true,
+      adminBlocked: false,
+      isBoosted: false,
+    ),
     FoodOffer(
       id: 'offer-1',
       restaurantId: 'res-1',
@@ -607,7 +741,7 @@ class CustomerOfferRepository {
     }
 
     // Filter seed offers based on parameters
-    return _seedOffers.where((offer) {
+    final results = _seedOffers.where((offer) {
       if (!offer.isVisibleToCustomer()) return false;
       if (category != null && category.isNotEmpty && category != 'All') {
         if (!matchesCategory(offer, category)) return false;
@@ -637,6 +771,15 @@ class CustomerOfferRepository {
       }
       return true;
     }).toList();
+
+    // Sort boosted offers to the top
+    results.sort((a, b) {
+      if (a.isBoosted && !b.isBoosted) return -1;
+      if (!a.isBoosted && b.isBoosted) return 1;
+      return 0;
+    });
+
+    return results;
   }
 
   /// Retrieves single food offer by ID.

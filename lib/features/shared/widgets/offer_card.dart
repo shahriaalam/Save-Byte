@@ -145,6 +145,46 @@ class OfferCard extends StatelessWidget {
                     ),
                   ),
 
+                  // Boosted Post Badge
+                  if (offer.isBoosted)
+                    Positioned(
+                      top: 12,
+                      right: offer.discountPercentage > 0 ? 92 : 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4.5,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF5722), Color(0xFFFF9800)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF5722).withValues(alpha: 0.45),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '🔥 BOOSTED',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   // Discount Percentage Badge
                   if (offer.discountPercentage > 0)
                     Positioned(

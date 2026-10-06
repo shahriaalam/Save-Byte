@@ -41,6 +41,20 @@ class PromoBannerRepository {
     return updatedList;
   }
 
+  /// Adds or updates a promotional banner (e.g. for premium restaurants).
+  Future<List<PromoBanner>> upsertBanner(PromoBanner banner) async {
+    final current = await getBanners();
+    final exists = current.any((b) => b.id == banner.id);
+    List<PromoBanner> updatedList;
+    if (exists) {
+      updatedList = current.map((b) => b.id == banner.id ? banner : b).toList();
+    } else {
+      updatedList = [banner, ...current];
+    }
+    await _saveBanners(updatedList);
+    return updatedList;
+  }
+
   /// Replaces the entire list of 3 banners (Admin only).
   Future<List<PromoBanner>> saveAllBanners(List<PromoBanner> banners) async {
     await _saveBanners(banners);

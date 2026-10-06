@@ -44,6 +44,10 @@ const List<RestaurantPhotoPreset> kRestaurantPhotoPresets = [
     url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
   ),
   RestaurantPhotoPreset(
+    name: 'Artisanal Roastery & Bistro',
+    url: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80',
+  ),
+  RestaurantPhotoPreset(
     name: 'Grill & BBQ',
     url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
   ),
@@ -243,6 +247,30 @@ class _RestaurantProfileScreenState
     }
   }
 
+  void _quickFillBlueBell() {
+    setState(() {
+      _nameController.text = 'Blue Bell Café';
+      _phoneController.text = '01711234567';
+      _addressController.text = 'House 14, Road 4, Block D, Banasree, Dhaka';
+      _selectedDivision = 'Dhaka';
+      _selectedArea = 'Banasree';
+      _cuisineController.text = 'Specialty Coffee & Italian Bistro';
+      _descriptionController.text =
+          'Artisanal Coffee Roastery & Italian Bistro in Banasree. Handcrafted pasta, slow-roasted beans, sourdough sandwiches, and signature tiramisu.';
+      _openingTimeController.text = '07:30 AM';
+      _closingTimeController.text = '11:00 PM';
+      _imageUrl =
+          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⚡ Filled Blue Bell Café info!'),
+        backgroundColor: Color(0xFFC2410C),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final restaurantAsync = ref.watch(currentRestaurantProvider);
@@ -336,7 +364,33 @@ class _RestaurantProfileScreenState
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
+
+                    // Quick Fill Blue Bell Info Button
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          foregroundColor: const Color(0xFFC2410C),
+                          backgroundColor: const Color(0xFFFFF7ED),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: const BorderSide(color: Color(0xFFFDBA74)),
+                          ),
+                        ),
+                        icon: const Icon(Icons.flash_on_rounded, size: 16),
+                        label: const Text(
+                          'Quick Fill (Blue Bell Café)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onPressed: _quickFillBlueBell,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
                     // Restaurant Profile Picture Section
                     Text(

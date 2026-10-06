@@ -23,6 +23,8 @@ class FoodOffer {
     this.restaurantAddress,
     this.division,
     this.area,
+    this.isBoosted = false,
+    this.boostedUntil,
   });
 
   final String id;
@@ -41,6 +43,8 @@ class FoodOffer {
   final String? blockedReason;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isBoosted;
+  final DateTime? boostedUntil;
 
   // Joined presentation fields
   final String? restaurantName;
@@ -111,6 +115,10 @@ class FoodOffer {
           (json['restaurants'] != null
               ? (json['restaurants'] as Map<String, dynamic>)['area'] as String?
               : null),
+      isBoosted: (json['is_boosted'] as bool?) ?? false,
+      boostedUntil: json['boosted_until'] != null
+          ? DateTime.tryParse(json['boosted_until'] as String)
+          : null,
     );
   }
 
@@ -134,6 +142,8 @@ class FoodOffer {
       if (blockedReason != null) 'blocked_reason': blockedReason,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
+      'is_boosted': isBoosted,
+      if (boostedUntil != null) 'boosted_until': boostedUntil!.toIso8601String(),
     };
   }
 
@@ -158,6 +168,8 @@ class FoodOffer {
     String? restaurantAddress,
     String? division,
     String? area,
+    bool? isBoosted,
+    DateTime? boostedUntil,
   }) {
     return FoodOffer(
       id: id ?? this.id,
@@ -180,6 +192,8 @@ class FoodOffer {
       restaurantAddress: restaurantAddress ?? this.restaurantAddress,
       division: division ?? this.division,
       area: area ?? this.area,
+      isBoosted: isBoosted ?? this.isBoosted,
+      boostedUntil: boostedUntil ?? this.boostedUntil,
     );
   }
 }

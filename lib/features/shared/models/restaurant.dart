@@ -19,6 +19,12 @@ class Restaurant {
     this.rejectionReason,
     this.createdAt,
     this.updatedAt,
+    this.isPremium = false,
+    this.subscriptionPlan,
+    this.subscriptionExpiresAt,
+    this.boostCredits = 0,
+    this.hasActiveBanner = false,
+    this.activeBannerId,
   });
 
   final String id;
@@ -37,11 +43,18 @@ class Restaurant {
   final String? rejectionReason;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isPremium;
+  final String? subscriptionPlan;
+  final DateTime? subscriptionExpiresAt;
+  final int boostCredits;
+  final bool hasActiveBanner;
+  final String? activeBannerId;
 
   bool get isApproved => status == AppConstants.statusApproved;
   bool get isPending => status == AppConstants.statusPending;
   bool get isSuspended => status == AppConstants.statusSuspended;
   bool get isRejected => status == AppConstants.statusRejected;
+  bool get hasGoldSubscription => isPremium && (subscriptionPlan == 'gold' || subscriptionPlan == 'premium');
 
   /// Profile completeness check:
   /// Requires restaurant name, phone, address, division, area, profile picture (imageUrl), and cuisine type.
@@ -90,6 +103,14 @@ class Restaurant {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'] as String)
           : null,
+      isPremium: (json['is_premium'] as bool?) ?? false,
+      subscriptionPlan: json['subscription_plan'] as String?,
+      subscriptionExpiresAt: json['subscription_expires_at'] != null
+          ? DateTime.tryParse(json['subscription_expires_at'] as String)
+          : null,
+      boostCredits: (json['boost_credits'] as num?)?.toInt() ?? 0,
+      hasActiveBanner: (json['has_active_banner'] as bool?) ?? false,
+      activeBannerId: json['active_banner_id'] as String?,
     );
   }
 
@@ -111,6 +132,13 @@ class Restaurant {
       if (rejectionReason != null) 'rejection_reason': rejectionReason,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
+      'is_premium': isPremium,
+      if (subscriptionPlan != null) 'subscription_plan': subscriptionPlan,
+      if (subscriptionExpiresAt != null)
+        'subscription_expires_at': subscriptionExpiresAt!.toIso8601String(),
+      'boost_credits': boostCredits,
+      'has_active_banner': hasActiveBanner,
+      if (activeBannerId != null) 'active_banner_id': activeBannerId,
     };
   }
 
@@ -131,6 +159,12 @@ class Restaurant {
     String? rejectionReason,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isPremium,
+    String? subscriptionPlan,
+    DateTime? subscriptionExpiresAt,
+    int? boostCredits,
+    bool? hasActiveBanner,
+    String? activeBannerId,
   }) {
     return Restaurant(
       id: id ?? this.id,
@@ -149,6 +183,13 @@ class Restaurant {
       rejectionReason: rejectionReason ?? this.rejectionReason,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isPremium: isPremium ?? this.isPremium,
+      subscriptionPlan: subscriptionPlan ?? this.subscriptionPlan,
+      subscriptionExpiresAt:
+          subscriptionExpiresAt ?? this.subscriptionExpiresAt,
+      boostCredits: boostCredits ?? this.boostCredits,
+      hasActiveBanner: hasActiveBanner ?? this.hasActiveBanner,
+      activeBannerId: activeBannerId ?? this.activeBannerId,
     );
   }
 }

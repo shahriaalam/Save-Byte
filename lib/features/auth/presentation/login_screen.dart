@@ -529,8 +529,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           const SizedBox(height: 10),
 
                                           // Quick Demo Credentials for Testing
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                          Wrap(
+                                            alignment: WrapAlignment.center,
+                                            crossAxisAlignment: WrapCrossAlignment.center,
+                                            spacing: 6,
+                                            runSpacing: 4,
                                             children: [
                                               Text(
                                                 'Quick Fill:',
@@ -559,6 +562,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                   child: const Text(
                                                     '👤 Customer',
                                                     style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              InkWell(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _emailController.text = 'restaurant@savebite.com';
+                                                    _passwordController.text = 'password';
+                                                  });
+                                                },
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFFFF7ED),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: const Color(0xFFFDBA74)),
+                                                  ),
+                                                  child: const Text(
+                                                    '🍽️ Restaurant',
+                                                    style: TextStyle(
+                                                      fontSize: 10.5,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: Color(0xFFC2410C),
+                                                    ),
                                                   ),
                                                 ),
                                               ),

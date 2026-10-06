@@ -246,6 +246,27 @@ void main() {
       expect(find.text('Surplus Price (৳) *'), findsOneWidget);
       expect(find.text('Publish Surplus Food Post'), findsOneWidget);
     });
+
+    testWidgets('Quick Fill Sample Offer populates offer form fields', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const CreateOfferScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      final quickFillBtn = find.text('Quick Fill Sample Offer');
+      expect(quickFillBtn, findsOneWidget);
+      await tester.tap(quickFillBtn);
+      await tester.pump();
+
+      expect(find.text('Truffle Beef Lasagna (Surplus Box)'), findsOneWidget);
+      expect(find.text('420'), findsOneWidget);
+    });
   });
 
   group('Restaurant Profile Screen', () {
@@ -266,6 +287,199 @@ void main() {
       expect(find.text('Dhaka'), findsWidgets);
       expect(find.text('Dhanmondi'), findsWidgets);
       expect(find.text('Save Restaurant Profile'), findsOneWidget);
+    });
+
+    testWidgets('Quick Fill (Blue Bell Café) populates profile fields', (tester) async {
+      tester.view.physicalSize = const Size(400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantProfileScreen(),
+        restaurant: incompleteRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      final quickFillBtn = find.text('Quick Fill (Blue Bell Café)');
+      expect(quickFillBtn, findsOneWidget);
+      await tester.tap(quickFillBtn);
+      await tester.pump();
+
+      expect(find.text('Blue Bell Café'), findsWidgets);
+      expect(find.text('01711234567'), findsOneWidget);
+    });
+  });
+
+  group('Restaurant Dashboard - Navigation, Admin Offers, Account & Owner Profile', () {
+    testWidgets('floating nav bar has Home in the middle: Posts, Offers, Home, Info, Account', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Check all 5 nav tabs exist by their precise ValueKeys
+      expect(find.byKey(const ValueKey('restaurant_nav_Posts')), findsOneWidget);
+      expect(find.byKey(const ValueKey('restaurant_nav_Offers')), findsOneWidget);
+      expect(find.byKey(const ValueKey('restaurant_nav_Home')), findsOneWidget);
+      expect(find.byKey(const ValueKey('restaurant_nav_Info')), findsOneWidget);
+      expect(find.byKey(const ValueKey('restaurant_nav_Account')), findsOneWidget);
+
+      // Verify Home is currently selected (rendered on Home view)
+      expect(find.text('Post Surplus Food'), findsOneWidget);
+    });
+
+    testWidgets('Offers tab displays Admin Promotional Packages (Banner 2000 tk, Boost 600 tk)', (tester) async {
+      tester.view.physicalSize = const Size(400, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap Offers nav tab using key
+      await tester.tap(find.byKey(const ValueKey('restaurant_nav_Offers')));
+      await tester.pumpAndSettle();
+
+      // Check Admin offers header and packages
+      expect(find.text('Admin Promotional Offers'), findsOneWidget);
+      expect(find.text('1 Homepage Hero Banner (24 Hours)'), findsOneWidget);
+      expect(find.text('৳2,000'), findsWidgets);
+      expect(find.text('Post Boost for 24 Hours'), findsOneWidget);
+      expect(find.text('৳600'), findsWidgets);
+      expect(find.text('Weekend 48h Surge Boost Pack'), findsOneWidget);
+      expect(find.textContaining('Weekly Hero Banner'), findsOneWidget);
+    });
+
+    testWidgets('Account tab is organized with Owner Profile, Gold card, and dark red Delete Account button', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap Account nav tab using key
+      await tester.tap(find.byKey(const ValueKey('restaurant_nav_Account')));
+      await tester.pumpAndSettle();
+
+      // Verify user-style account screen elements
+      expect(find.text('Owner Profile'), findsWidgets);
+      expect(find.textContaining('SaveBite Gold Merchant'), findsOneWidget);
+      expect(find.text('Request Info Update (Admin Review)'), findsOneWidget);
+      expect(find.text('Operating Hours & Status'), findsOneWidget);
+      expect(find.text('Surplus Food Safety Rules'), findsOneWidget);
+      expect(find.text('About'), findsOneWidget);
+      expect(find.text('Delete Account'), findsOneWidget);
+    });
+
+    testWidgets('Owner Profile dialog opens and displays verified owner credentials', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Navigate to Account tab using key
+      await tester.tap(find.byKey(const ValueKey('restaurant_nav_Account')));
+      await tester.pumpAndSettle();
+
+      // Tap Owner Profile option
+      await tester.tap(find.text('Owner Profile (Verified)'));
+      await tester.pumpAndSettle();
+
+      // Check owner dialog contents
+      expect(find.text("Rahman's Kitchen"), findsWidgets);
+      expect(find.textContaining('TRAD/DSCC/019284/2024'), findsOneWidget);
+      expect(find.textContaining('cannot be edited directly'), findsOneWidget);
+    });
+
+    testWidgets('Request Info Update submits change request and requires Admin Approval', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Navigate to Account tab using key
+      await tester.tap(find.byKey(const ValueKey('restaurant_nav_Account')));
+      await tester.pumpAndSettle();
+
+      // Tap Request Info Update
+      await tester.tap(find.text('Request Info Update (Admin Review)'));
+      await tester.pumpAndSettle();
+
+      // Check dialog
+      expect(find.text('Request Info Change'), findsOneWidget);
+      expect(find.textContaining('require Admin review'), findsOneWidget);
+
+      // Scroll to ensure Submit button is visible and tap it
+      final submitBtn = find.text('Submit Change Request to Admin');
+      await tester.ensureVisible(submitBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(submitBtn);
+      await tester.pumpAndSettle();
+
+      // Verify pending review banner is shown on Account screen
+      expect(find.text('Change Request Pending Admin Review'), findsOneWidget);
+      expect(find.text('Demo: Simulate Admin Approval'), findsOneWidget);
+    });
+
+    testWidgets('tapping About opens aesthetic SaveBite Partner Portal about sheet', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Navigate to Account tab using key
+      await tester.tap(find.byKey(const ValueKey('restaurant_nav_Account')));
+      await tester.pumpAndSettle();
+
+      // Tap About option
+      final aboutTile = find.text('About');
+      await tester.ensureVisible(aboutTile);
+      await tester.pumpAndSettle();
+      await tester.tap(aboutTile);
+      await tester.pumpAndSettle();
+
+      // Verify rich About sheet contents matching user app
+      expect(find.text('SaveBite'), findsWidgets);
+      expect(find.text('Smart Surplus Food Rescue Platform'), findsOneWidget);
+      expect(find.text('Version 1.1.0 (Build 110)'), findsOneWidget);
+      expect(find.text('About SaveBite'), findsOneWidget);
+      expect(find.text('Our Community Impact'), findsOneWidget);
+      expect(find.text('Key Features'), findsOneWidget);
+      expect(find.text('SaveBite Technologies Ltd.'), findsOneWidget);
     });
   });
 }

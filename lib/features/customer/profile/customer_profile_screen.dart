@@ -2277,6 +2277,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     Expanded(
                       child: _buildActionTile(
                         icon: Icons.receipt_long_outlined,
+                        iconColor: const Color(0xFF059669),
+                        iconBgColor: const Color(0xFFECFDF5),
                         label: 'Orders',
                         onTap: () => _showOrdersModal(context),
                       ),
@@ -2285,6 +2287,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     Expanded(
                       child: _buildActionTile(
                         icon: Icons.menu_book_outlined,
+                        iconColor: const Color(0xFF0284C7),
+                        iconBgColor: const Color(0xFFF0F9FF),
                         label: 'Addresses',
                         onTap: () => _showAddressesModal(context),
                       ),
@@ -2293,6 +2297,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     Expanded(
                       child: _buildActionTile(
                         icon: Icons.favorite_border_rounded,
+                        iconColor: const Color(0xFFE11D48),
+                        iconBgColor: const Color(0xFFFFF1F2),
                         label: 'Favourites',
                         onTap: () => _showFavouritesModal(context),
                       ),
@@ -2301,6 +2307,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     Expanded(
                       child: _buildActionTile(
                         icon: Icons.confirmation_number_outlined,
+                        iconColor: const Color(0xFFD97706),
+                        iconBgColor: const Color(0xFFFFFBEB),
                         label: 'Vouchers',
                         onTap: () => _showVouchersModal(context),
                       ),
@@ -2315,6 +2323,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     Expanded(
                       child: _buildActionTile(
                         icon: Icons.card_giftcard_rounded,
+                        iconColor: const Color(0xFF7C3AED),
+                        iconBgColor: const Color(0xFFF5F3FF),
                         label: 'Rewards',
                         onTap: () => _showRewardsModal(context),
                       ),
@@ -2323,6 +2333,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     Expanded(
                       child: _buildActionTile(
                         icon: Icons.headset_mic_outlined,
+                        iconColor: const Color(0xFF0891B2),
+                        iconBgColor: const Color(0xFFECFEFF),
                         label: 'Help center',
                         onTap: () => _showHelpCenterModal(context),
                       ),
@@ -2331,6 +2343,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     Expanded(
                       child: _buildActionTile(
                         icon: Icons.phone_outlined,
+                        iconColor: const Color(0xFFEA580C),
+                        iconBgColor: const Color(0xFFFFF7ED),
                         label: 'Contact us',
                         onTap: () => _showContactUsModal(context),
                       ),
@@ -2500,6 +2514,8 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
 
   Widget _buildActionTile({
     required IconData icon,
+    required Color iconColor,
+    required Color iconBgColor,
     required String label,
     required VoidCallback onTap,
   }) {
@@ -2509,7 +2525,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 76,
+          height: 82,
           decoration: BoxDecoration(
             color: const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(16),
@@ -2528,10 +2544,20 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: const Color(0xFFE11D48),
-                size: 24,
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 20,
+                  ),
+                ),
               ),
               const SizedBox(height: 6),
               Text(
