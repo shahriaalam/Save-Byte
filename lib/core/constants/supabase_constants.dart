@@ -19,10 +19,22 @@ abstract final class SupabaseConstants {
   static const String tableRestaurants = 'restaurants';
   static const String tableOffers = 'offers';
   static const String tablePromoBanners = 'promo_banners';
+  static const String tableOrders = 'orders';
+  static const String tableCustomerAddresses = 'customer_addresses';
+  static const String tableFavorites = 'favorites';
+  static const String tableVouchers = 'vouchers';
+  static const String tableUserVouchers = 'user_vouchers';
+  static const String tableRestaurantVerifications = 'restaurant_verifications';
+  static const String tableAdPackages = 'ad_packages';
+  static const String tableReviews = 'reviews';
+  static const String tableNotifications = 'notifications';
+  static const String tableGroupOrders = 'group_orders';
 
   // Storage buckets (Section 51)
   static const String bucketAvatars = 'avatars';
   static const String bucketRestaurantImages = 'restaurant-images';
   static const String bucketOfferImages = 'offer-images';
   static const String bucketPromoBanners = 'promo-banners';
+  static const String bucketVerificationDocuments = 'verification-documents';
+  static const String bucketReviewImages = 'review-images';
 }

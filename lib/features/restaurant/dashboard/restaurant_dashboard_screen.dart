@@ -244,7 +244,7 @@ class _RestaurantDashboardScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Owner Profile (Verified)',
+                          'Owner Profile',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -3012,202 +3012,374 @@ class _RestaurantDashboardScreenState
               ),
 
             // ==========================================
-            // 3. QUICK ACTION TILES (7 items with vibrant circular icons)
+            // 3. QUICK ACTION TILES (4 items in balanced row)
             // ==========================================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(
+              child: Row(
                 children: [
-                  // Row 1: Owner Profile, Update Info, Café Hours, Ad Packages
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.person_outline_rounded,
-                          iconColor: const Color(0xFF059669),
-                          iconBgColor: const Color(0xFFECFDF5),
-                          label: 'Owner Profile',
-                          onTap: () =>
-                              _showOwnerProfileModal(context, restaurant, user),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.edit_note_rounded,
-                          iconColor: const Color(0xFF0284C7),
-                          iconBgColor: const Color(0xFFF0F9FF),
-                          label: 'Update Info',
-                          badgeText:
-                              _pendingChangeRequest != null ? 'PENDING' : null,
-                          onTap: () => _showRequestInfoUpdateModal(
-                              context, restaurant, user),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.access_time_rounded,
-                          iconColor: const Color(0xFFE11D48),
-                          iconBgColor: const Color(0xFFFFF1F2),
-                          label: 'Café Hours',
-                          onTap: () => _showHoursModal(context, restaurant),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.campaign_outlined,
-                          iconColor: const Color(0xFFD97706),
-                          iconBgColor: const Color(0xFFFFFBEB),
-                          badgeText: 'OFFERS',
-                          label: 'Ad Packages',
-                          onTap: () => setState(() => _navIndex = 1),
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: _buildActionTile(
+                      icon: Icons.person_outline_rounded,
+                      iconColor: const Color(0xFF059669),
+                      iconBgColor: const Color(0xFFECFDF5),
+                      label: 'Owner Profile',
+                      onTap: () =>
+                          _showOwnerProfileModal(context, restaurant, user),
+                    ),
                   ),
-                  const SizedBox(height: 10),
-
-                  // Row 2: Safety Rules, Help Center, Contact Us, (Spacer)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.shield_outlined,
-                          iconColor: const Color(0xFF7C3AED),
-                          iconBgColor: const Color(0xFFF5F3FF),
-                          label: 'Safety Rules',
-                          onTap: () =>
-                              _showSurplusGuidelinesModal(context),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.headset_mic_outlined,
-                          iconColor: const Color(0xFF0891B2),
-                          iconBgColor: const Color(0xFFECFEFF),
-                          label: 'Help center',
-                          onTap: () => _showMerchantHelpModal(context),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.phone_outlined,
-                          iconColor: const Color(0xFFEA580C),
-                          iconBgColor: const Color(0xFFFFF7ED),
-                          label: 'Contact us',
-                          onTap: () => _showMerchantHelpModal(context),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Symmetrical spacer matching customer profile layout
-                      const Expanded(child: SizedBox()),
-                    ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionTile(
+                      icon: Icons.edit_note_rounded,
+                      iconColor: const Color(0xFF0284C7),
+                      iconBgColor: const Color(0xFFF0F9FF),
+                      label: 'Update Info',
+                      badgeText:
+                          _pendingChangeRequest != null ? 'PENDING' : null,
+                      onTap: () => _showRequestInfoUpdateModal(
+                          context, restaurant, user),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionTile(
+                      icon: Icons.campaign_outlined,
+                      iconColor: const Color(0xFFD97706),
+                      iconBgColor: const Color(0xFFFFFBEB),
+                      badgeText: 'OFFERS',
+                      label: 'Ad Packages',
+                      onTap: () => setState(() => _navIndex = 1),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionTile(
+                      icon: Icons.headset_mic_outlined,
+                      iconColor: const Color(0xFF7C3AED),
+                      iconBgColor: const Color(0xFFF5F3FF),
+                      label: 'Support',
+                      onTap: () => _showMerchantHelpModal(context),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
 
             // ==========================================
-            // 4. MENU OPTIONS LIST (Sleek List matching Customer Profile)
+            // 4. MENU OPTIONS LIST (Sleek Modern Card Architecture)
             // ==========================================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildMenuItem(
-                    icon: Icons.workspace_premium_rounded,
-                    iconColor: const Color(0xFFE11D48),
-                    iconBgColor: const Color(0xFFFFEDEC),
-                    title: 'Owner Profile (Verified)',
-                    subtitle: '$ownerName • Legal Representative',
-                    onTap: () =>
-                        _showOwnerProfileModal(context, restaurant, user),
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.edit_note_rounded,
-                    iconColor: const Color(0xFF475569),
-                    iconBgColor: const Color(0xFFF1F5F9),
-                    title: 'Request Info Update (Admin Review)',
-                    subtitle: _pendingChangeRequest != null
-                        ? '1 update request pending admin approval'
-                        : 'Changes to Name, Address & Phone require verification',
-                    trailing: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _pendingChangeRequest != null
-                            ? const Color(0xFFFEF3C7)
-                            : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _pendingChangeRequest != null ? 'PENDING' : 'PROTECTED',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          color: _pendingChangeRequest != null
-                              ? const Color(0xFFB45309)
-                              : const Color(0xFF64748B),
+                  // Section 1 Header: Business & Credentials
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3.5,
+                          height: 13,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'BUSINESS & CREDENTIALS',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ],
                     ),
-                    onTap: () =>
-                        _showRequestInfoUpdateModal(context, restaurant, user),
                   ),
-                  _buildMenuItem(
-                    icon: Icons.star_outline_rounded,
-                    iconColor: const Color(0xFF475569),
-                    iconBgColor: const Color(0xFFF1F5F9),
-                    title: 'SaveBite Gold Subscription',
-                    subtitle: restaurant.hasGoldSubscription
-                        ? 'Active • 5 monthly boosts & banner access'
-                        : 'Upgrade to boost dishes & get 3x reach',
-                    onTap: () =>
-                        _showGoldSubscriptionModal(context, restaurant),
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.access_time_rounded,
-                    iconColor: const Color(0xFF475569),
-                    iconBgColor: const Color(0xFFF1F5F9),
-                    title: 'Operating Hours & Status',
-                    subtitle:
-                        '${restaurant.openingTime ?? '07:30 AM'} – ${restaurant.closingTime ?? '11:00 PM'}',
-                    onTap: () => _showHoursModal(context, restaurant),
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.shield_outlined,
-                    iconColor: const Color(0xFF475569),
-                    iconBgColor: const Color(0xFFF1F5F9),
-                    title: 'Surplus Food Safety Rules',
-                    subtitle: 'Hygiene, packaging & discount policies',
-                    onTap: () => _showSurplusGuidelinesModal(context),
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.info_outline_rounded,
-                    iconColor: const Color(0xFF475569),
-                    iconBgColor: const Color(0xFFF1F5F9),
-                    title: 'About',
-                    subtitle: 'Version 1.1.0 • App Info & Impact',
-                    onTap: () => _showAboutModal(context),
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.logout_rounded,
-                    iconColor: const Color(0xFF475569),
-                    iconBgColor: const Color(0xFFF1F5F9),
-                    title: 'Log out',
-                    onTap: () => _confirmLogout(context),
-                  ),
-                  const SizedBox(height: 16),
 
-                  // Delete Account Button (Dark Red Button with Trash Icon matching customer screen)
+                  // Card 1: Credentials & Business Settings
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                        width: 1.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildMenuItem(
+                          icon: Icons.badge_outlined,
+                          iconColor: const Color(0xFF059669),
+                          iconBgColor: const Color(0xFFECFDF5),
+                          title: 'Owner Profile',
+                          subtitle: '$ownerName • Legal Representative',
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20)),
+                          trailing: restaurant.isApproved
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFF86EFAC)
+                                          .withValues(alpha: 0.7),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_rounded,
+                                        size: 11,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                      SizedBox(width: 3.5),
+                                      Text(
+                                        'VERIFIED',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF15803D),
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null,
+                          onTap: () =>
+                              _showOwnerProfileModal(context, restaurant, user),
+                        ),
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          indent: 70,
+                          endIndent: 16,
+                          color: Color(0xFFF1F5F9),
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.edit_note_rounded,
+                          iconColor: const Color(0xFF2563EB),
+                          iconBgColor: const Color(0xFFEFF6FF),
+                          title: 'Request Info Update (Admin Review)',
+                          subtitle: _pendingChangeRequest != null
+                              ? '1 update request pending admin approval'
+                              : 'Changes to Name, Address & Phone require verification',
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3.5),
+                            decoration: BoxDecoration(
+                              color: _pendingChangeRequest != null
+                                  ? const Color(0xFFFEF3C7)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _pendingChangeRequest != null
+                                    ? const Color(0xFFFCD34D)
+                                    : const Color(0xFFE2E8F0),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _pendingChangeRequest != null
+                                      ? Icons.schedule_rounded
+                                      : Icons.lock_outline_rounded,
+                                  size: 10,
+                                  color: _pendingChangeRequest != null
+                                      ? const Color(0xFFB45309)
+                                      : const Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 3.5),
+                                Text(
+                                  _pendingChangeRequest != null
+                                      ? 'PENDING'
+                                      : 'PROTECTED',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: _pendingChangeRequest != null
+                                        ? const Color(0xFFB45309)
+                                        : const Color(0xFF64748B),
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          onTap: () =>
+                              _showRequestInfoUpdateModal(context, restaurant, user),
+                        ),
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          indent: 70,
+                          endIndent: 16,
+                          color: Color(0xFFF1F5F9),
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.stars_rounded,
+                          iconColor: const Color(0xFFD97706),
+                          iconBgColor: const Color(0xFFFFFBEB),
+                          title: 'SaveBite Gold Subscription',
+                          subtitle: restaurant.hasGoldSubscription
+                              ? 'Active • 5 monthly boosts & banner access'
+                              : 'Upgrade to boost dishes & get 3x reach',
+                          borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(20)),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3.5),
+                            decoration: BoxDecoration(
+                              color: restaurant.hasGoldSubscription
+                                  ? const Color(0xFFFEF3C7)
+                                  : const Color(0xFFFFF1F2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: restaurant.hasGoldSubscription
+                                    ? const Color(0xFFFCD34D)
+                                    : const Color(0xFFFECDD3),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  restaurant.hasGoldSubscription
+                                      ? Icons.star_rounded
+                                      : Icons.arrow_upward_rounded,
+                                  size: 10,
+                                  color: restaurant.hasGoldSubscription
+                                      ? const Color(0xFFB45309)
+                                      : const Color(0xFFE11D48),
+                                ),
+                                const SizedBox(width: 3.5),
+                                Text(
+                                  restaurant.hasGoldSubscription
+                                      ? 'ACTIVE'
+                                      : 'UPGRADE',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: restaurant.hasGoldSubscription
+                                        ? const Color(0xFFB45309)
+                                        : const Color(0xFFE11D48),
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          onTap: () =>
+                              _showGoldSubscriptionModal(context, restaurant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Section 2 Header: App & System
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3.5,
+                          height: 13,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF64748B),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'APP & SYSTEM',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Card 2: App & System Settings
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                        width: 1.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildMenuItem(
+                          icon: Icons.info_outline_rounded,
+                          iconColor: const Color(0xFF475569),
+                          iconBgColor: const Color(0xFFF1F5F9),
+                          title: 'About',
+                          subtitle: 'Version 1.1.0 • App Info & Impact',
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20)),
+                          onTap: () => _showAboutModal(context),
+                        ),
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          indent: 70,
+                          endIndent: 16,
+                          color: Color(0xFFF1F5F9),
+                        ),
+                        _buildMenuItem(
+                          icon: Icons.logout_rounded,
+                          iconColor: const Color(0xFFE11D48),
+                          iconBgColor: const Color(0xFFFFF1F2),
+                          title: 'Log out',
+                          subtitle: 'Sign out of restaurant management session',
+                          borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(20)),
+                          onTap: () => _confirmLogout(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Delete Account Button (Premium Destructive Action Card)
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF991B1B), // Dark Red
@@ -3215,7 +3387,7 @@ class _RestaurantDashboardScreenState
                         elevation: 0,
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       onPressed: () => _confirmDeleteAccount(context),
@@ -3749,18 +3921,18 @@ class _RestaurantDashboardScreenState
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 82,
+          height: 84,
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFF1F5F9),
+              color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 6,
+                blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -3772,11 +3944,11 @@ class _RestaurantDashboardScreenState
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
                       color: iconBgColor,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
                       child: Icon(icon, size: 20, color: iconColor),
@@ -3805,12 +3977,12 @@ class _RestaurantDashboardScreenState
                     ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 7),
               Text(
                 label,
                 style: const TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFF1E293B),
                 ),
                 maxLines: 1,
@@ -3832,68 +4004,74 @@ class _RestaurantDashboardScreenState
     required VoidCallback onTap,
     String? subtitle,
     Widget? trailing,
+    BorderRadius? borderRadius,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 20,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius ?? BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 20,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      subtitle,
+                      title,
                       style: const TextStyle(
-                        fontSize: 11.5,
-                        color: Color(0xFF64748B),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2.5),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (trailing != null) ...[
-              trailing,
-              const SizedBox(width: 6),
+              if (trailing != null) ...[
+                trailing,
+                const SizedBox(width: 8),
+              ],
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF94A3B8),
+                size: 20,
+              ),
             ],
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFFE11D48),
-              size: 22,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -4738,47 +4916,6 @@ class _RestaurantDashboardScreenState
     );
   }
 
-  void _showSurplusGuidelinesModal(BuildContext context) {
-    _showSheet<void>(
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const Text(
-              'Surplus Food Safety Rules',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildGuidelineCard('1. Freshness & Hygiene', 'Only list freshly prepared food made today. Never list spoiled or compromised items.'),
-            _buildGuidelineCard('2. Safe Food Packaging', 'Seal portions in food-grade eco containers with packaging time marked.'),
-            _buildGuidelineCard('3. Minimum 30% Discount', 'All surplus listings must offer at least 30%+ savings off regular price.'),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showMerchantHelpModal(BuildContext context) {
     _showSheet<void>(
       builder: (ctx) => Container(
@@ -4940,27 +5077,4 @@ class _RestaurantDashboardScreenState
     );
   }
 
-  Widget _buildGuidelineCard(String title, String desc) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 3),
-          Text(desc,
-              style: const TextStyle(
-                  fontSize: 11.5, color: Color(0xFF64748B))),
-        ],
-      ),
-    );
-  }
 }

@@ -147,20 +147,20 @@ void main() {
     // Verify pill is visible again
     expect(pillFinder, findsOneWidget);
 
-    // Test Orders modal sheet in Account section
-    final ordersButton = find.text('Orders');
-    expect(ordersButton, findsOneWidget);
-    await tester.tap(ordersButton);
+    // Test Favourites modal sheet in Account section
+    final favouritesButton = find.text('Favourites');
+    expect(favouritesButton, findsOneWidget);
+    await tester.tap(favouritesButton);
     await tester.pumpAndSettle();
 
-    // Verify Orders sheet is open and pill is hidden
-    expect(find.text('My Food Rescue Orders'), findsOneWidget);
+    // Verify Favourites sheet is open and pill is hidden
+    expect(find.text('My Favourites'), findsOneWidget);
     expect(pillFinder, findsNothing);
 
-    // Close Orders sheet
-    final ordersCloseButton = find.byIcon(Icons.close_rounded);
-    if (ordersCloseButton.evaluate().isNotEmpty) {
-      await tester.tap(ordersCloseButton.first);
+    // Close Favourites sheet
+    final favouritesCloseButton = find.byIcon(Icons.close_rounded);
+    if (favouritesCloseButton.evaluate().isNotEmpty) {
+      await tester.tap(favouritesCloseButton.first);
       await tester.pumpAndSettle();
     } else {
       await tester.tapAt(const Offset(20, 20));

@@ -620,158 +620,6 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   // ACTION TILES MODAL HANDLERS
   // ==========================================
 
-  void _showOrdersModal(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'My Food Rescue Orders',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildMockOrderCard(
-                orderNumber: '#SB-2041',
-                title: 'Surplus Chicken Biryani Box',
-                restaurant: "Sultan's Dine, Dhanmondi",
-                price: '৳220',
-                status: 'Ready for Pickup',
-                statusColor: const Color(0xFF16A34A),
-                pickupCode: '4821',
-              ),
-              const SizedBox(height: 10),
-              _buildMockOrderCard(
-                orderNumber: '#SB-1980',
-                title: 'Assorted Gourmet Pastry Bag',
-                restaurant: 'Bread & Beyond, Banani',
-                price: '৳150',
-                status: 'Completed',
-                statusColor: const Color(0xFF64748B),
-                pickupCode: '9134',
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMockOrderCard({
-    required String orderNumber,
-    required String title,
-    required String restaurant,
-    required String price,
-    required String status,
-    required Color statusColor,
-    required String pickupCode,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                orderNumber,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: statusColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          Text(
-            restaurant,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Total: $price',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFE11D48),
-                ),
-              ),
-              Text(
-                'Pickup PIN: $pickupCode',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showAddressesModal(BuildContext context) {
     CustomerLocationSheet.show(context);
   }
@@ -918,33 +766,31 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  code,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFE11D48),
-                    letterSpacing: 0.5,
-                  ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                code,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFE11D48),
+                  letterSpacing: 0.5,
                 ),
-                Text(
-                  discount,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
-                  ),
+              ),
+              Text(
+                discount,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
                 ),
-                Text(
-                  expiry,
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                ),
-              ],
-            ),
+              ),
+              Text(
+                expiry,
+                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+              ),
+            ],
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1062,7 +908,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     );
   }
 
-  void _showHelpCenterModal(BuildContext context) {
+  void _showHelpSupportModal(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -1073,7 +919,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1091,14 +937,122 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Help Center & FAQs',
+                  'Help & Support',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1E293B),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
+                const Text(
+                  'Instant assistance, hotlines & FAQs for your surplus orders',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Support channels header
+                const Text(
+                  'CONTACT CHANNELS',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF94A3B8),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEDEC),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.phone_in_talk_rounded,
+                        color: Color(0xFFE11D48), size: 20),
+                  ),
+                  title: const Text('Customer Hotline',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: const Text('+880 1700-112233 (9 AM - 11:30 PM)'),
+                  trailing: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF94A3B8)),
+                  onTap: () {
+                    Clipboard.setData(const ClipboardData(text: '+8801700112233'));
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Hotline copied to clipboard.')),
+                    );
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.chat_bubble_outline_rounded,
+                        color: Color(0xFF10B981), size: 20),
+                  ),
+                  title: const Text('WhatsApp Chat Support',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: const Text('Instant support for active orders'),
+                  trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Opening WhatsApp Support...')),
+                    );
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.email_outlined,
+                        color: Color(0xFF3B82F6), size: 20),
+                  ),
+                  title: const Text('Email Support',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: const Text('support@savebite.com'),
+                  trailing: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF94A3B8)),
+                  onTap: () {
+                    Clipboard.setData(
+                        const ClipboardData(text: 'support@savebite.com'));
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Email copied to clipboard.')),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // FAQs header
+                const Text(
+                  'FREQUENTLY ASKED QUESTIONS',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF94A3B8),
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 _buildFaqItem('How do I collect my order?',
                     'Show your 4-digit pickup PIN in the app to the restaurant cashier during the scheduled pickup window.'),
                 _buildFaqItem('What is a Mystery Bag?',
@@ -1143,172 +1097,6 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showContactUsModal(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Contact SaveBite Support',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFFFEDEC),
-                  child: Icon(Icons.phone_in_talk_rounded,
-                      color: Color(0xFFE11D48)),
-                ),
-                title: const Text('Customer Hotline',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                subtitle: const Text('+880 1700-112233 (9 AM - 11:30 PM)'),
-                onTap: () {
-                  Clipboard.setData(const ClipboardData(text: '+8801700112233'));
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Hotline copied to clipboard.')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFECFDF5),
-                  child: Icon(Icons.chat_bubble_outline_rounded,
-                      color: Color(0xFF10B981)),
-                ),
-                title: const Text('WhatsApp Chat Support',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                subtitle: const Text('Instant support for active orders'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Opening WhatsApp Support...')),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFEFF6FF),
-                  child: Icon(Icons.email_outlined, color: Color(0xFF3B82F6)),
-                ),
-                title: const Text('Email Support',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                subtitle: const Text('support@savebite.com'),
-                onTap: () {
-                  Clipboard.setData(
-                      const ClipboardData(text: 'support@savebite.com'));
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Email copied to clipboard.')),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================
-  // POLICY & GROUP ORDER MODALS
-  // ==========================================
-
-  void _showRefundPolicyModal(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'SaveBite Refund Policy',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                '1. Food Quality Guarantee: If any rescued meal does not meet safety standards or is spoiled, you are eligible for a 100% immediate refund.\n\n'
-                '2. Store Unavailability: If a restaurant closes earlier than their stated pickup window, your reservation is refunded in full.\n\n'
-                '3. Processing Time: Digital payment refunds (bKash/Nagad/Cards) are credited within 2-4 business days.\n\n'
-                '4. Claims Window: Please report any discrepancy within 2 hours of collecting the meal with a photo in Help Center.',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF475569),
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE11D48),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Understood'),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -2218,22 +2006,22 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
               child: InkWell(
                 onTap: () => _showSuperSaverModal(context),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: const Color(0xFFF1F5F9),
-                      width: 1.5,
+                      color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                      width: 1.2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
+                        color: Colors.black.withValues(alpha: 0.025),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -2271,155 +2059,321 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
           const SizedBox(height: 12),
 
           // ==========================================
-          // 3. QUICK ACTION TILES (7 items as in screenshot)
+          // 3. QUICK ACTION TILES (4 balanced items)
           // ==========================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Column(
+            child: Row(
               children: [
-                // Row 1: Orders, Addresses, Favourites, Vouchers
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildActionTile(
-                        icon: Icons.receipt_long_outlined,
-                        iconColor: const Color(0xFF059669),
-                        iconBgColor: const Color(0xFFECFDF5),
-                        label: 'Orders',
-                        onTap: () => _showOrdersModal(context),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildActionTile(
-                        icon: Icons.menu_book_outlined,
-                        iconColor: const Color(0xFF0284C7),
-                        iconBgColor: const Color(0xFFF0F9FF),
-                        label: 'Addresses',
-                        onTap: () => _showAddressesModal(context),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildActionTile(
-                        icon: Icons.favorite_border_rounded,
-                        iconColor: const Color(0xFFE11D48),
-                        iconBgColor: const Color(0xFFFFF1F2),
-                        label: 'Favourites',
-                        onTap: () => _showFavouritesModal(context),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildActionTile(
-                        icon: Icons.confirmation_number_outlined,
-                        iconColor: const Color(0xFFD97706),
-                        iconBgColor: const Color(0xFFFFFBEB),
-                        label: 'Vouchers',
-                        onTap: () => _showVouchersModal(context),
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: _buildActionTile(
+                    icon: Icons.menu_book_outlined,
+                    iconColor: const Color(0xFF0284C7),
+                    iconBgColor: const Color(0xFFF0F9FF),
+                    label: 'Addresses',
+                    onTap: () => _showAddressesModal(context),
+                  ),
                 ),
-                const SizedBox(height: 10),
-
-                // Row 2: Rewards, Help center, Contact us
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildActionTile(
-                        icon: Icons.card_giftcard_rounded,
-                        iconColor: const Color(0xFF7C3AED),
-                        iconBgColor: const Color(0xFFF5F3FF),
-                        label: 'Rewards',
-                        onTap: () => _showRewardsModal(context),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildActionTile(
-                        icon: Icons.headset_mic_outlined,
-                        iconColor: const Color(0xFF0891B2),
-                        iconBgColor: const Color(0xFFECFEFF),
-                        label: 'Help center',
-                        onTap: () => _showHelpCenterModal(context),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildActionTile(
-                        icon: Icons.phone_outlined,
-                        iconColor: const Color(0xFFEA580C),
-                        iconBgColor: const Color(0xFFFFF7ED),
-                        label: 'Contact us',
-                        onTap: () => _showContactUsModal(context),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Spacer to maintain exact tile width matching Row 1
-                    const Expanded(child: SizedBox()),
-                  ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionTile(
+                    icon: Icons.favorite_border_rounded,
+                    iconColor: const Color(0xFFE11D48),
+                    iconBgColor: const Color(0xFFFFF1F2),
+                    label: 'Favourites',
+                    onTap: () => _showFavouritesModal(context),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionTile(
+                    icon: Icons.confirmation_number_outlined,
+                    iconColor: const Color(0xFFD97706),
+                    iconBgColor: const Color(0xFFFFFBEB),
+                    label: 'Vouchers',
+                    onTap: () => _showVouchersModal(context),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionTile(
+                    icon: Icons.card_giftcard_rounded,
+                    iconColor: const Color(0xFF7C3AED),
+                    iconBgColor: const Color(0xFFF5F3FF),
+                    label: 'Rewards',
+                    onTap: () => _showRewardsModal(context),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
 
           // ==========================================
-          // 4. MENU OPTIONS LIST
+          // 4. MENU OPTIONS LIST (Sleek Modern Card Architecture)
           // ==========================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMenuItem(
-                  icon: Icons.workspace_premium_rounded,
-                  iconColor: const Color(0xFFE11D48),
-                  iconBgColor: const Color(0xFFFFEDEC),
-                  title: 'Become a Super Saver',
-                  onTap: () => _showSuperSaverModal(context),
+                // Section 1 Header: Benefits & Policies
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 3.5,
+                        height: 13,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'BENEFITS & POLICIES',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                _buildMenuItem(
-                  icon: Icons.account_balance_wallet_outlined,
-                  iconColor: const Color(0xFF475569),
-                  iconBgColor: const Color(0xFFF1F5F9),
-                  title: 'Refund policy',
-                  onTap: () => _showRefundPolicyModal(context),
+
+                // Card 1: Benefits & Policies
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildMenuItem(
+                        icon: Icons.workspace_premium_rounded,
+                        iconColor: const Color(0xFFE11D48),
+                        iconBgColor: const Color(0xFFFFF1F2),
+                        title: 'Become a Super Saver',
+                        subtitle:
+                            'Unlock exclusive member perks & extra discounts',
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF1F2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFFECDD3),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.star_rounded,
+                                size: 10,
+                                color: Color(0xFFE11D48),
+                              ),
+                              SizedBox(width: 3.5),
+                              Text(
+                                'PERKS',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFFE11D48),
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        onTap: () => _showSuperSaverModal(context),
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 70,
+                        endIndent: 16,
+                        color: Color(0xFFF1F5F9),
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.group_add_outlined,
+                        iconColor: const Color(0xFF2563EB),
+                        iconBgColor: const Color(0xFFEFF6FF),
+                        title: 'Join group order',
+                        subtitle:
+                            'Order surplus food together with nearby friends',
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFBFDBFE),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.groups_rounded,
+                                size: 10,
+                                color: Color(0xFF2563EB),
+                              ),
+                              SizedBox(width: 3.5),
+                              Text(
+                                'SOCIAL',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF2563EB),
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        onTap: () => _showGroupOrderModal(context),
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 70,
+                        endIndent: 16,
+                        color: Color(0xFFF1F5F9),
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.shield_outlined,
+                        iconColor: const Color(0xFF0284C7),
+                        iconBgColor: const Color(0xFFF0F9FF),
+                        title: 'Privacy policy',
+                        subtitle:
+                            'Data protection & personal account safety',
+                        borderRadius: const BorderRadius.vertical(
+                            bottom: Radius.circular(20)),
+                        onTap: () => _showPrivacyPolicyModal(context),
+                      ),
+                    ],
+                  ),
                 ),
-                _buildMenuItem(
-                  icon: Icons.shield_outlined,
-                  iconColor: const Color(0xFF475569),
-                  iconBgColor: const Color(0xFFF1F5F9),
-                  title: 'Privacy policy',
-                  onTap: () => _showPrivacyPolicyModal(context),
+                const SizedBox(height: 18),
+
+                // Section 2 Header: Support & System
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 3.5,
+                        height: 13,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF64748B),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'SUPPORT & SYSTEM',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                _buildMenuItem(
-                  icon: Icons.group_add_outlined,
-                  iconColor: const Color(0xFF475569),
-                  iconBgColor: const Color(0xFFF1F5F9),
-                  title: 'Join group order',
-                  onTap: () => _showGroupOrderModal(context),
-                ),
-                _buildMenuItem(
-                  icon: Icons.info_outline_rounded,
-                  iconColor: const Color(0xFF475569),
-                  iconBgColor: const Color(0xFFF1F5F9),
-                  title: 'About',
-                  onTap: () => _showAboutModal(context),
-                ),
-                _buildMenuItem(
-                  icon: Icons.logout_rounded,
-                  iconColor: const Color(0xFF475569),
-                  iconBgColor: const Color(0xFFF1F5F9),
-                  title: 'Log out',
-                  onTap: () => _confirmLogout(context),
+
+                // Card 2: Support & System Settings
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildMenuItem(
+                        icon: Icons.headset_mic_outlined,
+                        iconColor: const Color(0xFF0891B2),
+                        iconBgColor: const Color(0xFFECFEFF),
+                        title: 'Help & Support',
+                        subtitle: 'Customer Care, 24/7 Hotline & FAQs',
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                        onTap: () => _showHelpSupportModal(context),
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 70,
+                        endIndent: 16,
+                        color: Color(0xFFF1F5F9),
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.info_outline_rounded,
+                        iconColor: const Color(0xFF475569),
+                        iconBgColor: const Color(0xFFF1F5F9),
+                        title: 'About',
+                        subtitle: 'Version 1.1.0 • App Info & Impact',
+                        onTap: () => _showAboutModal(context),
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 70,
+                        endIndent: 16,
+                        color: Color(0xFFF1F5F9),
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.logout_rounded,
+                        iconColor: const Color(0xFFE11D48),
+                        iconBgColor: const Color(0xFFFFF1F2),
+                        title: 'Log out',
+                        subtitle: 'Sign out of your customer account',
+                        borderRadius: const BorderRadius.vertical(
+                            bottom: Radius.circular(20)),
+                        onTap: () => _confirmLogout(context),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 18),
 
                 // Delete Account Dark Red Button
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
+                  height: 50,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF991B1B), // Dark Red
@@ -2427,7 +2381,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                       elevation: 0,
                       shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     onPressed: () => _confirmDeleteAccount(context),
@@ -2532,18 +2486,18 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 82,
+          height: 84,
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFF1F5F9),
+              color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 6,
+                blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -2552,11 +2506,11 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: iconBgColor,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Icon(
@@ -2566,12 +2520,12 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 7),
               Text(
                 label,
                 style: const TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFF1E293B),
                 ),
                 maxLines: 1,
@@ -2591,44 +2545,76 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     required Color iconBgColor,
     required String title,
     required VoidCallback onTap,
+    String? subtitle,
+    Widget? trailing,
+    BorderRadius? borderRadius,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E293B),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius ?? BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 20,
+                  ),
                 ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFFE11D48),
-              size: 22,
-            ),
-          ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2.5),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) ...[
+                trailing,
+                const SizedBox(width: 8),
+              ],
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF94A3B8),
+                size: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );

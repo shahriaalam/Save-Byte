@@ -381,8 +381,8 @@ void main() {
       expect(find.text('Owner Profile'), findsWidgets);
       expect(find.textContaining('SaveBite Gold Merchant'), findsOneWidget);
       expect(find.text('Request Info Update (Admin Review)'), findsOneWidget);
-      expect(find.text('Operating Hours & Status'), findsOneWidget);
-      expect(find.text('Surplus Food Safety Rules'), findsOneWidget);
+      expect(find.text('Operating Hours & Status'), findsNothing);
+      expect(find.text('Surplus Food Safety Rules'), findsNothing);
       expect(find.text('About'), findsOneWidget);
       expect(find.text('Delete Account'), findsOneWidget);
     });
@@ -404,7 +404,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Owner Profile option
-      await tester.tap(find.text('Owner Profile (Verified)'));
+      await tester.tap(find.text('Owner Profile').first);
       await tester.pumpAndSettle();
 
       // Check owner dialog contents

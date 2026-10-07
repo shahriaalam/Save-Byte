@@ -236,8 +236,8 @@ class AuthRepository {
       const adminProfile = UserProfile(
         id: 'admin-bootstrap-id',
         email: 'admin@savebite.com',
-        role: AppConstants.roleAdmin,
-        fullName: 'Platform Administrator',
+        role: AppConstants.roleHeadAdmin,
+        fullName: 'Platform Head Administrator',
         isActive: true,
       );
       _activeSessionProfile = adminProfile;

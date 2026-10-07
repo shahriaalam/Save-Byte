@@ -38,7 +38,13 @@ class UserProfile {
 
   bool get isCustomer => role == AppConstants.roleCustomer;
   bool get isRestaurant => role == AppConstants.roleRestaurant;
-  bool get isAdmin => role == AppConstants.roleAdmin;
+  bool get isAdmin =>
+      role == AppConstants.roleAdmin ||
+      role == AppConstants.roleHeadAdmin ||
+      role == AppConstants.roleModerator;
+  bool get isHeadAdmin => role == AppConstants.roleHeadAdmin;
+  bool get isModerator => role == AppConstants.roleModerator;
+  bool get isStandardAdmin => role == AppConstants.roleAdmin;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final firstName = json['first_name'] as String?;

@@ -24,14 +24,14 @@ class FakeAuthRepository implements AuthRepository {
     required String password,
   }) async {
     final role = email.trim().toLowerCase() == 'admin@savebite.com'
-        ? AppConstants.roleAdmin
+        ? AppConstants.roleHeadAdmin
         : AppConstants.roleCustomer;
     final profile = UserProfile(
       id: 'test-user-id',
       email: email,
       role: role,
-      fullName: role == AppConstants.roleAdmin
-          ? 'Platform Administrator'
+      fullName: role == AppConstants.roleHeadAdmin
+          ? 'Platform Head Administrator'
           : 'Test User',
       isActive: true,
     );

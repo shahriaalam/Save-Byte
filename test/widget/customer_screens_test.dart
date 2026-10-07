@@ -264,16 +264,17 @@ void main() {
 
       // Verify Super Saver card & action tiles
       expect(find.text('Become a Super Saver'), findsWidgets);
-      expect(find.text('Orders'), findsOneWidget);
+      expect(find.text('Orders'), findsNothing);
       expect(find.text('Addresses'), findsOneWidget);
       expect(find.text('Favourites'), findsOneWidget);
       expect(find.text('Vouchers'), findsOneWidget);
       expect(find.text('Rewards'), findsOneWidget);
-      expect(find.text('Help center'), findsOneWidget);
-      expect(find.text('Contact us'), findsOneWidget);
+      expect(find.text('Help center'), findsNothing);
+      expect(find.text('Contact us'), findsNothing);
 
       // Verify menu options list
-      expect(find.text('Refund policy'), findsOneWidget);
+      expect(find.text('Help & Support'), findsOneWidget);
+      expect(find.text('Refund policy'), findsNothing);
       expect(find.text('Privacy policy'), findsOneWidget);
       expect(find.text('Join group order'), findsOneWidget);
       expect(find.text('About'), findsOneWidget);

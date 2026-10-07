@@ -8,6 +8,8 @@ abstract final class AppConstants {
   static const String roleCustomer = 'customer';
   static const String roleRestaurant = 'restaurant';
   static const String roleAdmin = 'admin';
+  static const String roleHeadAdmin = 'head_admin';
+  static const String roleModerator = 'moderator';
 
   // Restaurant statuses (Section 11)
   static const String statusPending = 'pending';
