@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/platform_file_picker.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../shared/data/promo_banner_controller.dart';
@@ -478,20 +479,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       centerTitle: false,
       title: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.28),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.shield_rounded, color: Colors.white, size: 18),
+          const AppLogoIcon(
+            size: 32,
+            borderRadius: 10,
+            iconSize: 18,
           ),
           const SizedBox(width: 10),
           Column(

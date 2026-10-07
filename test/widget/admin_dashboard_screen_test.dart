@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:save_bite/core/constants/app_constants.dart';
+import 'package:save_bite/core/widgets/app_logo.dart';
 import 'package:save_bite/features/admin/dashboard/admin_dashboard_screen.dart';
 import 'package:save_bite/features/auth/domain/user_profile.dart';
 import 'package:save_bite/features/auth/presentation/auth_controller.dart';
@@ -47,7 +48,8 @@ void main() {
     await tester.pumpWidget(buildTestWidget());
     await tester.pumpAndSettle();
 
-    // Verify SaveBite Admin Panel header and role badge
+    // Verify SaveBite Admin Panel header, logo, and role badge
+    expect(find.byType(AppLogoIcon), findsOneWidget);
     expect(find.text('SaveBite Admin Panel'), findsOneWidget);
     expect(find.text('ADMIN • ACTIVE'), findsOneWidget);
 
