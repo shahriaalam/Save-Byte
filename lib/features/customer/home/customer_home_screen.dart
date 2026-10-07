@@ -154,8 +154,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     final nearbyOffersAsync = ref.watch(nearbyOffersProvider);
     final nearbyRestaurantsAsync = ref.watch(activeRestaurantsProvider);
     final promoBannersAsync = ref.watch(promoBannersControllerProvider);
-    final heroBanners =
+    final allBanners =
         promoBannersAsync.asData?.value ?? PromoBanner.defaultBanners;
+    final approvedBanners = allBanners.where((b) => b.isApproved).toList();
+    final heroBanners = approvedBanners.isNotEmpty
+        ? approvedBanners
+        : PromoBanner.defaultBanners;
     final activeBanner = heroBanners.isNotEmpty
         ? heroBanners[_currentBannerIndex % heroBanners.length]
         : PromoBanner.defaultBanners.first;

@@ -23,6 +23,7 @@ class Restaurant {
     this.subscriptionPlan,
     this.subscriptionExpiresAt,
     this.boostCredits = 0,
+    this.bannerCredits = 0,
     this.hasActiveBanner = false,
     this.activeBannerId,
   });
@@ -47,6 +48,7 @@ class Restaurant {
   final String? subscriptionPlan;
   final DateTime? subscriptionExpiresAt;
   final int boostCredits;
+  final int bannerCredits;
   final bool hasActiveBanner;
   final String? activeBannerId;
 
@@ -55,6 +57,12 @@ class Restaurant {
   bool get isSuspended => status == AppConstants.statusSuspended;
   bool get isRejected => status == AppConstants.statusRejected;
   bool get hasGoldSubscription => isPremium && (subscriptionPlan == 'gold' || subscriptionPlan == 'premium');
+
+  /// Hero Banner access eligibility:
+  /// Enabled if the restaurant is a Gold Merchant (1 ad per subscription)
+  /// OR has purchased banner facility/credits from the Offers tab.
+  bool get canAccessHeroBanner =>
+      hasGoldSubscription || bannerCredits > 0;
 
   /// Profile completeness check:
   /// Requires restaurant name, phone, address, division, area, profile picture (imageUrl), and cuisine type.
@@ -109,6 +117,7 @@ class Restaurant {
           ? DateTime.tryParse(json['subscription_expires_at'] as String)
           : null,
       boostCredits: (json['boost_credits'] as num?)?.toInt() ?? 0,
+      bannerCredits: (json['banner_credits'] as num?)?.toInt() ?? 0,
       hasActiveBanner: (json['has_active_banner'] as bool?) ?? false,
       activeBannerId: json['active_banner_id'] as String?,
     );
@@ -137,6 +146,7 @@ class Restaurant {
       if (subscriptionExpiresAt != null)
         'subscription_expires_at': subscriptionExpiresAt!.toIso8601String(),
       'boost_credits': boostCredits,
+      'banner_credits': bannerCredits,
       'has_active_banner': hasActiveBanner,
       if (activeBannerId != null) 'active_banner_id': activeBannerId,
     };
@@ -163,6 +173,7 @@ class Restaurant {
     String? subscriptionPlan,
     DateTime? subscriptionExpiresAt,
     int? boostCredits,
+    int? bannerCredits,
     bool? hasActiveBanner,
     String? activeBannerId,
   }) {
@@ -188,6 +199,7 @@ class Restaurant {
       subscriptionExpiresAt:
           subscriptionExpiresAt ?? this.subscriptionExpiresAt,
       boostCredits: boostCredits ?? this.boostCredits,
+      bannerCredits: bannerCredits ?? this.bannerCredits,
       hasActiveBanner: hasActiveBanner ?? this.hasActiveBanner,
       activeBannerId: activeBannerId ?? this.activeBannerId,
     );

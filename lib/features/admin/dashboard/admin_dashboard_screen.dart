@@ -9,6 +9,7 @@ import '../../../core/utils/platform_file_picker.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../restaurant/notifications/restaurant_notification_controller.dart';
 import '../../shared/data/promo_banner_controller.dart';
 import '../../shared/models/promo_banner.dart';
 
@@ -2082,45 +2083,141 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   // 6. TAB 3: BANNERS & PROMOTIONAL ENGINE
   // ==============================================================================
   Widget _buildBannersTab(BuildContext context, List<PromoBanner> banners) {
+    final pendingBanners = banners.where((b) => b.isPending).toList();
+    final activeBanners = banners.where((b) => b.isApproved).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. PENDING RESTAURANT BANNER REQUESTS (Approval Flow)
+          Row(
+            children: [
+              Container(
+                width: 3.5,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD97706),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'PARTNER BANNER REQUESTS',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: pendingBanners.isNotEmpty
+                      ? const Color(0xFFFEF3C7)
+                      : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${pendingBanners.length} PENDING',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    color: pendingBanners.isNotEmpty
+                        ? const Color(0xFF92400E)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Restaurant submitted hero banners requiring admin moderation before displaying.',
+            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 12),
+
+          if (pendingBanners.isNotEmpty) ...[
+            for (final p in pendingBanners) ...[
+              _buildAdminPendingBannerCard(context, ref, p),
+              const SizedBox(height: 12),
+            ],
+          ] else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded,
+                      size: 18, color: Color(0xFF16A34A)),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'No pending banner requests. All restaurant submissions reviewed.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // 2. ACTIVE CAROUSEL BANNERS
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 3.5,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(2),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 3.5,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'HERO BANNER STUDIO',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: 0.5,
-                        ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ACTIVE CAROUSEL BANNERS',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            'Live Slideshow on Customer Home Screen',
+                            style:
+                                TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Top 3 Carousel Slides on Customer Home',
-                        style:
-                            TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
               TextButton.icon(
                 onPressed: () async {
@@ -2146,7 +2243,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   }
                 },
                 icon: const Icon(Icons.refresh_rounded, size: 14),
-                label: const Text('Reset', style: TextStyle(fontSize: 11)),
+                label: const Text('Reset Defaults', style: TextStyle(fontSize: 11)),
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFF2563EB),
                 ),
@@ -2155,11 +2252,189 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ),
           const SizedBox(height: 14),
 
-          // 3 Banner Cards
-          for (int i = 0; i < banners.length; i++) ...[
-            _buildAdminBannerCard(context, ref, banners[i], i + 1),
-            if (i < banners.length - 1) const SizedBox(height: 12),
+          // Active Banner Cards
+          for (int i = 0; i < activeBanners.length; i++) ...[
+            _buildAdminBannerCard(context, ref, activeBanners[i], i + 1),
+            if (i < activeBanners.length - 1) const SizedBox(height: 12),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// Card displaying a pending restaurant hero banner request for Admin approval
+  Widget _buildAdminPendingBannerCard(
+    BuildContext context,
+    WidgetRef ref,
+    PromoBanner banner,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFDE68A),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD97706),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'PENDING APPROVAL ⏳',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.storefront_rounded,
+                      size: 14, color: Color(0xFF92400E)),
+                  const SizedBox(width: 4),
+                  Text(
+                    banner.restaurantName ?? 'Restaurant Partner',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF92400E),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            banner.title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          if (banner.subtitle.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(
+              banner.subtitle,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: Color(0xFF475569),
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          // Banner Image Design preview
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 110,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: banner.gradient,
+              ),
+              child: (banner.imageUrl != null && banner.imageUrl!.isNotEmpty)
+                  ? _buildAdminImagePreview(
+                      banner.imageUrl!,
+                      fit: BoxFit.cover,
+                    )
+                  : const Center(
+                      child: Text(
+                        'No design image attached',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.check_circle_rounded, size: 16),
+                  label: const Text('Approve & Go Live'),
+                  onPressed: () async {
+                    await ref
+                        .read(promoBannersControllerProvider.notifier)
+                        .approveBanner(banner.id);
+                    if (banner.restaurantId != null) {
+                      await ref
+                          .read(restaurantNotificationsProvider.notifier)
+                          .notifyBannerStarted(
+                            restaurantId: banner.restaurantId!,
+                            bannerHeadline: banner.title,
+                            bannerId: banner.id,
+                            restaurantName: banner.restaurantName,
+                          );
+                    }
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '🎉 Banner "${banner.title}" approved! Start notification sent to ${banner.restaurantName ?? 'partner'}.',
+                          ),
+                          backgroundColor: const Color(0xFF16A34A),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFDC2626),
+                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(Icons.close_rounded, size: 16),
+                label: const Text('Reject'),
+                onPressed: () async {
+                  await ref
+                      .read(promoBannersControllerProvider.notifier)
+                      .rejectBanner(banner.id,
+                          reason: 'Does not meet banner quality guidelines.');
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Banner "${banner.title}" rejected.'),
+                        backgroundColor: const Color(0xFFDC2626),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -2171,6 +2446,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     PromoBanner banner,
     int slotNumber,
   ) {
+    final bool isPartnerBanner = banner.restaurantId != null;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -2216,6 +2493,24 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                       ),
                     ),
+                    if (isPartnerBanner)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: Text(
+                          banner.restaurantName ?? 'PARTNER',
+                          style: const TextStyle(
+                            color: Color(0xFF166534),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 1.5),
@@ -2253,6 +2548,59 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 ),
               ),
               const SizedBox(width: 8),
+              if (isPartnerBanner)
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final confirmed = await ConfirmDialog.show(
+                      context,
+                      title: 'End Banner Campaign',
+                      message:
+                          'End display of "${banner.title}" on the customer homepage carousel? The restaurant will receive an ending notification.',
+                      confirmLabel: 'End Campaign',
+                    );
+                    if (confirmed) {
+                      await ref
+                          .read(promoBannersControllerProvider.notifier)
+                          .endBanner(banner.id);
+                      if (banner.restaurantId != null) {
+                        await ref
+                            .read(restaurantNotificationsProvider.notifier)
+                            .notifyBannerEnded(
+                              restaurantId: banner.restaurantId!,
+                              bannerHeadline: banner.title,
+                              bannerId: banner.id,
+                              restaurantName: banner.restaurantName,
+                            );
+                      }
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Hero banner campaign ended. Notification dispatched to restaurant.',
+                            ),
+                            backgroundColor: Color(0xFF0F172A),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.timer_off_rounded, size: 13),
+                  label: const Text('End',
+                      style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFDC2626),
+                    side: const BorderSide(color: Color(0xFFFCA5A5)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 5),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 4),
               ElevatedButton.icon(
                 onPressed: () => _openEditBannerSheet(context, ref, banner),
                 icon: const Icon(Icons.edit_rounded, size: 14),

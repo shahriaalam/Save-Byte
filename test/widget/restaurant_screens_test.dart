@@ -481,5 +481,95 @@ void main() {
       expect(find.text('Key Features'), findsOneWidget);
       expect(find.text('SaveBite Technologies Ltd.'), findsOneWidget);
     });
+
+    testWidgets('Hero Banner button is locked (gray) for normal restaurant and opens locked modal', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final normalRestaurant = completeRestaurant.copyWith(
+        isPremium: false,
+        subscriptionPlan: null,
+        bannerCredits: 0,
+        hasActiveBanner: false,
+      );
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: normalRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Verify the LOCKED badge is present on the Hero Banner tile
+      expect(find.text('LOCKED'), findsOneWidget);
+      expect(find.text('Hero Banner'), findsOneWidget);
+
+      // Tap Hero Banner tile
+      await tester.tap(find.text('Hero Banner'));
+      await tester.pumpAndSettle();
+
+      // Verify locked modal details
+      expect(find.text('Hero Banner Locked'), findsOneWidget);
+      expect(find.text('Option 1: Gold Merchant Upgrade'), findsOneWidget);
+      expect(find.text('Option 2: Buy Banner Package from Offers'), findsOneWidget);
+    });
+
+    testWidgets('Hero Banner is enabled for Gold Merchant and opens Designer with approval workflow', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final goldRestaurant = completeRestaurant.copyWith(
+        isPremium: true,
+        subscriptionPlan: 'gold',
+        bannerCredits: 1,
+      );
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: goldRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Normal LOCKED badge should not be on the Hero Banner button
+      expect(find.text('LOCKED'), findsNothing);
+      expect(find.text('Hero Banner'), findsOneWidget);
+
+      // Tap Hero Banner
+      await tester.tap(find.text('Hero Banner'));
+      await tester.pumpAndSettle();
+
+      // Verify Designer elements
+      expect(find.text('Homepage Hero Banner'), findsOneWidget);
+      expect(find.text('LIVE CUSTOMER HOMEPAGE PREVIEW'), findsOneWidget);
+      expect(find.text('1. Headline'), findsOneWidget);
+      expect(find.text('2. Description'), findsOneWidget);
+      expect(find.text('4. Banner Design (Image)'), findsOneWidget);
+      expect(find.text('Submit Banner for Admin Approval'), findsOneWidget);
+    });
+
+    testWidgets('Tapping notification bell opens Partner Notifications sheet', (tester) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap notification bell in header
+      final bellFinder = find.byIcon(Icons.notifications_outlined);
+      expect(bellFinder, findsOneWidget);
+      await tester.tap(bellFinder);
+      await tester.pumpAndSettle();
+
+      // Verify Partner Notifications sheet opens
+      expect(find.text('Partner Notifications'), findsOneWidget);
+    });
   });
 }

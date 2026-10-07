@@ -93,11 +93,12 @@ class RestaurantRepository {
         status: AppConstants.statusApproved,
         imageUrl:
             'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600',
-        isPremium: true,
-        subscriptionPlan: 'gold',
-        boostCredits: 5,
-        hasActiveBanner: true,
-        activeBannerId: 'banner_blue_bell',
+        isPremium: false,
+        subscriptionPlan: null,
+        boostCredits: 0,
+        bannerCredits: 0,
+        hasActiveBanner: false,
+        activeBannerId: null,
       );
       _memoryRestaurants[ownerId] = demoRes;
       await _persistRestaurant(demoRes);
@@ -158,11 +159,13 @@ class RestaurantRepository {
   }
 
   /// Upgrades or manages restaurant subscription (e.g. SaveBite Gold Merchant).
+  /// Gold Merchant grants 1 hero banner ad quota per subscription.
   Future<Restaurant> updateSubscription(
     String ownerId, {
     required bool isPremium,
     String? plan,
     int? boostCredits,
+    int? bannerCredits,
     bool? hasActiveBanner,
     String? activeBannerId,
   }) async {
@@ -174,8 +177,28 @@ class RestaurantRepository {
           ? DateTime.now().add(const Duration(days: 30))
           : null,
       boostCredits: boostCredits ?? (isPremium ? 5 : 0),
+      bannerCredits: bannerCredits ?? (isPremium ? 1 : 0),
       hasActiveBanner: hasActiveBanner ?? current.hasActiveBanner,
       activeBannerId: activeBannerId ?? current.activeBannerId,
+    );
+    return updateRestaurantProfile(updated);
+  }
+
+  /// Adds banner credits when a restaurant purchases a banner facility from Offers.
+  Future<Restaurant> addBannerCredits(String ownerId, int count) async {
+    final current = await getRestaurantByOwnerId(ownerId);
+    final updated = current.copyWith(
+      bannerCredits: current.bannerCredits + count,
+      hasActiveBanner: true,
+    );
+    return updateRestaurantProfile(updated);
+  }
+
+  /// Uses 1 banner credit upon submitting a hero banner request.
+  Future<Restaurant> useBannerCredit(String ownerId) async {
+    final current = await getRestaurantByOwnerId(ownerId);
+    final updated = current.copyWith(
+      bannerCredits: (current.bannerCredits - 1).clamp(0, 999),
     );
     return updateRestaurantProfile(updated);
   }

@@ -128,6 +128,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     required bool isPremium,
     String? plan,
     int? boostCredits,
+    int? bannerCredits,
     bool? hasActiveBanner,
     String? activeBannerId,
   }) async {
@@ -144,10 +145,48 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
         isPremium: isPremium,
         plan: plan,
         boostCredits: boostCredits,
+        bannerCredits: bannerCredits,
         hasActiveBanner: hasActiveBanner,
         activeBannerId: activeBannerId,
       );
       ref.invalidate(currentRestaurantProvider);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
+  /// Adds banner credits when a restaurant buys a banner facility from Offers.
+  Future<bool> addBannerCredits(int count) async {
+    state = const AsyncLoading();
+    try {
+      final restaurant = await ref.read(currentRestaurantProvider.future);
+      if (restaurant != null) {
+        final repo = ref.read(restaurantRepositoryProvider);
+        await repo.addBannerCredits(restaurant.ownerId, count);
+        ref.invalidate(currentRestaurantProvider);
+      }
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
+  /// Submits a restaurant hero banner for Admin approval (status = 'pending').
+  Future<bool> submitHeroBanner(PromoBanner banner) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(promoBannersControllerProvider.notifier).submitRestaurantBanner(banner);
+      final restaurant = await ref.read(currentRestaurantProvider.future);
+      if (restaurant != null) {
+        final repo = ref.read(restaurantRepositoryProvider);
+        await repo.useBannerCredit(restaurant.ownerId);
+        ref.invalidate(currentRestaurantProvider);
+      }
       state = const AsyncData(null);
       return true;
     } catch (e, st) {

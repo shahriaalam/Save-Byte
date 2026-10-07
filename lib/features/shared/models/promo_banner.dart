@@ -19,6 +19,13 @@ class PromoBanner {
     this.bgEndColor = '0xFF5D4037',
     this.imageUrl,
     this.logoUrl,
+    this.restaurantId,
+    this.restaurantName,
+    this.status = 'approved',
+    this.rejectionReason,
+    this.createdAt,
+    this.startsAt,
+    this.endsAt,
   });
 
   final String id;
@@ -35,6 +42,18 @@ class PromoBanner {
   final String bgEndColor;
   final String? imageUrl; // Direct banner image (PNG/JPG asset or URL)
   final String? logoUrl; // Brand/Partner logo image (optional)
+  final String? restaurantId;
+  final String? restaurantName;
+  final String status; // 'approved', 'pending', 'rejected', 'ended'
+  final String? rejectionReason;
+  final DateTime? createdAt;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+
+  bool get isPending => status == 'pending';
+  bool get isApproved => status == 'approved';
+  bool get isEnded => status == 'ended';
+  bool get isRejected => status == 'rejected';
 
   /// Effective banner display name
   String get bannerName {
@@ -67,6 +86,13 @@ class PromoBanner {
     String? bgEndColor,
     String? imageUrl,
     String? logoUrl,
+    String? restaurantId,
+    String? restaurantName,
+    String? status,
+    String? rejectionReason,
+    DateTime? createdAt,
+    DateTime? startsAt,
+    DateTime? endsAt,
     bool clearImageUrl = false,
     bool clearLogoUrl = false,
     bool clearCode = false,
@@ -87,6 +113,13 @@ class PromoBanner {
       bgEndColor: bgEndColor ?? this.bgEndColor,
       imageUrl: clearImageUrl ? null : (imageUrl ?? this.imageUrl),
       logoUrl: clearLogoUrl ? null : (logoUrl ?? this.logoUrl),
+      restaurantId: restaurantId ?? this.restaurantId,
+      restaurantName: restaurantName ?? this.restaurantName,
+      status: status ?? this.status,
+      rejectionReason: rejectionReason ?? this.rejectionReason,
+      createdAt: createdAt ?? this.createdAt,
+      startsAt: startsAt ?? this.startsAt,
+      endsAt: endsAt ?? this.endsAt,
     );
   }
 
@@ -106,6 +139,13 @@ class PromoBanner {
       'bgEndColor': bgEndColor,
       'imageUrl': imageUrl,
       'logoUrl': logoUrl,
+      'restaurantId': restaurantId,
+      'restaurantName': restaurantName,
+      'status': status,
+      'rejectionReason': rejectionReason,
+      'createdAt': createdAt?.toIso8601String(),
+      'startsAt': startsAt?.toIso8601String(),
+      'endsAt': endsAt?.toIso8601String(),
     };
   }
 
@@ -127,6 +167,13 @@ class PromoBanner {
       bgEndColor: (map['bgEndColor'] as String?) ?? '0xFF5D4037',
       imageUrl: map['imageUrl'] as String?,
       logoUrl: map['logoUrl'] as String?,
+      restaurantId: map['restaurantId'] as String?,
+      restaurantName: map['restaurantName'] as String?,
+      status: (map['status'] as String?) ?? 'approved',
+      rejectionReason: map['rejectionReason'] as String?,
+      createdAt: map['createdAt'] != null ? DateTime.tryParse(map['createdAt'] as String) : null,
+      startsAt: map['startsAt'] != null ? DateTime.tryParse(map['startsAt'] as String) : null,
+      endsAt: map['endsAt'] != null ? DateTime.tryParse(map['endsAt'] as String) : null,
     );
   }
 

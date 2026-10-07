@@ -111,5 +111,42 @@ void main() {
       final restored = await repo.getBanners();
       expect(restored[0].title, PromoBanner.defaultBanners[0].title);
     });
+
+    test('Partner Banner submission, approval, and end workflow', () async {
+      final repo = PromoBannerRepository();
+
+      // Restaurant submits banner
+      const partnerBanner = PromoBanner(
+        id: 'banner_partner_1',
+        title: 'Special 20% Off Weekend Buffet',
+        subtitle: 'Artisanal dishes rescued in Banasree',
+        restaurantId: 'rest_blue_bell',
+        restaurantName: 'Blue Bell Café',
+        status: 'pending',
+      );
+
+      await repo.submitRestaurantBanner(partnerBanner);
+      var banners = await repo.getBanners();
+      final pending = banners.firstWhere((b) => b.id == 'banner_partner_1');
+      expect(pending.isPending, isTrue);
+      expect(pending.isApproved, isFalse);
+      expect(pending.status, 'pending');
+
+      // Admin approves banner
+      await repo.approveBanner('banner_partner_1');
+      banners = await repo.getBanners();
+      final approved = banners.firstWhere((b) => b.id == 'banner_partner_1');
+      expect(approved.isApproved, isTrue);
+      expect(approved.status, 'approved');
+      expect(approved.startsAt, isNotNull);
+
+      // Admin ends campaign
+      await repo.endBanner('banner_partner_1');
+      banners = await repo.getBanners();
+      final ended = banners.firstWhere((b) => b.id == 'banner_partner_1');
+      expect(ended.isEnded, isTrue);
+      expect(ended.status, 'ended');
+      expect(ended.endsAt, isNotNull);
+    });
   });
 }

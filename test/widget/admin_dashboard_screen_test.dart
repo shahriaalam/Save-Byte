@@ -134,4 +134,23 @@ void main() {
     expect(find.text('Review Kitchens'), findsOneWidget);
     expect(find.text('+ Add Moderator'), findsOneWidget);
   });
+
+  testWidgets('AdminDashboardScreen Banners tab renders Partner Banner Requests and Slots',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    // Tap on Banners quick command
+    final bannersCmd = find.text('Banners').first;
+    await tester.tap(bannersCmd);
+    await tester.pumpAndSettle();
+
+    // Verify Banners tab renders Homepage Carousel banners and Partner Banner Requests
+    expect(find.text('ACTIVE CAROUSEL BANNERS'), findsOneWidget);
+    expect(find.text('PARTNER BANNER REQUESTS'), findsOneWidget);
+  });
 }

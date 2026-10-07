@@ -87,6 +87,7 @@ ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS subscription_expires_at 
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS boost_credits INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS has_active_banner BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS active_banner_id TEXT;
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS banner_credits INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS trade_license TEXT;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS nid TEXT;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE;
@@ -124,9 +125,10 @@ CREATE TABLE IF NOT EXISTS public.offers (
 ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS boosted_until TIMESTAMP WITH TIME ZONE;
 
--- 2.4 PROMO BANNERS TABLE (Dynamic Admin Hero Banners)
+-- 2.4 PROMO BANNERS TABLE (Dynamic Admin & Restaurant Hero Banners)
 CREATE TABLE IF NOT EXISTS public.promo_banners (
     id TEXT PRIMARY KEY,
+    restaurant_id UUID REFERENCES public.restaurants(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     subtitle TEXT NOT NULL,
     tag TEXT NOT NULL,
@@ -134,9 +136,23 @@ CREATE TABLE IF NOT EXISTS public.promo_banners (
     target_route TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     display_order INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected', 'ended', 'expired')),
+    rejection_reason TEXT,
+    starts_at TIMESTAMP WITH TIME ZONE,
+    ends_at TIMESTAMP WITH TIME ZONE,
+    reviewed_by UUID REFERENCES public.profiles(id),
+    reviewed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS restaurant_id UUID REFERENCES public.restaurants(id) ON DELETE CASCADE;
+ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved';
+ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS starts_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS ends_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES public.profiles(id);
+ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE;
 
 -- ==============================================================================
 -- 3. NEW FEATURE TABLES

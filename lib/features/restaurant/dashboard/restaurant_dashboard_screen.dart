@@ -16,6 +16,9 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../shared/models/food_offer.dart';
 import '../../shared/models/promo_banner.dart';
 import '../../shared/models/restaurant.dart';
+import '../../../core/utils/platform_file_picker.dart';
+import '../../shared/data/promo_banner_controller.dart';
+import '../notifications/restaurant_notification_controller.dart';
 import '../presentation/restaurant_controller.dart';
 
 /// Restaurant Management Portal Screen.
@@ -1443,9 +1446,14 @@ class _RestaurantDashboardScreenState
                         'Feature your restaurant banner prominently on the top carousel of the Customer Home Screen across Banasree and Dhaka for 24 hours.',
                     icon: Icons.view_carousel_rounded,
                     color: const Color(0xFF2563EB),
-                    onConfirm: () {
+                    onConfirm: () async {
                       setState(() => _hasActive24hBanner = true);
-                      _showHeroBannerModal(context, restaurant);
+                      await ref
+                          .read(restaurantActionNotifierProvider.notifier)
+                          .addBannerCredits(1);
+                      if (context.mounted) {
+                        _showHeroBannerModal(context, restaurant);
+                      }
                     },
                   );
                 }
@@ -1546,9 +1554,14 @@ class _RestaurantDashboardScreenState
                       'Maintain top featured placement on the customer home slideshow for 7 full days across Banasree and Dhaka.',
                   icon: Icons.star_rounded,
                   color: const Color(0xFF7C3AED),
-                  onConfirm: () {
+                  onConfirm: () async {
                     setState(() => _hasActive24hBanner = true);
-                    _showHeroBannerModal(context, restaurant);
+                    await ref
+                        .read(restaurantActionNotifierProvider.notifier)
+                        .addBannerCredits(1);
+                    if (context.mounted) {
+                      _showHeroBannerModal(context, restaurant);
+                    }
                   },
                 );
               },
@@ -1901,6 +1914,8 @@ class _RestaurantDashboardScreenState
                                   size: 18,
                                   color: Color(0xFFD97706),
                                 ),
+                                const Spacer(),
+                                _buildNotificationBell(context),
                               ],
                             ),
                             const SizedBox(height: 2),
@@ -2175,15 +2190,43 @@ class _RestaurantDashboardScreenState
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildActionTile(
-                          icon: Icons.view_carousel_rounded,
-                          iconColor: const Color(0xFF4F46E5),
-                          iconBgColor: const Color(0xFFEEF2FF),
-                          label: 'Hero Banner',
-                          onTap: () =>
-                              _showHeroBannerModal(context, restaurant),
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final isHeroBannerEnabled =
+                              restaurant.canAccessHeroBanner || _hasActive24hBanner;
+                          return Expanded(
+                            child: _buildActionTile(
+                              icon: isHeroBannerEnabled
+                                  ? Icons.view_carousel_rounded
+                                  : Icons.lock_outline_rounded,
+                              iconColor: isHeroBannerEnabled
+                                  ? const Color(0xFF4F46E5)
+                                  : const Color(0xFF94A3B8),
+                              iconBgColor: isHeroBannerEnabled
+                                  ? const Color(0xFFEEF2FF)
+                                  : const Color(0xFFF1F5F9),
+                              badgeText: isHeroBannerEnabled
+                                  ? (restaurant.bannerCredits > 0
+                                      ? '${restaurant.bannerCredits} READY'
+                                      : (restaurant.hasActiveBanner ? 'LIVE' : null))
+                                  : 'LOCKED',
+                              badgeColor: isHeroBannerEnabled
+                                  ? (restaurant.hasActiveBanner
+                                      ? const Color(0xFF16A34A)
+                                      : const Color(0xFF4F46E5))
+                                  : const Color(0xFF64748B),
+                              label: 'Hero Banner',
+                              isDisabled: !isHeroBannerEnabled,
+                              onTap: () {
+                                if (isHeroBannerEnabled) {
+                                  _showHeroBannerModal(context, restaurant);
+                                } else {
+                                  _showHeroBannerLockedModal(context, restaurant);
+                                }
+                              },
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -3914,7 +3957,28 @@ class _RestaurantDashboardScreenState
     Color iconColor = const Color(0xFFE11D48),
     Color iconBgColor = const Color(0xFFFFEDEC),
     String? badgeText,
+    Color? badgeColor,
+    Color? badgeTextColor,
+    Color? tileBgColor,
+    Color? textColor,
+    bool isDisabled = false,
   }) {
+    final effectiveTileBg =
+        isDisabled ? const Color(0xFFF8FAFC) : (tileBgColor ?? Colors.white);
+    final effectiveBorderColor = isDisabled
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFFE2E8F0).withValues(alpha: 0.8);
+    final effectiveIconColor =
+        isDisabled ? const Color(0xFF94A3B8) : iconColor;
+    final effectiveIconBgColor =
+        isDisabled ? const Color(0xFFF1F5F9) : iconBgColor;
+    final effectiveTextColor = isDisabled
+        ? const Color(0xFF64748B)
+        : (textColor ?? const Color(0xFF1E293B));
+    final effectiveBadgeColor = badgeColor ??
+        (isDisabled ? const Color(0xFF64748B) : const Color(0xFFFF5722));
+    final effectiveBadgeTextColor = badgeTextColor ?? Colors.white;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -3923,10 +3987,10 @@ class _RestaurantDashboardScreenState
         child: Container(
           height: 84,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: effectiveTileBg,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+              color: effectiveBorderColor,
               width: 1.2,
             ),
             boxShadow: [
@@ -3947,11 +4011,11 @@ class _RestaurantDashboardScreenState
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: iconBgColor,
+                      color: effectiveIconBgColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
-                      child: Icon(icon, size: 20, color: iconColor),
+                      child: Icon(icon, size: 20, color: effectiveIconColor),
                     ),
                   ),
                   if (badgeText != null)
@@ -3962,13 +4026,13 @@ class _RestaurantDashboardScreenState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF5722),
+                          color: effectiveBadgeColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           badgeText,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: effectiveBadgeTextColor,
                             fontSize: 8,
                             fontWeight: FontWeight.w800,
                           ),
@@ -3980,10 +4044,10 @@ class _RestaurantDashboardScreenState
               const SizedBox(height: 7),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E293B),
+                  color: effectiveTextColor,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -4626,13 +4690,26 @@ class _RestaurantDashboardScreenState
                         onPressed: () async {
                           Navigator.of(ctx).pop();
                           final newStatus = !isSubscribed;
+                          if (!newStatus) {
+                            setState(() => _hasActive24hBanner = false);
+                          }
                           await ref
                               .read(restaurantActionNotifierProvider.notifier)
                               .updateSubscription(
                                 isPremium: newStatus,
                                 plan: newStatus ? 'gold' : null,
                                 boostCredits: newStatus ? 5 : 0,
+                                bannerCredits: newStatus ? 1 : 0,
+                                hasActiveBanner: newStatus,
                               );
+                          if (newStatus) {
+                            await ref
+                                .read(restaurantNotificationsProvider.notifier)
+                                .notifyGoldMerchant(
+                                  restaurantId: restaurant.id,
+                                  restaurantName: restaurant.name,
+                                );
+                          }
                         },
                         child: Text(
                           isSubscribed ? 'Manage Subscription' : 'Upgrade (${AppConstants.currencySymbol}999/mo)',
@@ -4757,17 +4834,624 @@ class _RestaurantDashboardScreenState
     );
   }
 
+  // ==========================================
+  // NOTIFICATION BELL & PARTNER NOTIFICATIONS SHEET
+  // ==========================================
+  Widget _buildNotificationBell(BuildContext context) {
+    final notifsAsync = ref.watch(restaurantNotificationsProvider);
+    final notifs = notifsAsync.asData?.value ?? [];
+    final unreadCount = notifs.where((n) => !n.isRead).length;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showRestaurantNotificationsSheet(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(
+                Icons.notifications_outlined,
+                size: 20,
+                color: Color(0xFF334155),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  top: -5,
+                  right: -5,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE11D48),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Center(
+                      child: Text(
+                        unreadCount > 9 ? '9+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRestaurantNotificationsSheet(BuildContext context) {
+    _showSheet<void>(
+      builder: (ctx) => Consumer(
+        builder: (sheetCtx, sheetRef, _) {
+          final notifsAsync = sheetRef.watch(restaurantNotificationsProvider);
+          final notifs = notifsAsync.asData?.value ?? [];
+          final unreadCount = notifs.where((n) => !n.isRead).length;
+
+          return Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_active_rounded,
+                        color: Color(0xFF4F46E5),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Partner Notifications',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          Text(
+                            unreadCount > 0
+                                ? '$unreadCount unread updates'
+                                : 'All notifications read',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: unreadCount > 0
+                                  ? const Color(0xFFE11D48)
+                                  : const Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (unreadCount > 0)
+                      TextButton(
+                        onPressed: () {
+                          sheetRef
+                              .read(restaurantNotificationsProvider.notifier)
+                              .markAllRead();
+                        },
+                        child: const Text('Mark all read'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (notifs.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.notifications_none_rounded,
+                            size: 36, color: Color(0xFF94A3B8)),
+                        SizedBox(height: 8),
+                        Text(
+                          'No notifications yet',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'You will receive notifications when your hero banner starts or ends.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(sheetCtx).size.height * 0.55,
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: notifs.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      itemBuilder: (itemCtx, idx) {
+                        final notif = notifs[idx];
+                        Color iconBg;
+                        Color iconColor;
+                        IconData icon;
+
+                        switch (notif.type) {
+                          case 'banner_started':
+                            iconBg = const Color(0xFFDCFCE7);
+                            iconColor = const Color(0xFF16A34A);
+                            icon = Icons.campaign_rounded;
+                            break;
+                          case 'banner_ended':
+                            iconBg = const Color(0xFFDBEAFE);
+                            iconColor = const Color(0xFF2563EB);
+                            icon = Icons.flag_rounded;
+                            break;
+                          case 'gold_merchant':
+                            iconBg = const Color(0xFFFEF3C7);
+                            iconColor = const Color(0xFFD97706);
+                            icon = Icons.workspace_premium_rounded;
+                            break;
+                          default:
+                            iconBg = const Color(0xFFF1F5F9);
+                            iconColor = const Color(0xFF64748B);
+                            icon = Icons.info_outline_rounded;
+                        }
+
+                        return InkWell(
+                          onTap: () {
+                            sheetRef
+                                .read(restaurantNotificationsProvider.notifier)
+                                .markAsRead(notif.id);
+                          },
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: notif.isRead
+                                  ? const Color(0xFFF8FAFC)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: notif.isRead
+                                    ? const Color(0xFFE2E8F0)
+                                    : const Color(0xFFBFDBFE),
+                                width: notif.isRead ? 1.0 : 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: iconBg,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(icon, color: iconColor, size: 20),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              notif.title,
+                                              style: TextStyle(
+                                                fontSize: 13.5,
+                                                fontWeight: notif.isRead
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w800,
+                                                color: const Color(0xFF1E293B),
+                                              ),
+                                            ),
+                                          ),
+                                          if (!notif.isRead)
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFFE11D48),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        notif.message,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF475569),
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        _formatRelativeTime(notif.createdAt),
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _formatRelativeTime(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
+  // ==========================================
+  // HERO BANNER LOCKED MODAL (FOR NORMAL RESTAURANTS)
+  // ==========================================
+  void _showHeroBannerLockedModal(BuildContext context, Restaurant restaurant) {
+    _showSheet<void>(
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.lock_rounded,
+                      color: Color(0xFFE11D48),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hero Banner Locked',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        Text(
+                          'Exclusive feature for Gold Merchants & Promo Ad buyers',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Text(
+                  'The Homepage Hero Banner carousel showcases premium restaurants to thousands of food savers daily in Dhaka. Normal accounts cannot post hero banners. You can unlock this feature through either of the following 2 options:',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFF334155),
+                    height: 1.45,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Option 1: Gold Merchant Subscription
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.workspace_premium_rounded,
+                              color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Option 1: Gold Merchant Upgrade',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF92400E),
+                                ),
+                              ),
+                              Text(
+                                '৳999 / month • Includes 1 Hero Banner Ad + 5 Post Boosts',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFFB45309),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 42,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFD97706),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          _showGoldSubscriptionModal(context, restaurant);
+                        },
+                        child: const Text(
+                          'Upgrade to Gold Merchant (৳999/mo)',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Option 2: Buy from Offers tab
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2563EB),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.view_carousel_rounded,
+                              color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Option 2: Buy Banner Package from Offers',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF1E40AF),
+                                ),
+                              ),
+                              Text(
+                                '৳2,000 / 24 Hours • 12,500+ customer views on Dhaka homepage',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 42,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          setState(() => _navIndex = 1); // Switch to Offers tab
+                        },
+                        child: const Text(
+                          'View Ad Packages in Offers Tab',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // HERO BANNER MODAL (DESIGN, IMAGE, & ADMIN APPROVAL)
+  // ==========================================
   void _showHeroBannerModal(BuildContext context, Restaurant restaurant) {
-    final titleController = TextEditingController(text: '15% OFF AT BLUE BELL CAFÉ');
-    final subtitleController = TextEditingController(text: 'Artisanal roastery coffee, lasagna & pastries in Banasree');
-    final badgeController = TextEditingController(text: '☕ BANASREE SPECIALTY');
-    String selectedTheme = 'coffee';
+    final titleController = TextEditingController(
+      text: '20% OFF SURPLUS FEAST AT ${restaurant.name.toUpperCase()}',
+    );
+    final subtitleController = TextEditingController(
+      text: 'Freshly prepared specialty dishes rescued daily in ${restaurant.area ?? "Dhaka"}.',
+    );
+    final badgeController = TextEditingController(text: '🔥 SPECIAL OFFER');
+    String selectedTheme = 'yellow';
+    String currentImageUrl = restaurant.imageUrl ??
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&auto=format&fit=crop&q=80';
+    bool isSubmitting = false;
+
+    final presetImages = [
+      {
+        'label': 'Bakery & Pastry',
+        'url':
+            'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=900&auto=format&fit=crop&q=80',
+      },
+      {
+        'label': 'Coffee & Café',
+        'url':
+            'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=900&auto=format&fit=crop&q=80',
+      },
+      {
+        'label': 'Gourmet Feast',
+        'url':
+            'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=900&auto=format&fit=crop&q=80',
+      },
+      {
+        'label': 'Surplus Dishes',
+        'url':
+            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&auto=format&fit=crop&q=80',
+      },
+    ];
 
     _showSheet<void>(
       builder: (ctx) => StatefulBuilder(
         builder: (modalCtx, setModalState) {
           final themeInfo = PromoBanner.availableThemes[selectedTheme] ??
-              PromoBanner.availableThemes['coffee']!;
+              PromoBanner.availableThemes['coffee'] ??
+              PromoBanner.availableThemes.values.first;
+
+          final allBanners =
+              ref.watch(promoBannersControllerProvider).asData?.value ?? [];
+          final partnerBanners = allBanners
+              .where((b) =>
+                  b.restaurantId == restaurant.id ||
+                  (b.restaurantName != null &&
+                      b.restaurantName == restaurant.name))
+              .toList();
+          final pendingBanner =
+              partnerBanners.where((b) => b.isPending).firstOrNull;
+          final activeBanner =
+              partnerBanners.where((b) => b.isApproved).firstOrNull;
 
           return Container(
             padding: EdgeInsets.fromLTRB(
@@ -4796,65 +5480,539 @@ class _RestaurantDashboardScreenState
                     ),
                   ),
                   const SizedBox(height: 18),
+
+                  // Header with Quota & Verification
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.view_carousel_rounded,
+                          color: Color(0xFF4F46E5),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Homepage Hero Banner',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            Text(
+                              restaurant.hasGoldSubscription
+                                  ? 'Gold Merchant Access • Requires Admin Approval'
+                                  : 'Ad Package Active • Requires Admin Approval',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Status indicator if pending or active
+                  if (pendingBanner != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.hourglass_top_rounded,
+                              color: Color(0xFFD97706), size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '⏳ Banner Pending Admin Review',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12.5,
+                                    color: Color(0xFF92400E),
+                                  ),
+                                ),
+                                Text(
+                                  'Headline: "${pendingBanner.title}". You will receive a notification the moment admin approves it.',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFFB45309),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (activeBanner != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded,
+                              color: Color(0xFF16A34A), size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '🟢 Banner is Live on Customer Home',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12.5,
+                                    color: Color(0xFF15803D),
+                                  ),
+                                ),
+                                Text(
+                                  'Currently seen by customers in Dhaka. You will receive a notification when the campaign ends.',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFF166534),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // LIVE CAROUSEL PREVIEW CARD
                   const Text(
-                    'Homepage Hero Banner Designer',
+                    'LIVE CUSTOMER HOMEPAGE PREVIEW',
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        children: [
+                          // Background Image
+                          Positioned.fill(
+                            child: Image.network(
+                              currentImageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: const Color(0xFF1E293B),
+                                child: const Icon(
+                                  Icons.image_outlined,
+                                  color: Colors.white54,
+                                  size: 40,
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Dark gradient overlay for readability
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.85),
+                                    Colors.black.withValues(alpha: 0.45),
+                                    Colors.black.withValues(alpha: 0.2),
+                                  ],
+                                  begin: Alignment.bottomLeft,
+                                  end: Alignment.topRight,
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Content Overlay
+                          Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (badgeController.text.trim().isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE11D48),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      badgeController.text.trim(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.4,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  titleController.text.trim().isEmpty
+                                      ? 'Banner Headline'
+                                      : titleController.text.trim(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  subtitleController.text.trim().isEmpty
+                                      ? 'Description of your featured offer'
+                                      : subtitleController.text.trim(),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 1. HEADLINE
+                  const Text(
+                    '1. Headline',
+                    style: TextStyle(
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF1E293B),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Banner Headline',
-                      border: OutlineInputBorder(),
-                      isDense: true,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. 20% Off Weekend Buffet Feast',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
                     ),
                     onChanged: (_) => setModalState(() {}),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+
+                  // 2. DESCRIPTION
+                  const Text(
+                    '2. Description',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   TextField(
                     controller: subtitleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Subtitle / Description',
-                      border: OutlineInputBorder(),
-                      isDense: true,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText:
+                          'e.g. Freshly handcrafted lasagna and pastries in Banasree',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
                     ),
                     onChanged: (_) => setModalState(() {}),
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 12),
+
+                  // 3. BADGE / OFFER TAG
+                  const Text(
+                    '3. Badge Tag (Optional)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: badgeController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. 🔥 20% OFF SURPLUS',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
+                    ),
+                    onChanged: (_) => setModalState(() {}),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 4. BANNER DESIGN (IMAGE)
+                  const Text(
+                    '4. Banner Design (Image)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Image Upload Button & Presets
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: const BorderSide(color: Color(0xFF4F46E5)),
+                          ),
+                          icon: const Icon(Icons.add_photo_alternate_rounded,
+                              size: 18, color: Color(0xFF4F46E5)),
+                          label: const Text(
+                            'Pick From Gallery',
+                            style: TextStyle(
+                              color: Color(0xFF4F46E5),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          onPressed: () async {
+                            final picked =
+                                await pickImageWithPermission(modalCtx);
+                            if (picked != null) {
+                              setModalState(() {
+                                currentImageUrl = picked;
+                              });
+                            }
+                          },
                         ),
                       ),
-                      onPressed: () async {
-                        Navigator.of(ctx).pop();
-                        final banner = PromoBanner(
-                          id: 'banner_blue_bell',
-                          name: titleController.text.trim(),
-                          title: titleController.text.trim(),
-                          subtitle: subtitleController.text.trim(),
-                          badge: badgeController.text.trim(),
-                          themeKey: selectedTheme,
-                          bgStartColor: themeInfo.start,
-                          bgEndColor: themeInfo.end,
-                          ctaText: 'Visit Blue Bell',
-                          targetRoute: '/customer/restaurant/${restaurant.id}',
-                          imageUrl: restaurant.imageUrl,
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Quick presets
+                  const Text(
+                    'Or select a professionally curated banner design:',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: presetImages.map((preset) {
+                        final isSelected = currentImageUrl == preset['url'];
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(preset['label']!),
+                            selected: isSelected,
+                            selectedColor: const Color(0xFFEEF2FF),
+                            labelStyle: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected
+                                  ? const Color(0xFF4F46E5)
+                                  : const Color(0xFF475569),
+                            ),
+                            onSelected: (val) {
+                              if (val) {
+                                setModalState(() {
+                                  currentImageUrl = preset['url']!;
+                                });
+                              }
+                            },
+                          ),
                         );
-                        await ref
-                            .read(restaurantActionNotifierProvider.notifier)
-                            .publishBanner(banner);
-                      },
-                      child: const Text('Publish Banner to Customer Home'),
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // ADMIN APPROVAL INFO NOTICE
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded,
+                            size: 18, color: Color(0xFF64748B)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Note: Banners are submitted to Admin for quality check. You will receive an in-app notification when the banner starts and ends.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF475569),
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // SUBMIT BUTTON
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F46E5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: Text(
+                        isSubmitting
+                            ? 'Submitting...'
+                            : 'Submit Banner for Admin Approval',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              final headline = titleController.text.trim();
+                              final subtitle = subtitleController.text.trim();
+                              if (headline.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter a headline.'),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setModalState(() => isSubmitting = true);
+
+                              final banner = PromoBanner(
+                                id: 'banner_${restaurant.id}_${DateTime.now().millisecondsSinceEpoch}',
+                                name: headline,
+                                title: headline,
+                                subtitle: subtitle,
+                                badge: badgeController.text.trim().isNotEmpty
+                                    ? badgeController.text.trim()
+                                    : 'PARTNER SPECIAL',
+                                themeKey: selectedTheme,
+                                bgStartColor: themeInfo.start,
+                                bgEndColor: themeInfo.end,
+                                ctaText: 'Visit ${restaurant.name}',
+                                targetRoute:
+                                    '/customer/restaurant/${restaurant.id}',
+                                imageUrl: currentImageUrl,
+                                restaurantId: restaurant.id,
+                                restaurantName: restaurant.name,
+                                status: 'pending',
+                                createdAt: DateTime.now(),
+                              );
+
+                              final ok = await ref
+                                  .read(
+                                      restaurantActionNotifierProvider.notifier)
+                                  .submitHeroBanner(banner);
+
+                              if (context.mounted) {
+                                Navigator.of(ctx).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      ok
+                                          ? '🎉 Banner submitted for Admin Approval! You will receive a notification when it goes live.'
+                                          : 'Failed to submit banner. Please try again.',
+                                    ),
+                                    backgroundColor: ok
+                                        ? const Color(0xFF0F172A)
+                                        : const Color(0xFFDC2626),
+                                  ),
+                                );
+                              }
+                            },
                     ),
                   ),
                 ],
@@ -4865,6 +6023,7 @@ class _RestaurantDashboardScreenState
       ),
     );
   }
+
 
   void _showHoursModal(BuildContext context, Restaurant restaurant) {
     _showSheet<void>(
