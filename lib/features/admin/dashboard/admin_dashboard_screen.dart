@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/utils/platform_file_picker.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/confirm_dialog.dart';
@@ -337,9 +338,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   // ==========================================
   Future<T?> _showSheet<T>({required WidgetBuilder builder}) async {
     setState(() => _isNavVisible = false);
+    final targetContext = rootNavigatorKey.currentContext ?? context;
     try {
       return await showModalBottomSheet<T>(
-        context: context,
+        context: targetContext,
+        useRootNavigator: true,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: builder,
@@ -2631,6 +2634,39 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               color: Color(0xFF0F172A),
             ),
           ),
+          if (banner.subtitle.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              banner.subtitle,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          if (banner.code != null && banner.code!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.confirmation_number_outlined,
+                    size: 13, color: Color(0xFF0284C7)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Code: ${banner.code}',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0284C7),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 8),
           Container(
             height: 110,
@@ -2668,24 +2704,41 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     WidgetRef ref,
     PromoBanner banner,
   ) {
-    final nameController = TextEditingController(text: banner.bannerName);
+    final headlineController =
+        TextEditingController(text: banner.bannerName);
+    final subtitleController =
+        TextEditingController(text: banner.subtitle);
+    final badgeController =
+        TextEditingController(text: banner.badge);
+    final codeController =
+        TextEditingController(text: banner.code ?? '');
+    final ctaController =
+        TextEditingController(text: banner.ctaText);
     final imageUrlController =
         TextEditingController(text: banner.imageUrl ?? '');
     String selectedTheme = banner.themeKey;
+    bool isSaving = false;
 
     _showSheet(
       builder: (sheetCtx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
+            final themeInfo = PromoBanner.availableThemes[selectedTheme] ??
+                PromoBanner.availableThemes['coffee'] ??
+                PromoBanner.availableThemes.values.first;
+            final currentStartColor = Color(int.parse(themeInfo.start));
+            final currentEndColor = Color(int.parse(themeInfo.end));
+
             return Container(
+              width: double.infinity,
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(sheetCtx).size.height * 0.9,
+                maxHeight: MediaQuery.of(sheetCtx).size.height * 0.92,
               ),
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
-                top: 16,
-                left: 20,
-                right: 20,
+                top: 14,
+                left: 18,
+                right: 18,
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -2706,7 +2759,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
+
+                    // Header
                     Row(
                       children: [
                         Container(
@@ -2716,33 +2771,178 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
-                              Icons.photo_size_select_actual_rounded,
-                              color: AppColors.primary,
-                              size: 20),
+                            Icons.auto_fix_high_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 10),
-                        Text(
-                          'Edit Promotional Banner (${banner.id})',
-                          style: const TextStyle(
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Edit Banner (${banner.id})',
+                                style: const TextStyle(
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const Text(
+                                'Customize headline, image, subtitle & theme',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded,
+                              color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.of(sheetCtx).pop(),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 14),
+
+                    // Live Interactive Preview
+                    const Text(
+                      'LIVE PREVIEW',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [currentStartColor, currentEndColor],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: currentStartColor.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (imageUrlController.text.trim().isNotEmpty)
+                            Container(
+                              height: 120,
+                              width: double.infinity,
+                              color: Colors.black12,
+                              child: _buildAdminImagePreview(
+                                imageUrlController.text.trim(),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: [
+                                    if (badgeController.text.trim().isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.25),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          badgeController.text.trim(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                    if (codeController.text.trim().isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          'Code: ${codeController.text.trim()}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  headlineController.text.trim().isEmpty
+                                      ? 'Banner Headline'
+                                      : headlineController.text.trim(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (subtitleController.text.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    subtitleController.text.trim(),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 11.5,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 16),
 
-                    // 1. Banner Name
-                    const Text('Banner Name',
+                    // 1. Banner Headline / Name
+                    const Text('Banner Headline / Name *',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF0F172A))),
                     const SizedBox(height: 6),
                     TextField(
-                      controller: nameController,
+                      controller: headlineController,
                       style: const TextStyle(color: Color(0xFF0F172A)),
+                      onChanged: (_) => setSheetState(() {}),
                       decoration: InputDecoration(
                         hintText: 'e.g. International Coffee Day 10% OFF',
                         hintStyle:
@@ -2762,10 +2962,125 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-                    // 2. Banner Picture
-                    const Text('Banner Picture (URL / File)',
+                    // 2. Banner Subtitle / Description
+                    const Text('Description / Subtitle',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A))),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: subtitleController,
+                      style: const TextStyle(color: Color(0xFF0F172A)),
+                      maxLines: 2,
+                      onChanged: (_) => setSheetState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Valid across all North End branches on coffee day',
+                        hintStyle:
+                            const TextStyle(color: Color(0xFF94A3B8)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 3. Badge & Promo Code row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Badge Tag',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF0F172A))),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: badgeController,
+                                style: const TextStyle(
+                                    color: Color(0xFF0F172A)),
+                                onChanged: (_) => setSheetState(() {}),
+                                decoration: InputDecoration(
+                                  hintText: '☕ COFFEE DAY',
+                                  hintStyle: const TextStyle(
+                                      color: Color(0xFF94A3B8)),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  isDense: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Coupon / Code',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF0F172A))),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: codeController,
+                                style: const TextStyle(
+                                    color: Color(0xFF0F172A)),
+                                onChanged: (_) => setSheetState(() {}),
+                                decoration: InputDecoration(
+                                  hintText: 'e.g. BYTE100',
+                                  hintStyle: const TextStyle(
+                                      color: Color(0xFF94A3B8)),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  isDense: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xFFE2E8F0)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 4. Banner Picture (URL / File Pick)
+                    const Text('Banner Picture (URL / Device File)',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -2779,7 +3094,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             style: const TextStyle(color: Color(0xFF0F172A)),
                             onChanged: (_) => setSheetState(() {}),
                             decoration: InputDecoration(
-                              hintText: 'Image URL or pick file',
+                              hintText: 'Image URL or asset path',
                               hintStyle:
                                   const TextStyle(color: Color(0xFF94A3B8)),
                               filled: true,
@@ -2802,7 +3117,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         OutlinedButton.icon(
                           onPressed: () async {
                             final dataUrl =
-                                await pickImageWithPermission(context);
+                                await pickImageWithPermission(sheetCtx);
                             if (dataUrl != null) {
                               imageUrlController.text = dataUrl;
                               setSheetState(() {});
@@ -2813,6 +3128,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primary,
                             side: const BorderSide(color: AppColors.primary),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 12),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -2820,9 +3139,31 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    if (imageUrlController.text.trim().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            imageUrlController.clear();
+                            setSheetState(() {});
+                          },
+                          icon: const Icon(Icons.delete_outline_rounded,
+                              size: 15, color: Color(0xFFDC2626)),
+                          label: const Text('Remove Image',
+                              style: TextStyle(
+                                  fontSize: 11.5, color: Color(0xFFDC2626))),
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
 
-                    // 3. Theme selector
+                    // 5. Theme selector
                     const Text('Background Color Theme',
                         style: TextStyle(
                             fontSize: 12,
@@ -2855,12 +3196,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                 color: isSelected
                                     ? Colors.white
                                     : Colors.transparent,
-                                width: 2,
+                                width: 2.2,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2),
+                                        color: Colors.black.withValues(alpha: 0.25),
                                         blurRadius: 6,
                                         offset: const Offset(0, 2),
                                       ),
@@ -2886,44 +3227,130 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
 
-                    // Save CTA Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    // Actions
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF64748B),
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              minimumSize: const Size(0, 46),
+                            ),
+                            onPressed: isSaving
+                                ? null
+                                : () => Navigator.of(sheetCtx).pop(),
+                            child: const Text('Cancel',
+                                style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700)),
                           ),
                         ),
-                        onPressed: () async {
-                          final updated = banner.copyWith(
-                            name: nameController.text.trim(),
-                            title: nameController.text.trim(),
-                            imageUrl: imageUrlController.text.trim(),
-                            themeKey: selectedTheme,
-                          );
-                          await ref
-                              .read(promoBannersControllerProvider.notifier)
-                              .updateBanner(updated);
-                          if (sheetCtx.mounted) {
-                            Navigator.of(sheetCtx).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Banner "${updated.bannerName}" updated!'),
-                                backgroundColor: const Color(0xFF16A34A),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            );
-                          }
-                        },
-                        child: const Text('Save Banner Changes',
-                            style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w800)),
-                      ),
+                              minimumSize: const Size(0, 46),
+                            ),
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    final finalHeadline = headlineController
+                                        .text
+                                        .trim()
+                                        .isNotEmpty
+                                        ? headlineController.text.trim()
+                                        : banner.bannerName;
+                                    setSheetState(() => isSaving = true);
+                                    try {
+                                      final chosenTheme =
+                                          PromoBanner.availableThemes[
+                                                  selectedTheme] ??
+                                              PromoBanner.availableThemes[
+                                                  'coffee'] ??
+                                              PromoBanner.availableThemes.values
+                                                  .first;
+                                      final updated = banner.copyWith(
+                                        name: finalHeadline,
+                                        title: finalHeadline,
+                                        subtitle:
+                                            subtitleController.text.trim(),
+                                        badge: badgeController.text.trim().isNotEmpty
+                                            ? badgeController.text.trim()
+                                            : banner.badge,
+                                        code: codeController.text.trim(),
+                                        clearCode: codeController.text.trim().isEmpty,
+                                        ctaText: ctaController.text.trim().isNotEmpty
+                                            ? ctaController.text.trim()
+                                            : banner.ctaText,
+                                        imageUrl: imageUrlController.text.trim(),
+                                        clearImageUrl: imageUrlController.text.trim().isEmpty,
+                                        themeKey: selectedTheme,
+                                        bgStartColor: chosenTheme.start,
+                                        bgEndColor: chosenTheme.end,
+                                      );
+
+                                      await ref
+                                          .read(promoBannersControllerProvider
+                                              .notifier)
+                                          .updateBanner(updated);
+
+                                      if (sheetCtx.mounted) {
+                                        Navigator.of(sheetCtx).pop();
+                                      }
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Banner "${updated.bannerName}" updated successfully! ✨',
+                                            ),
+                                            backgroundColor:
+                                                const Color(0xFF16A34A),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (sheetCtx.mounted) {
+                                        setSheetState(() => isSaving = false);
+                                        ScaffoldMessenger.of(sheetCtx)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Failed to save banner: $e'),
+                                            backgroundColor:
+                                                const Color(0xFFDC2626),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                            child: isSaving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Save Banner Changes',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
