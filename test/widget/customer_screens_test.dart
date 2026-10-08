@@ -374,9 +374,20 @@ void main() {
         expect(find.text('Cancel'), findsOneWidget);
         expect(find.text('Delete Account'), findsOneWidget);
 
-        // Tap Delete Account in dialog to confirm
+        // Tap Delete Account in dialog to request OTP
         await tester.tap(find.widgetWithText(FilledButton, 'Delete Account'));
         await tester.pumpAndSettle();
+
+        // EmailOtpVerificationSheet appears for deletion; enter OTP to verify
+        expect(find.text('Confirm Account Deletion'), findsOneWidget);
+        final otpField = find.byKey(const Key('otp_input_field'));
+        if (otpField.evaluate().isNotEmpty) {
+          await tester.enterText(otpField, '123456');
+          await tester.pumpAndSettle();
+        } else if (find.text('Verify & Delete Account').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Verify & Delete Account'));
+          await tester.pumpAndSettle();
+        }
 
         // Verify success snackbar appears
         expect(find.text('Your account has been deleted.'), findsOneWidget);

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:save_bite/core/constants/app_constants.dart';
 import 'package:save_bite/core/theme/app_theme.dart';
+import 'package:save_bite/features/auth/data/auth_repository.dart';
 import 'package:save_bite/features/auth/domain/user_profile.dart';
 import 'package:save_bite/features/auth/presentation/auth_controller.dart';
 import 'package:save_bite/features/restaurant/dashboard/restaurant_dashboard_screen.dart';
@@ -13,6 +14,8 @@ import 'package:save_bite/features/restaurant/offers/presentation/create_offer_s
 import 'package:save_bite/features/restaurant/presentation/restaurant_controller.dart';
 import 'package:save_bite/features/restaurant/profile/restaurant_profile_screen.dart';
 import 'package:save_bite/features/shared/models/restaurant.dart';
+
+import '../helpers/fake_auth_repository.dart';
 
 class FakeCurrentUserNotifier extends CurrentUserNotifier {
   FakeCurrentUserNotifier(this._profile);
@@ -122,9 +125,12 @@ void main() {
   Widget createTestWidget(
     Widget child, {
     Restaurant? restaurant = incompleteRestaurant,
+    FakeAuthRepository? authRepo,
   }) {
     return ProviderScope(
       overrides: [
+        if (authRepo != null)
+          authRepositoryProvider.overrideWithValue(authRepo),
         currentUserProfileProvider.overrideWith(
           () => FakeCurrentUserNotifier(restaurantUser),
         ),
@@ -351,8 +357,8 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('restaurant_nav_Offers')));
       await tester.pumpAndSettle();
 
-      // Check Admin offers header and packages
-      expect(find.text('Admin Promotional Offers'), findsOneWidget);
+      // Check offers header and packages
+      expect(find.text('Offers for you'), findsOneWidget);
       expect(find.text('1 Homepage Hero Banner (24 Hours)'), findsOneWidget);
       expect(find.text('৳2,000'), findsWidgets);
       expect(find.text('Post Boost for 24 Hours'), findsOneWidget);
@@ -572,5 +578,67 @@ void main() {
       // Verify Partner Notifications sheet opens
       expect(find.text('Partner Notifications'), findsOneWidget);
     });
+
+    testWidgets(
+      'Restaurant Account Deletion requires warning confirmation and email OTP verification',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final fakeRepo = FakeAuthRepository(initialProfile: restaurantUser);
+
+        await tester.pumpWidget(createTestWidget(
+          const RestaurantDashboardScreen(),
+          restaurant: completeRestaurant,
+          authRepo: fakeRepo,
+        ));
+        await tester.pumpAndSettle();
+
+        // 1. Switch to Account Tab
+        final accountTabFinder =
+            find.byKey(const ValueKey('restaurant_nav_Account'));
+        expect(accountTabFinder, findsOneWidget);
+        await tester.tap(accountTabFinder);
+        await tester.pumpAndSettle();
+
+        // 2. Scroll to Delete Account button and tap it
+        final deleteButton = find.widgetWithText(ElevatedButton, 'Delete Account');
+        expect(deleteButton, findsOneWidget);
+        await tester.ensureVisible(deleteButton);
+        await tester.tap(deleteButton);
+        await tester.pumpAndSettle();
+
+        // 3. Confirm Delete Account dialog is displayed
+        expect(find.text('Permanently Delete'), findsOneWidget);
+        expect(
+          find.textContaining('An OTP verification code will be sent to your registered email'),
+          findsOneWidget,
+        );
+
+        // 4. Tap Permanently Delete in confirmation dialog
+        await tester.tap(find.widgetWithText(FilledButton, 'Permanently Delete'));
+        await tester.pumpAndSettle();
+
+        // 5. EmailOtpVerificationSheet appears for deletion
+        expect(find.text('Confirm Account Deletion'), findsOneWidget);
+        final otpField = find.byKey(const Key('otp_input_field'));
+        if (otpField.evaluate().isNotEmpty) {
+          await tester.enterText(otpField, '123456');
+          await tester.pumpAndSettle();
+        } else if (find.text('Verify & Delete Account').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Verify & Delete Account'));
+          await tester.pumpAndSettle();
+        }
+
+        // 6. Verify account deletion was executed
+        expect(fakeRepo.deleteAccountCalled, isTrue);
+        expect(
+          find.text('Your restaurant account has been permanently deleted.'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

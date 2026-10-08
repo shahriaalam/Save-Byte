@@ -13,6 +13,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../auth/domain/user_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/widgets/email_otp_verification_sheet.dart';
 import '../../shared/models/food_offer.dart';
 import '../../shared/models/promo_banner.dart';
 import '../../shared/models/restaurant.dart';
@@ -814,7 +815,7 @@ class _RestaurantDashboardScreenState
                         ),
                       ),
                       Text(
-                        'Admin Promotion Package • $duration',
+                        'Promotional Package • $duration',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF64748B),
@@ -874,7 +875,7 @@ class _RestaurantDashboardScreenState
                           size: 15, color: Color(0xFF16A34A)),
                       SizedBox(width: 6),
                       Text(
-                        'Billed to linked restaurant balance / weekly settlement',
+                        'Instant activation • Verified restaurant growth feature',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -905,7 +906,7 @@ class _RestaurantDashboardScreenState
                   final payResult = await showPaymentPortalSheet(
                     context: context,
                     title: packageTitle,
-                    subtitle: 'Admin Promotional Package • $duration',
+                    subtitle: 'Promotional Package • $duration',
                     amount: parsedAmount,
                     customerOrBusinessName: 'Partner Kitchen',
                     perkHighlights: [
@@ -980,7 +981,7 @@ class _RestaurantDashboardScreenState
           ],
         ),
         content: const Text(
-          'Are you sure you want to permanently delete your restaurant account? All listed food offers, active boosts, banners, and analytics history will be erased immediately.',
+          'Are you sure you want to permanently delete your restaurant account? All listed food offers, active boosts, banners, and analytics history will be erased immediately.\n\nAn OTP verification code will be sent to your registered email to authorize permanent deletion.',
           style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.textPrimary),
         ),
         actions: [
@@ -1001,16 +1002,63 @@ class _RestaurantDashboardScreenState
 
     if (mounted) setState(() => _isNavVisible = true);
 
-    if (confirmed == true && mounted) {
-      await ref.read(authControllerProvider.notifier).signOut();
+    if (confirmed == true && context.mounted) {
+      final profile = ref.read(currentUserProfileProvider);
+      final email = profile?.email.trim() ?? '';
+      if (email.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to find restaurant registered email address.'),
+              backgroundColor: Color(0xFF8B0000),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 1. Send OTP to restaurant owner's email
+      final otp = await ref
+          .read(authControllerProvider.notifier)
+          .sendDeletionOtp(email);
+
+      if (!context.mounted) return;
+
+      // 2. Open OTP verification bottom sheet for deletion
+      final isVerified = await EmailOtpVerificationSheet.show(
+        context: context,
+        email: email,
+        initialOtp: otp,
+        purpose: OtpPurpose.deletion,
+      );
+
+      if (!context.mounted) return;
+      if (!isVerified) return; // User closed sheet without verifying
+
+      // 3. Delete restaurant account permanently
+      final success = await ref
+          .read(authControllerProvider.notifier)
+          .deleteAccount();
+
       if (context.mounted) {
-        context.go(AppRoutes.login);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Your restaurant account has been removed.'),
-            backgroundColor: Color(0xFF8B0000),
-          ),
-        );
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Your restaurant account has been permanently deleted.'),
+              backgroundColor: Color(0xFF8B0000),
+            ),
+          );
+          try {
+            context.go(AppRoutes.login);
+          } catch (_) {}
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete restaurant account. Please try again.'),
+              backgroundColor: Color(0xFF8B0000),
+            ),
+          );
+        }
       }
     }
   }
@@ -1387,38 +1435,55 @@ class _RestaurantDashboardScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header: Offers for you
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    Icons.campaign_rounded,
-                    color: Color(0xFF7C3AED),
-                    size: 24,
+                    Icons.local_offer_rounded,
+                    color: AppColors.primary,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Text(
+                    'Offers for you',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      Icon(Icons.bolt_rounded,
+                          size: 14, color: Color(0xFFD97706)),
+                      SizedBox(width: 3),
                       Text(
-                        'Admin Promotional Offers',
+                        'PROMO DEALS',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
+                          color: Color(0xFF475569),
+                          letterSpacing: 0.5,
                         ),
-                      ),
-                      Text(
-                        'Growth, banner & boost packages provided by SaveBite HQ',
-                        style:
-                            TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                       ),
                     ],
                   ),
@@ -1430,26 +1495,56 @@ class _RestaurantDashboardScreenState
             // Active Promotions Status Banner
             if (_hasActive24hBanner || _hasActive24hBoost)
               Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFA7F3D0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded,
-                        color: Color(0xFF10B981), size: 20),
-                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.check_rounded,
+                          color: Colors.white, size: 16),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        'Active Campaign: ${_hasActive24hBanner ? "1 Homepage Hero Banner (24h)" : ""}${_hasActive24hBanner && _hasActive24hBoost ? " • " : ""}${_hasActive24hBoost ? "1 Dish Boost (24h)" : ""}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF065F46),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Active Promotion Running',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF047857),
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_hasActive24hBanner ? "1 Homepage Hero Banner (24h)" : ""}${_hasActive24hBanner && _hasActive24hBoost ? " • " : ""}${_hasActive24hBoost ? "1 Dish Boost (24h)" : ""}',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF065F46),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1464,7 +1559,7 @@ class _RestaurantDashboardScreenState
               priceTag: '${AppConstants.currencySymbol}2,000',
               duration: '24 Hours',
               description:
-                  'Promote Blue Bell Café on the customer home slideshow banner carousel for 24 hours. Includes custom headline, image & direct booking link.',
+                  'Promote ${restaurant.name.isNotEmpty ? restaurant.name : "your café"} on the customer home slideshow banner carousel for 24 hours. Includes custom headline, image & direct booking link.',
               reachMetric: '12,500+ Customer Views',
               icon: Icons.view_carousel_rounded,
               iconColor: const Color(0xFF2563EB),
@@ -1504,7 +1599,7 @@ class _RestaurantDashboardScreenState
             // ADMIN OFFER 2: Boost for 24hrs 600 tk (Explicitly requested!)
             _buildAdminPackageCard(
               badge: 'HIGH CONVERSION • TOP FEEDS',
-              badgeColor: const Color(0xFFFF5722),
+              badgeColor: const Color(0xFFEA580C),
               title: 'Post Boost for 24 Hours',
               priceTag: '${AppConstants.currencySymbol}600',
               duration: '24 Hours',
@@ -1512,7 +1607,7 @@ class _RestaurantDashboardScreenState
                   'Boost a surplus food post to #1 priority placement in Customer Search & Hot Deals feeds in Banasree for 24 hours.',
               reachMetric: '3.4x Faster Orders',
               icon: Icons.local_fire_department_rounded,
-              iconColor: const Color(0xFFFF5722),
+              iconColor: const Color(0xFFEA580C),
               iconBgColor: const Color(0xFFFFEDE6),
               isPurchased: _hasActive24hBoost,
               actionLabel: _hasActive24hBoost
@@ -1527,7 +1622,7 @@ class _RestaurantDashboardScreenState
                   description:
                       'Pin your surplus dish at the top of customer search and hot deals in Banasree for 24 hours to clear all stock before closing.',
                   icon: Icons.local_fire_department_rounded,
-                  color: const Color(0xFFFF5722),
+                  color: const Color(0xFFEA580C),
                   onConfirm: () {
                     setState(() => _hasActive24hBoost = true);
                     _showBoostOffersModal(context, offers, restaurant);
@@ -1550,7 +1645,8 @@ class _RestaurantDashboardScreenState
               icon: Icons.bolt_rounded,
               iconColor: const Color(0xFFD97706),
               iconBgColor: const Color(0xFFFEF3C7),
-              actionLabel: 'Buy Weekend Pack (${AppConstants.currencySymbol}1,000)',
+              actionLabel:
+                  'Buy Weekend Pack (${AppConstants.currencySymbol}1,000)',
               onAction: () {
                 _showPackagePurchaseModal(
                   context: context,
@@ -1583,7 +1679,8 @@ class _RestaurantDashboardScreenState
               icon: Icons.star_rounded,
               iconColor: const Color(0xFF7C3AED),
               iconBgColor: const Color(0xFFEDE9FE),
-              actionLabel: 'Buy 7-Day Banner (${AppConstants.currencySymbol}10,000)',
+              actionLabel:
+                  'Buy 7-Day Banner (${AppConstants.currencySymbol}10,000)',
               onAction: () {
                 _showPackagePurchaseModal(
                   context: context,
@@ -1616,12 +1713,13 @@ class _RestaurantDashboardScreenState
               priceTag: '${AppConstants.currencySymbol}3,500',
               duration: '1 Broadcast Blast',
               description:
-                  'Admin sends an instant high-priority push notification to all 3,420+ registered food lovers in Banasree when you post surplus food.',
+                  'Send an instant high-priority push notification to all 3,420+ registered food lovers in Banasree when you post surplus food.',
               reachMetric: 'Avg 25-Min Sellout',
               icon: Icons.notifications_active_rounded,
               iconColor: const Color(0xFF059669),
               iconBgColor: const Color(0xFFD1FAE5),
-              actionLabel: 'Schedule Broadcast (${AppConstants.currencySymbol}3,500)',
+              actionLabel:
+                  'Schedule Broadcast (${AppConstants.currencySymbol}3,500)',
               onAction: () {
                 _showPackagePurchaseModal(
                   context: context,
@@ -1635,41 +1733,14 @@ class _RestaurantDashboardScreenState
                   onConfirm: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('📣 Push notification broadcast scheduled for 08:30 PM closing window!'),
+                        content: Text(
+                            '📣 Push notification broadcast scheduled for 08:30 PM closing window!'),
                         backgroundColor: Color(0xFF059669),
                       ),
                     );
                   },
                 );
               },
-            ),
-            const SizedBox(height: 18),
-
-            // Admin Billing Terms Notice
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.receipt_long_outlined,
-                      color: Color(0xFF64748B), size: 20),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'All promotional packages purchased from Admin are automatically logged in your statement and settled weekly with your restaurant payouts.',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: Color(0xFF64748B),
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -1696,17 +1767,19 @@ class _RestaurantDashboardScreenState
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isPurchased
               ? const Color(0xFF10B981)
-              : const Color(0xFFE2E8F0),
-          width: isPurchased ? 1.5 : 1,
+              : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+          width: isPurchased ? 1.6 : 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
+            color: isPurchased
+                ? const Color(0xFF10B981).withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.035),
+            blurRadius: 12,
             offset: const Offset(0, 3),
           ),
         ],
@@ -1715,43 +1788,90 @@ class _RestaurantDashboardScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: iconBgColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: iconColor.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
                 ),
-                child: Icon(icon, color: iconColor, size: 22),
+                child: Center(
+                  child: Icon(icon, color: iconColor, size: 22),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2.5),
-                      decoration: BoxDecoration(
-                        color: badgeColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        badge,
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w800,
-                          color: badgeColor,
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: badgeColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badge,
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              color: badgeColor,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (isPurchased)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: const Color(0xFFA7F3D0),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_rounded,
+                                    size: 10, color: Color(0xFF059669)),
+                                SizedBox(width: 3),
+                                Text(
+                                  'ACTIVE',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF047857),
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 5),
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 14.5,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E293B),
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
                       ),
                     ),
                   ],
@@ -1763,9 +1883,9 @@ class _RestaurantDashboardScreenState
           Text(
             description,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 12.5,
               color: Color(0xFF475569),
-              height: 1.35,
+              height: 1.4,
             ),
           ),
           const SizedBox(height: 12),
@@ -1775,14 +1895,14 @@ class _RestaurantDashboardScreenState
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFF1F5F9)),
             ),
             child: Wrap(
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
               spacing: 8,
-              runSpacing: 4,
+              runSpacing: 6,
               children: [
                 Wrap(
                   spacing: 6,
@@ -1791,15 +1911,16 @@ class _RestaurantDashboardScreenState
                     Text(
                       priceTag,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w900,
                         color: badgeColor,
+                        letterSpacing: -0.3,
                       ),
                     ),
                     Text(
                       '• $duration',
                       style: const TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF64748B),
                       ),
@@ -1811,16 +1932,27 @@ class _RestaurantDashboardScreenState
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(7),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: Text(
-                    reachMetric,
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF334155),
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.trending_up_rounded,
+                        size: 13,
+                        color: badgeColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        reachMetric,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1831,24 +1963,44 @@ class _RestaurantDashboardScreenState
           // Action Button
           SizedBox(
             width: double.infinity,
-            height: 42,
+            height: 44,
             child: FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: isPurchased
                     ? const Color(0xFF0F766E)
-                    : const Color(0xFF1E293B),
+                    : badgeColor,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
               onPressed: onAction,
-              child: Text(
-                actionLabel,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPurchased
+                        ? Icons.tune_rounded
+                        : Icons.bolt_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      actionLabel,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

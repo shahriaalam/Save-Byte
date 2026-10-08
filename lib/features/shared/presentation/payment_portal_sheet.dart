@@ -387,12 +387,14 @@ class _PaymentPortalModalState extends State<_PaymentPortalModal>
                               const Icon(Icons.check_circle_rounded,
                                   size: 13, color: Color(0xFF16A34A)),
                               const SizedBox(width: 4),
-                              Text(
-                                perk,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF334155),
+                              Flexible(
+                                child: Text(
+                                  perk,
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF334155),
+                                  ),
                                 ),
                               ),
                             ],

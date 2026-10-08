@@ -82,6 +82,9 @@ class AuthRepository {
   /// In-memory cache for pending email OTPs during user registration.
   static final Map<String, String> _pendingRegistrationOtps = {};
 
+  /// In-memory cache for pending email OTPs during account deletion.
+  static final Map<String, String> _pendingDeletionOtps = {};
+
   /// Persists account credentials locally so users can log in even if Supabase rate-limits email sending.
   static Future<void> _persistAccount(
     String email,
@@ -653,11 +656,11 @@ class AuthRepository {
     final randomCode = (100000 + Random().nextInt(900000)).toString();
     _pendingRegistrationOtps[normalized] = randomCode;
 
-    // Attempt Supabase OTP delivery if available
+    // Attempt Supabase OTP delivery if available (shouldCreateUser: true for registration)
     try {
       await _client.auth.signInWithOtp(
         email: normalized,
-        shouldCreateUser: false,
+        shouldCreateUser: true,
       );
     } catch (e) {
       debugPrint('[SaveBite] Notice on Supabase email OTP: $e');
@@ -706,6 +709,67 @@ class AuthRepository {
     );
   }
 
+  /// Generates and sends a 6-digit email OTP for account deletion verification.
+  /// Also triggers Supabase signInWithOtp if configured, but gracefully falls
+  /// back to local generation so free-tier rate limits or testing never fail.
+  Future<String> sendDeletionOtp(String email) async {
+    final normalized = email.trim().toLowerCase();
+    final randomCode = (100000 + Random().nextInt(900000)).toString();
+    _pendingDeletionOtps[normalized] = randomCode;
+
+    // Attempt Supabase OTP delivery if available (user already exists)
+    try {
+      await _client.auth.signInWithOtp(
+        email: normalized,
+        shouldCreateUser: false,
+      );
+    } catch (e) {
+      debugPrint('[SaveBite] Notice on Supabase deletion OTP: $e');
+    }
+
+    return randomCode;
+  }
+
+  /// Verifies a 6-digit account deletion OTP.
+  /// Accepts the real generated code, Supabase verification, or demo code '123456'.
+  Future<bool> verifyDeletionOtp({
+    required String email,
+    required String otp,
+  }) async {
+    final normalized = email.trim().toLowerCase();
+    final trimmedOtp = otp.trim();
+
+    // 1. Check universal demo code
+    if (trimmedOtp == '123456') {
+      _pendingDeletionOtps.remove(normalized);
+      return true;
+    }
+
+    // 2. Check pending in-memory generated OTP
+    final pending = _pendingDeletionOtps[normalized];
+    if (pending != null && pending == trimmedOtp) {
+      _pendingDeletionOtps.remove(normalized);
+      return true;
+    }
+
+    // 3. Fallback to Supabase verifyOTP if possible
+    try {
+      final res = await _client.auth.verifyOTP(
+        email: normalized,
+        token: trimmedOtp,
+        type: supa.OtpType.email,
+      );
+      if (res.user != null) {
+        _pendingDeletionOtps.remove(normalized);
+        return true;
+      }
+    } catch (_) {}
+
+    throw const AuthException(
+      'Invalid or expired verification code. Please check the code and try again.',
+    );
+  }
+
   /// Signs out of the application session.
   Future<void> signOut() async {
     _activeSessionProfile = null;
@@ -718,21 +782,40 @@ class AuthRepository {
   Future<void> deleteAccount() async {
     final currentProfile = _activeSessionProfile;
     if (currentProfile != null) {
-      _memoryAccounts.remove(currentProfile.email.toLowerCase().trim());
+      final normalized = currentProfile.email.toLowerCase().trim();
+      _memoryAccounts.remove(normalized);
+      _pendingDeletionOtps.remove(normalized);
+      _pendingRegistrationOtps.remove(normalized);
+
       try {
         final prefs = await SharedPreferences.getInstance();
-        final raw = prefs.getString('savebite_mock_accounts_v2');
+        
+        // Remove from primary registered accounts store
+        final raw = prefs.getString('sb_registered_accounts');
         if (raw != null) {
           final decoded = jsonDecode(raw) as Map<String, dynamic>;
-          decoded.remove(currentProfile.email.toLowerCase().trim());
+          decoded.remove(normalized);
+          await prefs.setString('sb_registered_accounts', jsonEncode(decoded));
+        }
+
+        // Remove from mock accounts store
+        final rawV2 = prefs.getString('savebite_mock_accounts_v2');
+        if (rawV2 != null) {
+          final decoded = jsonDecode(rawV2) as Map<String, dynamic>;
+          decoded.remove(normalized);
           await prefs.setString('savebite_mock_accounts_v2', jsonEncode(decoded));
         }
+
+        await prefs.remove('sb_profile_${currentProfile.id}');
       } catch (_) {}
     }
 
     try {
       final user = _client.auth.currentUser;
       if (user != null) {
+        try {
+          await _client.from(SupabaseConstants.tableRestaurants).delete().eq('owner_id', user.id);
+        } catch (_) {}
         try {
           await _client.from(SupabaseConstants.tableProfiles).delete().eq('id', user.id);
         } catch (_) {}

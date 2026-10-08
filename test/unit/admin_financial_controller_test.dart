@@ -21,14 +21,20 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      final initialMonthly =
-          container.read(adminFinancialProvider).monthlySubscriptionEarnings;
-      final initialTotal =
-          container.read(adminFinancialProvider).totalPlatformEarnings;
-      final initialTxCount =
-          container.read(adminFinancialProvider).recentTransactions.length;
+      final initialMonthly = container
+          .read(adminFinancialProvider)
+          .monthlySubscriptionEarnings;
+      final initialTotal = container
+          .read(adminFinancialProvider)
+          .totalPlatformEarnings;
+      final initialTxCount = container
+          .read(adminFinancialProvider)
+          .recentTransactions
+          .length;
 
-      container.read(adminFinancialProvider.notifier).recordSubscriptionPayment(
+      container
+          .read(adminFinancialProvider.notifier)
+          .recordSubscriptionPayment(
             payerName: 'Kacchi Express',
             payerType: 'restaurant',
             planName: 'Gold Merchant Monthly',
@@ -54,10 +60,13 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      final initialVipCount =
-          container.read(adminFinancialProvider).activeSuperSaverMembers;
+      final initialVipCount = container
+          .read(adminFinancialProvider)
+          .activeSuperSaverMembers;
 
-      container.read(adminFinancialProvider.notifier).recordSubscriptionPayment(
+      container
+          .read(adminFinancialProvider.notifier)
+          .recordSubscriptionPayment(
             payerName: 'Rahim Khan',
             payerType: 'customer',
             planName: 'Super Saver VIP Club',
@@ -74,12 +83,9 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      container.read(adminFinancialProvider.notifier).updatePartnerCounts(
-            total: 25,
-            gold: 15,
-            verified: 20,
-            pending: 5,
-          );
+      container
+          .read(adminFinancialProvider.notifier)
+          .updatePartnerCounts(total: 25, gold: 15, verified: 20, pending: 5);
 
       final state = container.read(adminFinancialProvider);
       expect(state.totalPartners, 25);

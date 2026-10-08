@@ -13,10 +13,12 @@ import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../auth/domain/user_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../auth/presentation/widgets/email_otp_verification_sheet.dart';
 import '../location/widgets/customer_location_sheet.dart';
 import '../shell/customer_shell_screen.dart';
 import '../../shared/data/admin_financial_controller.dart';
 import '../../shared/presentation/payment_portal_sheet.dart';
+import 'data/customer_favorites_controller.dart';
 import 'data/customer_membership_controller.dart';
 import 'widgets/change_avatar_sheet.dart';
 
@@ -843,82 +845,20 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
 
 
   void _showFavouritesModal(BuildContext context) {
+    ref.read(customerNavbarVisibleProvider.notifier).hide();
+    final targetContext = rootNavigatorKey.currentContext ?? context;
     showModalBottomSheet<void>(
-      context: context,
+      context: targetContext,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'My Favourites',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildFavRestaurant(
-                  "Sultan's Dine", 'Dhanmondi • Biryani & Kebabs', '4.9 ★'),
-              _buildFavRestaurant(
-                  'Chillox Burgers', 'Banani • Gourmet Burgers', '4.8 ★'),
-              _buildFavRestaurant(
-                  'Secret Recipe', 'Gulshan • Cakes & Pastries', '4.7 ★'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFavRestaurant(String name, String type, String rating) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFFF1F5F9)),
-        ),
-        tileColor: const Color(0xFFF8FAFC),
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFFFFEDEC),
-          child: Icon(Icons.favorite_rounded, color: Color(0xFFE11D48), size: 18),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
-        ),
-        subtitle: Text(type, style: const TextStyle(fontSize: 11.5)),
-        trailing: Text(
-          rating,
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            color: Color(0xFFD97706),
-          ),
-        ),
-      ),
-    );
+      builder: (ctx) => const _CustomerFavoritesModalSheet(),
+    ).whenComplete(() {
+      ref.read(customerNavbarVisibleProvider.notifier).show();
+    });
   }
 
   void _showVouchersModal(BuildContext context) {
@@ -1474,7 +1414,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
               SizedBox(height: 10),
               Text(
-                'This action cannot be undone.',
+                'An OTP verification code will be sent to your registered email to authorize permanent deletion.\nThis action cannot be undone.',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -1498,9 +1438,44 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
               onPressed: () async {
                 Navigator.pop(dialogContext);
+
+                final profile = ref.read(currentUserProfileProvider);
+                final email = profile?.email.trim() ?? '';
+                if (email.isEmpty) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Unable to find account email address.'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                // 1. Send OTP to customer's email
+                final otp = await ref
+                    .read(authControllerProvider.notifier)
+                    .sendDeletionOtp(email);
+
+                if (!context.mounted) return;
+
+                // 2. Open OTP verification bottom sheet for deletion
+                final isVerified = await EmailOtpVerificationSheet.show(
+                  context: context,
+                  email: email,
+                  initialOtp: otp,
+                  purpose: OtpPurpose.deletion,
+                );
+
+                if (!context.mounted) return;
+                if (!isVerified) return; // Verification was cancelled or failed
+
+                // 3. Delete account after verified OTP
                 final success = await ref
                     .read(authControllerProvider.notifier)
                     .deleteAccount();
+
                 if (context.mounted) {
                   if (success) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -2563,3 +2538,299 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     );
   }
 }
+
+class _CustomerFavoritesModalSheet extends ConsumerStatefulWidget {
+  const _CustomerFavoritesModalSheet();
+
+  @override
+  ConsumerState<_CustomerFavoritesModalSheet> createState() =>
+      _CustomerFavoritesModalSheetState();
+}
+
+class _CustomerFavoritesModalSheetState
+    extends ConsumerState<_CustomerFavoritesModalSheet> {
+  bool _isEditing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final favorites = ref.watch(customerFavoritesProvider);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'My Favourites',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF1F2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${favorites.length}',
+                        style: const TextStyle(
+                          color: Color(0xFFE11D48),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (favorites.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isEditing = !_isEditing;
+                      });
+                    },
+                    icon: Icon(
+                      _isEditing
+                          ? Icons.check_circle_rounded
+                          : Icons.edit_rounded,
+                      size: 15,
+                      color: _isEditing
+                          ? const Color(0xFF059669)
+                          : const Color(0xFFE11D48),
+                    ),
+                    label: Text(
+                      _isEditing ? 'Done' : 'Edit',
+                      style: TextStyle(
+                        color: _isEditing
+                            ? const Color(0xFF059669)
+                            : const Color(0xFFE11D48),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      backgroundColor: _isEditing
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFFFF1F2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (_isEditing && favorites.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 4),
+                child: Text(
+                  'Tap the delete button to remove a restaurant from favourites',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: const Color(0xFFE11D48).withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12),
+            if (favorites.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFF1F2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.favorite_border_rounded,
+                          size: 32,
+                          color: Color(0xFFE11D48),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No favourites yet',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Explore shops and tap the heart icon to save them here.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.60,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(),
+                  itemCount: favorites.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final fav = favorites[index];
+                    return Material(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () {
+                          if (_isEditing) {
+                            _removeFavorite(fav);
+                          } else {
+                            if (fav.id.startsWith('res-')) {
+                              Navigator.pop(context);
+                              context.push('/customer/restaurants/${fav.id}');
+                            }
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFF1F5F9)),
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Color(0xFFFFEDEC),
+                                child: Icon(
+                                  Icons.favorite_rounded,
+                                  color: Color(0xFFE11D48),
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fav.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13.5,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      fav.subtitle,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (_isEditing)
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () => _removeFavorite(fav),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFEDEC),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: const Color(0xFFFECDD3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Color(0xFFE11D48),
+                                      size: 18,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Text(
+                                  fav.rating,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFFD97706),
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _removeFavorite(FavoriteRestaurant fav) async {
+    await ref
+        .read(customerFavoritesProvider.notifier)
+        .removeFavorite(fav.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${fav.name} removed from favourites'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+}
+

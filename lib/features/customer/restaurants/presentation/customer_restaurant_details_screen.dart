@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/widgets/double_pull_reload.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../shared/widgets/offer_card.dart';
 import '../../offers/presentation/customer_offers_controller.dart';
+import '../../profile/data/customer_favorites_controller.dart';
 
 /// Restaurant details screen displaying restaurant info and active offers (Section 23).
 class CustomerRestaurantDetailsScreen extends ConsumerWidget {
@@ -30,7 +32,20 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
         data: (restaurant) {
           if (restaurant == null) {
             return Scaffold(
-              appBar: AppBar(title: const Text('Restaurant Details')),
+              appBar: AppBar(
+                title: const Text('Restaurant Details'),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  tooltip: 'Back',
+                  onPressed: () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      context.go(AppRoutes.customerHome);
+                    }
+                  },
+                ),
+              ),
               body: const Center(child: Text('Restaurant not found.')),
             );
           }
@@ -49,6 +64,96 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
               SliverAppBar(
                 expandedHeight: 200,
                 pinned: true,
+                automaticallyImplyLeading: false,
+                leading: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Material(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      tooltip: 'Back',
+                      onPressed: () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        } else {
+                          context.go(AppRoutes.customerHome);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                actions: [
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final isFav = ref.watch(customerFavoritesProvider.select(
+                        (favs) => favs.any((f) => f.id == restaurant.id),
+                      ));
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: Material(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          shape: const CircleBorder(),
+                          clipBehavior: Clip.antiAlias,
+                          child: IconButton(
+                            icon: Icon(
+                              isFav
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: isFav
+                                  ? const Color(0xFFE11D48)
+                                  : Colors.white,
+                              size: 20,
+                            ),
+                            tooltip: isFav
+                                ? 'Remove from favourites'
+                                : 'Add to favourites',
+                            onPressed: () async {
+                              final favSubtitle = [
+                                restaurant.area ??
+                                    restaurant.division ??
+                                    'Dhaka',
+                                restaurant.cuisineType ?? 'Dining',
+                              ].where((s) => s.isNotEmpty).join(' • ');
+
+                              final wasFav = ref
+                                  .read(customerFavoritesProvider.notifier)
+                                  .isFavorite(restaurant.id);
+                              await ref
+                                  .read(customerFavoritesProvider.notifier)
+                                  .toggleFavorite(
+                                    id: restaurant.id,
+                                    name: restaurant.name,
+                                    subtitle: favSubtitle,
+                                    rating: '4.8 ★',
+                                    imageUrl: restaurant.imageUrl,
+                                  );
+
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context)
+                                    .hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(wasFav
+                                        ? '${restaurant.name} removed from favourites'
+                                        : '${restaurant.name} added to favourites ❤️'),
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     restaurant.name,
@@ -111,7 +216,7 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Cuisine chip & status
+                      // Cuisine chip & status & Favourite action
                       Row(
                         children: [
                           if (restaurant.cuisineType != null &&
@@ -122,7 +227,8 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.12),
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -135,6 +241,96 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                               ),
                             ),
                           const Spacer(),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final isFav = ref.watch(
+                                  customerFavoritesProvider.select(
+                                (favs) => favs.any((f) => f.id == restaurant.id),
+                              ));
+                              return InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () async {
+                                  final favSubtitle = [
+                                    restaurant.area ??
+                                        restaurant.division ??
+                                        'Dhaka',
+                                    restaurant.cuisineType ?? 'Dining',
+                                  ].where((s) => s.isNotEmpty).join(' • ');
+
+                                  final wasFav = ref
+                                      .read(customerFavoritesProvider.notifier)
+                                      .isFavorite(restaurant.id);
+                                  await ref
+                                      .read(customerFavoritesProvider.notifier)
+                                      .toggleFavorite(
+                                        id: restaurant.id,
+                                        name: restaurant.name,
+                                        subtitle: favSubtitle,
+                                        rating: '4.8 ★',
+                                        imageUrl: restaurant.imageUrl,
+                                      );
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context)
+                                        .hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(wasFav
+                                            ? '${restaurant.name} removed from favourites'
+                                            : '${restaurant.name} added to favourites ❤️'),
+                                        duration: const Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isFav
+                                        ? const Color(0xFFFFEDEC)
+                                        : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isFav
+                                          ? const Color(0xFFFECDD3)
+                                          : const Color(0xFFE2E8F0),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isFav
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_border_rounded,
+                                        size: 14,
+                                        color: isFav
+                                            ? const Color(0xFFE11D48)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        isFav ? 'Favourited' : 'Add to Favourite',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: isFav
+                                              ? const Color(0xFFE11D48)
+                                              : const Color(0xFF475569),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,

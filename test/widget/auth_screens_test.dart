@@ -134,10 +134,16 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
 
-        // Bottom sheet is now open; tap Verify & Activate Account
+        // Bottom sheet is now open; enter OTP to verify
         expect(find.text('Verify & Activate Account'), findsOneWidget);
-        await tester.tap(find.text('Verify & Activate Account'));
-        await tester.pump();
+        final otpField = find.byKey(const Key('otp_input_field'));
+        if (otpField.evaluate().isNotEmpty) {
+          await tester.enterText(otpField, '123456');
+          await tester.pump();
+        } else {
+          await tester.tap(find.text('Verify & Activate Account'));
+          await tester.pump();
+        }
         await tester.pump(const Duration(milliseconds: 400));
         await tester.pump(const Duration(milliseconds: 400));
 
@@ -236,7 +242,12 @@ void main() {
         await tester.pump(const Duration(milliseconds: 400));
 
         // If EmailOtpVerificationSheet appears, verify OTP
-        if (find.text('Verify & Activate Account').evaluate().isNotEmpty) {
+        if (find.byKey(const Key('otp_input_field')).evaluate().isNotEmpty) {
+          await tester.enterText(find.byKey(const Key('otp_input_field')), '123456');
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          await tester.pump(const Duration(milliseconds: 400));
+        } else if (find.text('Verify & Activate Account').evaluate().isNotEmpty) {
           await tester.tap(find.text('Verify & Activate Account'));
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 400));

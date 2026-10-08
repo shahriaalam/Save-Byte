@@ -163,12 +163,25 @@ class FakeAuthRepository implements AuthRepository {
       otp.trim() == '123456';
 
   @override
+  Future<String> sendDeletionOtp(String email) async => '123456';
+
+  @override
+  Future<bool> verifyDeletionOtp({
+    required String email,
+    required String otp,
+  }) async =>
+      otp.trim() == '123456';
+
+  @override
   Future<void> signOut() async {
     initialProfile = null;
   }
 
+  bool deleteAccountCalled = false;
+
   @override
   Future<void> deleteAccount() async {
+    deleteAccountCalled = true;
     initialProfile = null;
   }
 }
