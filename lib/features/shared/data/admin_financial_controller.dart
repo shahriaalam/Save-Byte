@@ -206,7 +206,7 @@ class AdminFinancialController extends Notifier<AdminFinancialState> {
         ),
         HeroBannerRun(
           slotId: 'SLOT #2',
-          bannerTitle: 'Fresh Surplus & Groceries',
+          bannerTitle: 'Fresh Food & Groceries',
           merchantName: 'Teal Mart Banasree',
           daysActiveThisMonth: 24,
           impressions: 14100,

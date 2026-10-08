@@ -317,7 +317,7 @@ class _RestaurantRegisterScreenState
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Sell surplus food and eliminate food waste efficiently.',
+                            'Sell delicious meals and eliminate food waste efficiently.',
                             style: TextStyle(
                               fontSize: 12.5,
                               color: AppColors.textSecondary,

@@ -495,7 +495,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   'Free Delivery on Orders > ৳200', 'Valid across Dhaka city'),
               _buildPerkRow(
                   Icons.discount_outlined,
-                  'Extra 10% Off Surplus Bags',
+                  'Extra 10% Off Food Bags',
                   'Stackable with restaurant discounts'),
               _buildPerkRow(Icons.bolt_rounded, '15-Min Early Deal Drop Access',
                   'Grab limited hot meals before anyone else'),
@@ -575,7 +575,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                       customerOrBusinessName: customerName,
                       perkHighlights: const [
                         'Free Delivery on Orders > ৳200',
-                        'Extra 10% Off Surplus Bags',
+                        'Extra 10% Off Food Bags',
                         '15-Min Early Deal Drop Access',
                         'Exclusive Super Saver VIP Badge',
                       ],
@@ -742,7 +742,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               _buildPerkRow(Icons.local_shipping_outlined,
                   'Free Delivery on Orders > ৳200', 'Active across Dhaka city'),
               _buildPerkRow(Icons.discount_outlined,
-                  'Extra 10% Off Surplus Bags', 'Stacked automatically at checkout'),
+                  'Extra 10% Off Food Bags', 'Stacked automatically at checkout'),
               _buildPerkRow(Icons.bolt_rounded,
                   '15-Min Priority Early Deal Drops', 'Notifications enabled'),
               _buildPerkRow(Icons.verified_rounded,
@@ -900,7 +900,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               _buildVoucherTile(
                   context, 'SAVEBITE50', '৳50 OFF on orders above ৳200', 'Expires in 3 days'),
               _buildVoucherTile(
-                  context, 'SAVE20', '20% OFF surplus bags', 'Expires in 7 days'),
+                  context, 'SAVE20', '20% OFF food bags', 'Expires in 7 days'),
               _buildVoucherTile(
                   context, 'SUPERSAVER', 'Free delivery anywhere in Dhaka', 'Super Saver Exclusive'),
             ],
@@ -1103,7 +1103,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Instant assistance, hotlines & FAQs for your surplus orders',
+                  'Instant assistance, hotlines & FAQs for your orders',
                   style: TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFF64748B),
@@ -1213,7 +1213,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                 _buildFaqItem('How do I collect my order?',
                     'Show your 4-digit pickup PIN in the app to the restaurant cashier during the scheduled pickup window.'),
                 _buildFaqItem('What is a Mystery Bag?',
-                    'A surprise assortment of surplus meals, pastries, or groceries packed by the restaurant at 50-70% off!'),
+                    'A surprise assortment of fresh meals, pastries, or groceries packed by the restaurant at 50-70% off!'),
                 _buildFaqItem('Can I cancel an order?',
                     'Cancellations are accepted up to 30 minutes before the pickup window begins.'),
                 _buildFaqItem('Are the meals safe to eat?',
@@ -1586,7 +1586,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Smart Surplus Food & Deals Platform',
+                          'Smart Food & Deals Platform',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -1664,7 +1664,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'SaveBite is a premier surplus food and discount dining platform in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects smart customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality surplus meals accessible at 50% to 70% discounts before closing time.',
+                          'SaveBite is a premier food and discount dining platform in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects smart customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality meals accessible at 50% to 70% discounts before closing time.',
                           style: TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF475569),

@@ -219,7 +219,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   const Text(
-                                    'Discover surplus meals at 40-70% off',
+                                    'Discover meals at 40-70% off',
                                     style: TextStyle(
                                       color: Colors.white70,
                                       fontSize: 11.5,
@@ -759,7 +759,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                           Row(
                             children: [
                               const Text(
-                                'Surplus Deals',
+                                'Hot Deals',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,

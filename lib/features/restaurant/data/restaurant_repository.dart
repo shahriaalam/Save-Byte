@@ -245,7 +245,7 @@ class RestaurantRepository {
           area: 'Banasree',
           title: 'Tuscan Slow-Baked Lasagna',
           description:
-              'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner surplus discovery.',
+              'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner discovery.',
           category: 'Italian',
           originalPrice: 750,
           discountedPrice: 420,

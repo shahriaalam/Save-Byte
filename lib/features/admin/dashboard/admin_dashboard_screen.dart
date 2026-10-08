@@ -277,7 +277,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       },
       {
         'code': 'SAVE20',
-        'title': '20% Surplus Bag Discount',
+        'title': '20% Meal Bag Discount',
         'discount': '20% OFF (Min ৳150)',
         'type': 'Percentage',
         'status': 'Active',
@@ -397,7 +397,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 children: [
                   _buildOverviewTab(context, banners),
                   _buildPartnersTab(context),
-                  _buildSurplusPostsTab(context),
+                  _buildPostsTab(context),
                   _buildBannersTab(context, banners),
                   _buildSystemConsoleTab(context, profile),
                 ],
@@ -906,7 +906,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           const SizedBox(height: 12),
           _buildActivityTile(
             time: '2 mins ago',
-            event: 'Surplus Mutton Kacchi Basmati Box (Order #SB-2041)',
+            event: 'Mutton Kacchi Basmati Box (Order #SB-2041)',
             desc: "Pickup PIN verified at Sultan's Dine, Dhanmondi",
             icon: Icons.check_circle_rounded,
             iconColor: const Color(0xFF16A34A),
@@ -1638,9 +1638,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   // ==============================================================================
-  // 5. TAB 2: SURPLUS POSTS MODERATION
+  // 5. TAB 2: POSTS MODERATION
   // ==============================================================================
-  Widget _buildSurplusPostsTab(BuildContext context) {
+  Widget _buildPostsTab(BuildContext context) {
     var filtered = _offersData.where((o) {
       if (_offerFilter == 'active' &&
           (o['isBlocked'] == true || o['quantity'] == 0)) {
@@ -1743,7 +1743,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               padding: const EdgeInsets.all(32),
               alignment: Alignment.center,
               child: const Text(
-                'No surplus offers match the filter.',
+                'No offers match the filter.',
                 style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
               ),
             )
@@ -2155,7 +2155,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     context,
                     title: 'Reset Promotional Banners',
                     message:
-                        'Restore default 3 hero banners for Dhaka surplus campaigns?',
+                        'Restore default 3 hero banners for Dhaka campaigns?',
                     confirmLabel: 'Reset',
                   );
                   if (confirmed) {
@@ -4554,7 +4554,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         roleTitle: 'Moderator (Level 3)',
                         badgeText: '🔍 Moderation Role',
                         description:
-                            'Can verify/block partner kitchens, moderate surplus deals, and manage community posts.',
+                            'Can verify/block partner kitchens, moderate deals, and manage community posts.',
                         isSelected:
                             selectedRole == AppConstants.roleModerator,
                         onTap: () => setModalState(() =>
@@ -4566,7 +4566,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         roleTitle: 'Moderator (Level 3)',
                         badgeText: '🔍 Moderation Role',
                         description:
-                            'Can verify/block partner kitchens, moderate surplus deals, and manage community posts.',
+                            'Can verify/block partner kitchens, moderate deals, and manage community posts.',
                         isSelected: true,
                         onTap: () {},
                       ),
@@ -5274,7 +5274,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               controller: bodyCtrl,
               style: const TextStyle(color: Color(0xFF0F172A)),
               decoration: InputDecoration(
-                hintText: 'e.g. 12 fresh surplus boxes available in Dhanmondi.',
+                hintText: 'e.g. 12 fresh meal boxes available in Dhanmondi.',
                 hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
                 labelText: 'Message Body',
                 labelStyle: const TextStyle(color: Color(0xFF64748B)),

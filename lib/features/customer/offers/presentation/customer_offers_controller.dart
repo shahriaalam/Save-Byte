@@ -142,7 +142,7 @@ final allDhakaHotDealsProvider = FutureProvider<List<FoodOffer>>((ref) async {
   return hotDeals;
 });
 
-/// Nearby restaurants provider for customer home ("Shops Near You") that have active surplus listings right now.
+/// Nearby restaurants provider for customer home ("Shops Near You") that have active listings right now.
 /// Filters by both selectedCategory and homeArea to only display shops offering the selected category.
 final activeRestaurantsProvider = FutureProvider<List<Restaurant>>((ref) async {
   final repository = ref.watch(customerOfferRepositoryProvider);

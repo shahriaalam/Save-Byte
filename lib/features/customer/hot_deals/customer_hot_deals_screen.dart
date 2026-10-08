@@ -74,7 +74,7 @@ class _CustomerHotDealsScreenState extends ConsumerState<CustomerHotDealsScreen>
               ),
               const SizedBox(height: 4),
               const Text(
-                'Show 45%+ surplus discounts near you in Dhaka',
+                'Show 45%+ hot discounts near you in Dhaka',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 14),
@@ -423,8 +423,8 @@ class _CustomerHotDealsScreenState extends ConsumerState<CustomerHotDealsScreen>
                         const SizedBox(height: 4),
                         Text(
                           selectedArea == 'All'
-                              ? 'Surplus listings with 45% or more discount across Dhaka'
-                              : 'Exclusive 45%+ surplus discounts near your detected location',
+                              ? 'Listings with 45% or more discount across Dhaka'
+                              : 'Exclusive 45%+ hot discounts near your detected location',
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 12.5,
@@ -636,7 +636,7 @@ class _CustomerHotDealsScreenState extends ConsumerState<CustomerHotDealsScreen>
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'Hot deals require 45% or more discount. Restaurants post fresh surplus drops daily between lunch and dinner closing.',
+                            'Hot deals require 45% or more discount. Restaurants post fresh food drops daily between lunch and dinner closing.',
                             style: TextStyle(
                               fontSize: 12.5,
                               color: AppColors.textSecondary,

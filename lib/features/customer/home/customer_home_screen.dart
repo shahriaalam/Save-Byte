@@ -650,8 +650,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             ),
                             child: Text(
                               selectedCategory != 'All'
-                                  ? 'No surplus $selectedCategory offers in $selectedArea right now. Try another category!'
-                                  : 'No surplus offer posts in $selectedArea right now. Check back soon!',
+                                  ? 'No $selectedCategory offers in $selectedArea right now. Try another category!'
+                                  : 'No offer posts in $selectedArea right now. Check back soon!',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
@@ -686,7 +686,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
               const SizedBox(height: 22),
 
               // ==========================================
-              // 5. "SHOPS NEAR YOU" / SURPLUS NEAR ME
+              // 5. "SHOPS NEAR YOU" / SHOPS NEAR ME
               // (Matches 4th Screenshot - Dhaka Location Active Restaurants)
               // ==========================================
               Padding(
@@ -770,7 +770,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             child: Text(
                               selectedCategory != 'All'
                                   ? 'No restaurants offering $selectedCategory in $selectedArea right now.'
-                                  : 'No restaurants listed surplus in $selectedArea yet. Try exploring All Dhaka!',
+                                  : 'No restaurants listed food in $selectedArea yet. Try exploring All Dhaka!',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
@@ -873,7 +873,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             padding: EdgeInsets.only(top: 24.0),
                             child: EmptyState(
                               title: 'No offers available right now',
-                              message: 'Check back shortly! Restaurants list surplus food in the evening before closing.',
+                              message: 'Check back shortly! Restaurants list food offers in the evening before closing.',
                               icon: Icons.fastfood_outlined,
                             ),
                           );

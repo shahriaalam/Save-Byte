@@ -187,7 +187,7 @@ class _RestaurantDashboardScreenState
     });
   }
 
-  void _onPostSurplusTapped(BuildContext context, Restaurant restaurant) {
+  void _onNewPostTapped(BuildContext context, Restaurant restaurant) {
     if (!restaurant.isProfileComplete) {
       _showIncompleteProfileDialog(context, restaurant);
     } else {
@@ -1343,7 +1343,7 @@ class _RestaurantDashboardScreenState
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Manage surplus listings in Banasree',
+                        'Manage active listings in Banasree',
                         style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -1359,14 +1359,14 @@ class _RestaurantDashboardScreenState
                     ),
                     icon: const Icon(Icons.add, size: 16),
                     label: const Text(
-                      '+ New Surplus Post',
+                      '+ New Post',
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     onPressed: () =>
-                        _onPostSurplusTapped(context, restaurant),
+                        _onNewPostTapped(context, restaurant),
                   ),
                 ],
               ),
@@ -1417,8 +1417,8 @@ class _RestaurantDashboardScreenState
                   message: _selectedPostsFilter == 'done'
                       ? 'When you finish an offer and mark it as "Done", it will appear here with its added dashboard value.'
                       : isComplete
-                          ? 'Tap "+ New Surplus Post" to list fresh discounted food for hungry neighbors in Banasree!'
-                          : 'Complete your restaurant profile to start posting surplus food offers.',
+                          ? 'Tap "+ New Post" to list fresh meals for hungry neighbors in Banasree!'
+                          : 'Complete your restaurant profile to start posting food offers.',
                   icon: Icons.fastfood_outlined,
                   actionText:
                       isComplete ? 'Post Food Offer' : 'Complete Profile',
@@ -1628,7 +1628,7 @@ class _RestaurantDashboardScreenState
               priceTag: '${AppConstants.currencySymbol}600',
               duration: '24 Hours',
               description:
-                  'Boost a surplus food post to #1 priority placement in Customer Search & Hot Deals feeds in Banasree for 24 hours.',
+                  'Boost a post to #1 priority placement in Customer Search & Hot Deals feeds in Banasree for 24 hours.',
               reachMetric: '3.4x Faster Orders',
               icon: Icons.local_fire_department_rounded,
               iconColor: const Color(0xFFEA580C),
@@ -1644,7 +1644,7 @@ class _RestaurantDashboardScreenState
                   price: '${AppConstants.currencySymbol}600',
                   duration: '24 Hours',
                   description:
-                      'Pin your surplus dish at the top of customer search and hot deals in Banasree for 24 hours to clear all stock before closing.',
+                      'Pin your dish at the top of customer search and hot deals in Banasree for 24 hours to clear all stock before closing.',
                   icon: Icons.local_fire_department_rounded,
                   color: const Color(0xFFEA580C),
                   onConfirm: () {
@@ -1664,7 +1664,7 @@ class _RestaurantDashboardScreenState
               priceTag: '${AppConstants.currencySymbol}1,000',
               duration: 'Friday & Saturday (48h)',
               description:
-                  'Covers the entire weekend surplus rush. Boost up to 2 surplus dishes for 48 hours during Dhaka weekend dining hours.',
+                  'Covers the entire weekend dining rush. Boost up to 2 dishes for 48 hours during Dhaka weekend dining hours.',
               reachMetric: 'Save ${AppConstants.currencySymbol}200 on bundle',
               icon: Icons.bolt_rounded,
               iconColor: const Color(0xFFD97706),
@@ -1678,7 +1678,7 @@ class _RestaurantDashboardScreenState
                   price: '${AppConstants.currencySymbol}1,000',
                   duration: '48 Hours',
                   description:
-                      'Keep up to 2 surplus dishes boosted throughout Friday and Saturday night closing hours.',
+                      'Keep up to 2 dishes boosted throughout Friday and Saturday night closing hours.',
                   icon: Icons.bolt_rounded,
                   color: const Color(0xFFD97706),
                   onConfirm: () {
@@ -1737,7 +1737,7 @@ class _RestaurantDashboardScreenState
               priceTag: '${AppConstants.currencySymbol}3,500',
               duration: '1 Broadcast Blast',
               description:
-                  'Send an instant high-priority push notification to all 3,420+ registered food lovers in Banasree when you post surplus food.',
+                  'Send an instant high-priority push notification to all 3,420+ registered food lovers in Banasree when you create a post.',
               reachMetric: 'Avg 25-Min Sellout',
               icon: Icons.notifications_active_rounded,
               iconColor: const Color(0xFF059669),
@@ -1751,7 +1751,7 @@ class _RestaurantDashboardScreenState
                   price: '${AppConstants.currencySymbol}3,500',
                   duration: 'Instant Broadcast',
                   description:
-                      'Send a targeted push alert to all nearby customers in Banasree announcing tonight\'s fresh surplus drop.',
+                      'Send a targeted push alert to all nearby customers in Banasree announcing tonight\'s fresh food drop.',
                   icon: Icons.notifications_active_rounded,
                   color: const Color(0xFF059669),
                   onConfirm: () {
@@ -2351,9 +2351,9 @@ class _RestaurantDashboardScreenState
                           icon: Icons.add_circle_outline_rounded,
                           iconColor: const Color(0xFFE11D48),
                           iconBgColor: const Color(0xFFFFEDEC),
-                          label: 'Post Surplus',
+                          label: 'New Post',
                           onTap: () =>
-                              _onPostSurplusTapped(context, restaurant),
+                              _onNewPostTapped(context, restaurant),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -2472,34 +2472,6 @@ class _RestaurantDashboardScreenState
             ),
             const SizedBox(height: 18),
 
-            // Prominent "Post Surplus Food" Button (tested by widget test!)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.add_circle_outline_rounded, size: 19),
-                  label: const Text(
-                    'Post Surplus Food',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  onPressed: () => _onPostSurplusTapped(context, restaurant),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
             // Recent Active Offers Preview
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -2513,7 +2485,7 @@ class _RestaurantDashboardScreenState
                     runSpacing: 4,
                     children: [
                       const Text(
-                        'Active Surplus Listings',
+                        'Active Listings',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -2546,8 +2518,8 @@ class _RestaurantDashboardScreenState
                       child: Center(
                         child: Text(
                           isComplete
-                              ? 'No food offers posted yet. Tap "Post Surplus Food" above!'
-                              : 'Complete your restaurant profile to start posting surplus dishes.',
+                              ? 'No food offers posted yet. Tap "New Post" in Quick Access above!'
+                              : 'Complete your restaurant profile to start posting dishes.',
                           style: const TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
@@ -2738,7 +2710,7 @@ class _RestaurantDashboardScreenState
           const SizedBox(height: 4),
 
           // ==========================================
-          // 2. HERO TOTAL FOOD SOLD & RESCUED REVENUE
+          // 2. HERO TOTAL FOOD SOLD & EARNINGS
           // ==========================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -2831,7 +2803,7 @@ class _RestaurantDashboardScreenState
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'earned from surplus',
+                          'earned from orders',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -3006,7 +2978,7 @@ class _RestaurantDashboardScreenState
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Top Selling Surplus Posts',
+                          'Top Selling Dishes',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
@@ -3278,7 +3250,7 @@ class _RestaurantDashboardScreenState
                             ),
                             SizedBox(height: 1),
                             Text(
-                              '68% of surplus orders occur during late hours',
+                              '68% of orders occur during evening hours',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Color(0xFFB45309),
@@ -3319,7 +3291,7 @@ class _RestaurantDashboardScreenState
                         ),
                       ),
                       onPressed: () =>
-                          _onPostSurplusTapped(context, restaurant),
+                          _onNewPostTapped(context, restaurant),
                     ),
                   ),
                 ],
@@ -4159,7 +4131,7 @@ class _RestaurantDashboardScreenState
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Smart Surplus Food & Deals Platform',
+                          'Smart Food & Deals Platform',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -4239,7 +4211,7 @@ class _RestaurantDashboardScreenState
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'SaveBite is a premier surplus food and discount dining platform in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects smart customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality surplus meals accessible at 50% to 70% discounts before closing time.',
+                          'SaveBite is a premier food and discount dining platform in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects smart customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality meals accessible at 50% to 70% discounts before closing time.',
                           style: TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF475569),
@@ -4771,7 +4743,7 @@ class _RestaurantDashboardScreenState
       },
       {
         'rank': 4,
-        'title': 'Truffle Beef Lasagna (Surplus Box)',
+        'title': 'Truffle Beef Lasagna (Special Box)',
         'category': 'meals',
         'categoryLabel': 'Main Dishes',
         'soldCount': 76,
@@ -4849,7 +4821,7 @@ class _RestaurantDashboardScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Top Selling Surplus Posts',
+                            'Top Selling Dishes',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
@@ -4931,7 +4903,7 @@ class _RestaurantDashboardScreenState
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '459 total surplus orders rescued across top items',
+                          '459 total orders across top dishes',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -5122,7 +5094,7 @@ class _RestaurantDashboardScreenState
                     icon:
                         const Icon(Icons.add_circle_outline_rounded, size: 18),
                     label: const Text(
-                      'Post Surplus for Top Items',
+                      'Post for Top Items',
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
@@ -5133,7 +5105,7 @@ class _RestaurantDashboardScreenState
                       final currentRest =
                           ref.read(currentRestaurantProvider).asData?.value;
                       if (currentRest != null) {
-                        _onPostSurplusTapped(context, currentRest);
+                        _onNewPostTapped(context, currentRest);
                       }
                     },
                   ),
@@ -5755,7 +5727,7 @@ class _RestaurantDashboardScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Are you sure you want to finish and close this surplus food post?',
+              'Are you sure you want to finish and close this post?',
               style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 14),
@@ -6480,7 +6452,7 @@ class _RestaurantDashboardScreenState
                     _buildBenefitItem(
                       icon: Icons.local_fire_department_rounded,
                       color: const Color(0xFFFF5722),
-                      title: 'Boost Surplus Posts (🔥)',
+                      title: 'Boost Posts (🔥)',
                       description: 'Top placement in search and hot deals feeds.',
                     ),
                     _buildBenefitItem(
@@ -6675,7 +6647,7 @@ class _RestaurantDashboardScreenState
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
-                    'No food offers posted yet. Post a surplus dish first!',
+                    'No food offers posted yet. Create a post first!',
                     style: TextStyle(color: Color(0xFF64748B)),
                   ),
                 ),
@@ -7302,7 +7274,7 @@ class _RestaurantDashboardScreenState
   // ==========================================
   void _showHeroBannerModal(BuildContext context, Restaurant restaurant) {
     final titleController = TextEditingController(
-      text: '20% OFF SURPLUS FEAST AT ${restaurant.name.toUpperCase()}',
+      text: '20% OFF FEAST AT ${restaurant.name.toUpperCase()}',
     );
     final subtitleController = TextEditingController(
       text: 'Freshly prepared specialty dishes available daily in ${restaurant.area ?? "Dhaka"}.',
@@ -7330,7 +7302,7 @@ class _RestaurantDashboardScreenState
             'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=900&auto=format&fit=crop&q=80',
       },
       {
-        'label': 'Surplus Dishes',
+        'label': 'Special Dishes',
         'url':
             'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&auto=format&fit=crop&q=80',
       },
@@ -7697,7 +7669,7 @@ class _RestaurantDashboardScreenState
                   TextField(
                     controller: badgeController,
                     decoration: InputDecoration(
-                      hintText: 'e.g. 🔥 20% OFF SURPLUS',
+                      hintText: 'e.g. 🔥 20% OFF',
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
                       contentPadding: const EdgeInsets.symmetric(

@@ -900,7 +900,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           ),
                                           const SizedBox(height: 1),
                                           const Text(
-                                            'Sell surplus inventory & cut food waste',
+                                            'Sell fresh meals & cut food waste',
                                             style: TextStyle(
                                               fontSize: 10.5,
                                               color: AppColors.textSecondary,

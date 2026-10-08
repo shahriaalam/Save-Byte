@@ -157,7 +157,7 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Surplus food offer posted successfully!'),
+          content: Text('Food offer posted successfully!'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -175,7 +175,7 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
 
   void _quickFillSampleOffer() {
     setState(() {
-      _titleController.text = 'Truffle Beef Lasagna (Surplus Box)';
+      _titleController.text = 'Truffle Beef Lasagna (Special Box)';
       _descriptionController.text =
           'Artisan layered lasagna with slow-cooked beef ragu, parmesan béchamel, and truffle aroma. Prepared fresh today at Blue Bell Café.';
       _selectedCategory = 'Bakery';
@@ -188,7 +188,7 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('⚡ Filled sample surplus food offer!'),
+        content: Text('⚡ Filled sample food offer!'),
         backgroundColor: Color(0xFFC2410C),
         duration: Duration(seconds: 2),
       ),
@@ -204,7 +204,7 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Post Surplus Food'),
+        title: const Text('New Post'),
       ),
       body: restaurantAsync.when(
         data: (restaurant) {
@@ -369,13 +369,13 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
                         ),
                         const SizedBox(width: 12),
 
-                        // Discounted Surplus Price
+                        // Discounted Price
                         Expanded(
                           child: TextFormField(
                             controller: _discountedPriceController,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
-                              labelText: 'Surplus Price (৳) *',
+                              labelText: 'Discount Price (৳) *',
                               prefixIcon: Icon(Icons.local_offer_outlined),
                               hintText: '120',
                             ),
@@ -560,7 +560,7 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
                       maxLines: 2,
                       decoration: const InputDecoration(
                         labelText: 'Description (Optional)',
-                        hintText: 'e.g. Fresh lunch surplus packaged safely in takeaway container.',
+                        hintText: 'e.g. Fresh lunch packaged safely in takeaway container.',
                         prefixIcon: Icon(Icons.notes_rounded),
                       ),
                     ),
@@ -568,7 +568,7 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
 
                     // Publish Button
                     PrimaryButton(
-                      text: 'Publish Surplus Food Post',
+                      text: 'Publish Post',
                       isLoading: isPublishing,
                       onPressed: isPublishing ? null : () => _handlePublish(restaurant),
                     ),

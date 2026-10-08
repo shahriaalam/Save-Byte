@@ -112,7 +112,7 @@ class AccountCreatedDialog extends StatelessWidget {
                 Text(
                   isRestaurant
                       ? 'Your restaurant partner account has been created. Please log in to manage your profile and track application verification.'
-                      : 'Your customer account has been created successfully. Log in with your email and password to start exploring surplus food offers!',
+                      : 'Your customer account has been created successfully. Log in with your email and password to start exploring food offers!',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.45,

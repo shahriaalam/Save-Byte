@@ -523,7 +523,7 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                         child: EmptyState(
                           title: 'No active offers right now',
                           message:
-                              'This restaurant has not published any surplus food offers for pickup currently.',
+                              'This restaurant has not published any food offers for pickup currently.',
                           icon: Icons.fastfood_outlined,
                         ),
                       ),

@@ -77,7 +77,7 @@ class CustomerOfferRepository {
       id: 'res-4',
       ownerId: 'owner-4',
       name: 'Sweet Treats Bakery',
-      description: 'Fresh evening bakery surplus, croissants, rolls and desserts.',
+      description: 'Fresh evening bakery items, croissants, rolls and desserts.',
       phone: '01611778899',
       address: 'Mirpur DOHS, Dhaka',
       division: 'Dhaka',
@@ -123,7 +123,7 @@ class CustomerOfferRepository {
       id: 'res-7',
       ownerId: 'owner-7',
       name: 'Dhanmondi Bakehouse',
-      description: 'Artisanal cakes, cookies, and evening surplus pastries.',
+      description: 'Artisanal cakes, cookies, and evening fresh pastries.',
       phone: '01711556677',
       address: 'Road 8/A, Dhanmondi, Dhaka',
       division: 'Dhaka',
@@ -199,7 +199,7 @@ class CustomerOfferRepository {
       id: 'res-12',
       ownerId: 'owner-12',
       name: 'Crust & Crumb Bakery Banasree',
-      description: 'Evening surplus pastries, red velvet cake slices and croissants.',
+      description: 'Evening fresh pastries, red velvet cake slices and croissants.',
       phone: '01811776655',
       address: 'Block F, Banasree, Dhaka',
       division: 'Dhaka',
@@ -244,7 +244,7 @@ class CustomerOfferRepository {
       area: 'Banasree',
       title: 'Tuscan Slow-Baked Lasagna',
       description:
-          'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner surplus discovery.',
+          'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner discovery.',
       category: 'Italian',
       originalPrice: 750,
       discountedPrice: 420,
@@ -847,7 +847,7 @@ class CustomerOfferRepository {
         .toList();
   }
 
-  /// Retrieves active restaurants that have available surplus food offers right now,
+  /// Retrieves active restaurants that have available food offers right now,
   /// filtered by category, division and area. Only restaurants with active offers matching
   /// the selected category (if provided) will be returned.
   Future<List<Restaurant>> getActiveRestaurants({

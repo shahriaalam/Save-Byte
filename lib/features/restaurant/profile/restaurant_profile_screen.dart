@@ -355,7 +355,7 @@ class _RestaurantProfileScreenState
                                 const SizedBox(height: 4),
                                 Text(
                                   isComplete
-                                      ? 'Your restaurant profile is 100% complete with photo, division, and area info. You are fully eligible to post surplus food offers!'
+                                      ? 'Your restaurant profile is 100% complete with photo, division, and area info. You are fully eligible to post food offers!'
                                       : 'Without a complete profile (including profile picture, division, area, address, and phone), you cannot post any food offers in SaveBite.',
                                   style: TextStyle(
                                     fontSize: 12,

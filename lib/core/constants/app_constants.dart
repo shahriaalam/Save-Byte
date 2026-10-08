@@ -1,7 +1,7 @@
 /// Global application constants based on SaveBite V1 specification.
 abstract final class AppConstants {
   static const String appName = 'SaveBite';
-  static const String appTagline = 'Surplus Food Discovery Platform';
+  static const String appTagline = 'Smart Food & Deals Platform';
   static const String currencySymbol = '৳';
 
   // Role values (Section 10)

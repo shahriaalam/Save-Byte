@@ -42,7 +42,7 @@ class _FoodLoadingAnimationState extends State<FoodLoadingAnimation>
   ];
 
   static const List<String> _subtitles = [
-    'Finding fresh surplus food near you...',
+    'Finding fresh food offers near you...',
     'Connecting with local restaurants & bakeries...',
     'Unlocking 50%+ discounts on delicious meals...',
     'Almost there! Preparing your SaveBite dashboard...',

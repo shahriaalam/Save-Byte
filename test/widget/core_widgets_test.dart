@@ -99,7 +99,7 @@ void main() {
         createTestApp(
           EmptyState(
             title: 'No Offers Available',
-            message: 'Check back later for fresh surplus food.',
+            message: 'Check back later for fresh food offers.',
             actionText: 'Refresh',
             onAction: () => refreshed = true,
           ),
@@ -108,7 +108,7 @@ void main() {
 
       expect(find.text('No Offers Available'), findsOneWidget);
       expect(
-        find.text('Check back later for fresh surplus food.'),
+        find.text('Check back later for fresh food offers.'),
         findsOneWidget,
       );
       expect(find.text('Refresh'), findsOneWidget);

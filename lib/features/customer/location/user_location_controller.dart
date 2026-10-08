@@ -138,7 +138,7 @@ class UserLocationNotifier extends Notifier<UserLocationState> {
       );
 
       // If inside Dhaka, set specific neighborhood.
-      // If outside Dhaka (e.g. Chittagong, Sylhet), set to 'All' so Dhaka surplus offers display.
+      // If outside Dhaka (e.g. Chittagong, Sylhet), set to 'All' so Dhaka food offers display.
       if (result.isInsideDhaka) {
         ref.read(homeAreaProvider.notifier).setArea(result.area);
       } else {

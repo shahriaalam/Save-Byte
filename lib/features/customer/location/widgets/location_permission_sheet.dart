@@ -208,7 +208,7 @@ class _LocationPermissionSheetState
 
               // Body
               const Text(
-                'Get instant alerts when nearby restaurants post new surplus food offers with 45%+ discounts.',
+                'Get instant alerts when nearby restaurants post new food offers with 45%+ discounts.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13.5,
@@ -234,7 +234,7 @@ class _LocationPermissionSheetState
               _buildPermBenefit(
                 icon: Icons.lock_outline_rounded,
                 color: AppColors.primary,
-                text: 'No spam — only real nearby surplus offers',
+                text: 'No spam — only real nearby food offers',
               ),
               const SizedBox(height: 24),
 
@@ -422,7 +422,7 @@ class _LocationPermissionSheetState
 
             // Subtitle
             const Text(
-              'Allow Save Bite to detect your Dhaka location to suggest hot deals with 45%+ discount and surplus meals right around your neighborhood.',
+              'Allow Save Bite to detect your Dhaka location to suggest hot deals with 45%+ discount and delicious meals right around your neighborhood.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -445,7 +445,7 @@ class _LocationPermissionSheetState
                   _buildBenefitRow(
                     icon: Icons.local_fire_department_rounded,
                     iconColor: const Color(0xFFEA580C),
-                    text: 'Exclusive 45% or more surplus food discounts',
+                    text: 'Exclusive 45% or more food discounts',
                   ),
                   const SizedBox(height: 10),
                   _buildBenefitRow(
@@ -457,7 +457,7 @@ class _LocationPermissionSheetState
                   _buildBenefitRow(
                     icon: Icons.storefront_rounded,
                     iconColor: const Color(0xFF059669),
-                    text: 'Near-you restaurants with active surplus food right now',
+                    text: 'Near-you restaurants with active food offers right now',
                   ),
                 ],
               ),

@@ -36,7 +36,7 @@ class RestaurantNotificationNotifier extends AsyncNotifier<List<RestaurantNotifi
         id: 'initial_notif_1',
         restaurantId: 'blue_bell_cafe',
         title: 'Welcome to SaveBite Partner Portal 🏪',
-        message: 'Manage your surplus food drops, dish boosts, and homepage hero banner campaigns here.',
+        message: 'Manage your food drops, dish boosts, and homepage hero banner campaigns here.',
         type: 'general',
         createdAt: DateTime.now().subtract(const Duration(hours: 3)),
         isRead: false,

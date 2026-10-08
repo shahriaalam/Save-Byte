@@ -536,7 +536,7 @@ class _EmptyNotificationState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'When a nearby restaurant posts a new surplus food offer, you\'ll see it here.',
+              'When a nearby restaurant posts a new food offer, you\'ll see it here.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

@@ -164,7 +164,7 @@ void main() {
       expect(find.text('Fix Now'), findsOneWidget);
     });
 
-    testWidgets('tapping Post Surplus Food with incomplete profile shows blocking alert dialog', (tester) async {
+    testWidgets('tapping New Post with incomplete profile shows blocking alert dialog', (tester) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -176,8 +176,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // Tap Post Surplus Food button
-      final postButton = find.text('Post Surplus Food');
+      // Tap New Post Quick Access button
+      final postButton = find.text('New Post');
       expect(postButton, findsOneWidget);
       await tester.tap(postButton);
       await tester.pumpAndSettle();
@@ -233,7 +233,7 @@ void main() {
 
       // Offer form fields should NOT be shown
       expect(find.text('Food Offer Title *'), findsNothing);
-      expect(find.text('Surplus Price (৳) *'), findsNothing);
+      expect(find.text('Discount Price (৳) *'), findsNothing);
     });
 
     testWidgets('renders offer creation form when restaurant profile is complete', (tester) async {
@@ -249,10 +249,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Form should be rendered
-      expect(find.text('Post Surplus Food'), findsOneWidget);
+      expect(find.text('New Post'), findsOneWidget);
       expect(find.text('Food Offer Title *'), findsOneWidget);
-      expect(find.text('Surplus Price (৳) *'), findsOneWidget);
-      expect(find.text('Publish Surplus Food Post'), findsOneWidget);
+      expect(find.text('Discount Price (৳) *'), findsOneWidget);
+      expect(find.text('Publish Post'), findsOneWidget);
     });
 
     testWidgets('Quick Fill Sample Offer populates offer form fields', (tester) async {
@@ -272,7 +272,7 @@ void main() {
       await tester.tap(quickFillBtn);
       await tester.pump();
 
-      expect(find.text('Truffle Beef Lasagna (Surplus Box)'), findsOneWidget);
+      expect(find.text('Truffle Beef Lasagna (Special Box)'), findsOneWidget);
       expect(find.text('420'), findsOneWidget);
     });
   });
@@ -340,7 +340,7 @@ void main() {
       expect(find.byKey(const ValueKey('restaurant_nav_Account')), findsOneWidget);
 
       // Verify Home is currently selected (rendered on Home view)
-      expect(find.text('Post Surplus Food'), findsOneWidget);
+      expect(find.text('New Post'), findsOneWidget);
     });
 
     testWidgets('Offers tab displays Admin Promotional Packages (Banner 2000 tk, Boost 600 tk)', (tester) async {
@@ -482,7 +482,7 @@ void main() {
 
       // Verify rich About sheet contents matching user app
       expect(find.text('SaveBite'), findsWidgets);
-      expect(find.text('Smart Surplus Food & Deals Platform'), findsOneWidget);
+      expect(find.text('Smart Food & Deals Platform'), findsOneWidget);
       expect(find.text('Version 1.1.0 (Build 110)'), findsOneWidget);
       expect(find.text('About SaveBite'), findsOneWidget);
       expect(find.text('Our Community Impact'), findsNothing);
@@ -678,7 +678,7 @@ void main() {
         expect(find.text('312 Foodies'), findsOneWidget);
 
         // 4. Verify Top Selling Product preview card on page
-        expect(find.text('Top Selling Surplus Posts'), findsOneWidget);
+        expect(find.text('Top Selling Dishes'), findsOneWidget);
         expect(find.text('Belgium Dark Chocolate Pastry'), findsOneWidget);
         expect(find.text('Open Full Top Sellers Leaderboard'), findsOneWidget);
 
@@ -693,9 +693,9 @@ void main() {
         expect(find.text('Bakery & Dessert'), findsWidgets);
         expect(find.text('Hazelnut Cappuccino & Croissant'), findsOneWidget);
         expect(find.text('Blue Bell Club Chicken Sandwich'), findsOneWidget);
-        expect(find.text('Truffle Beef Lasagna (Surplus Box)'), findsOneWidget);
+        expect(find.text('Truffle Beef Lasagna (Special Box)'), findsOneWidget);
         expect(find.text('Artisan Garlic Sourdough Loaf'), findsOneWidget);
-        expect(find.text('Post Surplus for Top Items'), findsOneWidget);
+        expect(find.text('Post for Top Items'), findsOneWidget);
 
         // 7. Close bottom sheet
         await tester.tap(find.byIcon(Icons.close_rounded));

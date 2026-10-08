@@ -286,7 +286,7 @@ class _CustomerRegisterScreenState
                           ),
                           const SizedBox(height: 3),
                           const Text(
-                            'Discover fresh, discounted surplus food near you.',
+                            'Discover fresh, discounted food near you.',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.textSecondary,

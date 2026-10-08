@@ -33,7 +33,7 @@ void main() {
     expect(find.text('Find 45%+ Hot Deals Near You'), findsOneWidget);
     expect(find.text('Allow Location & Find Deals'), findsOneWidget);
     expect(find.text('Choose Dhaka Area Manually'), findsNothing);
-    expect(find.text('Exclusive 45% or more surplus food discounts'), findsOneWidget);
+    expect(find.text('Exclusive 45% or more food discounts'), findsOneWidget);
   });
 
   testWidgets('CustomerHotDealsScreen filters for 45%+ deals near detected location', (tester) async {

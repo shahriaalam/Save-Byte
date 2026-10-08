@@ -119,7 +119,7 @@ void main() {
       const partnerBanner = PromoBanner(
         id: 'banner_partner_1',
         title: 'Special 20% Off Weekend Buffet',
-        subtitle: 'Artisanal dishes rescued in Banasree',
+        subtitle: 'Artisanal dishes available in Banasree',
         restaurantId: 'rest_blue_bell',
         restaurantName: 'Blue Bell Café',
         status: 'pending',
