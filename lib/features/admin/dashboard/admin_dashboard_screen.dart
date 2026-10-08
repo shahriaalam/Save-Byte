@@ -12,7 +12,9 @@ import '../../../core/widgets/confirm_dialog.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../restaurant/notifications/restaurant_notification_controller.dart';
 import '../../shared/data/promo_banner_controller.dart';
+import '../../shared/data/admin_financial_controller.dart';
 import '../../shared/models/promo_banner.dart';
+import 'widgets/admin_analytics_dashboard_sheet.dart';
 
 /// Admin Command Center & Platform Management Portal
 ///
@@ -57,6 +59,25 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   void initState() {
     super.initState();
     _initMockData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncFinancialCounts();
+    });
+  }
+
+  void _syncFinancialCounts() {
+    if (!mounted) return;
+    final totalPartners = _restaurantsData.length;
+    final gold = _restaurantsData.where((r) => r['isPremium'] == true).length;
+    final verified =
+        _restaurantsData.where((r) => r['isVerified'] == true).length;
+    final pending =
+        _restaurantsData.where((r) => r['status'] == 'pending').length;
+    ref.read(adminFinancialProvider.notifier).updatePartnerCounts(
+          total: totalPartners,
+          gold: gold,
+          verified: verified,
+          pending: pending,
+        );
   }
 
   @override
@@ -830,10 +851,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           // ==========================================
           // QUICK ACCESS SYMBOLS (MANDATORY REQUIREMENT)
           // ==========================================
-          _buildSectionHeader('QUICK ACCESS COMMANDS', countBadge: '12 Tools'),
+          _buildSectionHeader('QUICK ACCESS COMMANDS', countBadge: '13 Tools'),
           const SizedBox(height: 14),
 
-          // 12 Squircle Quick Access Symbols Grid matching app action tiles
+          // 13 Squircle Quick Access Symbols Grid matching app action tiles
           GridView.count(
             crossAxisCount: 4,
             shrinkWrap: true,
@@ -842,6 +863,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             crossAxisSpacing: 10,
             childAspectRatio: 0.82,
             children: [
+              _buildQuickAccessSymbol(
+                label: 'Dashboard',
+                badge: 'Live KPI',
+                icon: Icons.insights_rounded,
+                gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
+                onTap: () => showAdminAnalyticsDashboardSheet(context),
+              ),
               _buildQuickAccessSymbol(
                 label: 'Partners',
                 badge:

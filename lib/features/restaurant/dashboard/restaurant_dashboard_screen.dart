@@ -18,6 +18,8 @@ import '../../shared/models/promo_banner.dart';
 import '../../shared/models/restaurant.dart';
 import '../../../core/utils/platform_file_picker.dart';
 import '../../shared/data/promo_banner_controller.dart';
+import '../../shared/data/admin_financial_controller.dart';
+import '../../shared/presentation/payment_portal_sheet.dart';
 import '../notifications/restaurant_notification_controller.dart';
 import '../presentation/restaurant_controller.dart';
 
@@ -896,9 +898,47 @@ class _RestaurantDashboardScreenState
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(ctx).pop();
-                  onConfirm();
+                  final cleanStr = price.replaceAll(RegExp(r'[^0-9]'), '');
+                  final parsedAmount = double.tryParse(cleanStr) ?? 600.0;
+                  final payResult = await showPaymentPortalSheet(
+                    context: context,
+                    title: packageTitle,
+                    subtitle: 'Admin Promotional Package • $duration',
+                    amount: parsedAmount,
+                    customerOrBusinessName: 'Partner Kitchen',
+                    perkHighlights: [
+                      description,
+                      'Instant Feature Clearance',
+                    ],
+                    itemType: 'ad_package',
+                  );
+
+                  if (payResult != null && payResult.isSuccess) {
+                    ref
+                        .read(adminFinancialProvider.notifier)
+                        .recordSubscriptionPayment(
+                          payerName: 'Partner Merchant',
+                          payerType: 'restaurant',
+                          planName: packageTitle,
+                          amount: parsedAmount,
+                          paymentGateway: payResult.gateway ?? 'bKash',
+                          transactionId:
+                              payResult.transactionId ?? 'TXN-PKG-771',
+                        );
+                    onConfirm();
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Payment was not completed. Package was not activated.'),
+                          backgroundColor: Color(0xFF64748B),
+                        ),
+                      );
+                    }
+                  }
                 },
                 child: Text(
                   'Confirm & Activate ($price)',
@@ -4689,30 +4729,112 @@ class _RestaurantDashboardScreenState
                         ),
                         onPressed: () async {
                           Navigator.of(ctx).pop();
-                          final newStatus = !isSubscribed;
-                          if (!newStatus) {
-                            setState(() => _hasActive24hBanner = false);
+                          if (isSubscribed) {
+                            final confirm = await ConfirmDialog.show(
+                              context,
+                              title: 'Cancel Gold Subscription?',
+                              message:
+                                  'Are you sure you want to cancel your SaveBite Gold Merchant subscription? Hero banner placement and boost quotas will be discontinued.',
+                              confirmLabel: 'Cancel Plan',
+                            );
+                            if (confirm == true) {
+                              setState(() => _hasActive24hBanner = false);
+                              await ref
+                                  .read(restaurantActionNotifierProvider.notifier)
+                                  .updateSubscription(
+                                    isPremium: false,
+                                    plan: null,
+                                    boostCredits: 0,
+                                    bannerCredits: 0,
+                                    hasActiveBanner: false,
+                                  );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Gold subscription canceled.'),
+                                    backgroundColor: Color(0xFF64748B),
+                                  ),
+                                );
+                              }
+                            }
+                            return;
                           }
-                          await ref
-                              .read(restaurantActionNotifierProvider.notifier)
-                              .updateSubscription(
-                                isPremium: newStatus,
-                                plan: newStatus ? 'gold' : null,
-                                boostCredits: newStatus ? 5 : 0,
-                                bannerCredits: newStatus ? 1 : 0,
-                                hasActiveBanner: newStatus,
-                              );
-                          if (newStatus) {
+
+                          // Not subscribed: TAKE THEM TO SECURE PAYMENT PORTAL!
+                          final payResult = await showPaymentPortalSheet(
+                            context: context,
+                            title: 'SaveBite Gold Merchant Subscription',
+                            subtitle: '1 Month (30 Days) • Auto-Renews',
+                            amount: 999.0,
+                            customerOrBusinessName: restaurant.name,
+                            perkHighlights: const [
+                              '1 Homepage Hero Banner Placement',
+                              '5 Priority Meal Boosts (🔥)',
+                              'Verified Gold Merchant Badge',
+                              'Top Placement in Banasree Feeds',
+                            ],
+                            itemType: 'restaurant_subscription',
+                          );
+
+                          if (payResult != null && payResult.isSuccess) {
+                            // ONLY UNLOCK UPON VERIFIED PAYMENT!
+                            setState(() => _hasActive24hBanner = true);
+                            await ref
+                                .read(restaurantActionNotifierProvider.notifier)
+                                .updateSubscription(
+                                  isPremium: true,
+                                  plan: 'gold',
+                                  boostCredits: 5,
+                                  bannerCredits: 1,
+                                  hasActiveBanner: true,
+                                );
+
+                            ref
+                                .read(adminFinancialProvider.notifier)
+                                .recordSubscriptionPayment(
+                                  payerName: '${restaurant.name} (Partner)',
+                                  payerType: 'restaurant',
+                                  planName: 'Gold Merchant Monthly',
+                                  amount: 999.0,
+                                  paymentGateway: payResult.gateway ?? 'bKash',
+                                  transactionId:
+                                      payResult.transactionId ?? 'TXN-GM-991',
+                                );
+
                             await ref
                                 .read(restaurantNotificationsProvider.notifier)
                                 .notifyGoldMerchant(
                                   restaurantId: restaurant.id,
                                   restaurantName: restaurant.name,
                                 );
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '🎉 Payment Approved via ${payResult.gateway}! SaveBite Gold Merchant unlocked! ✨',
+                                  ),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Payment was not completed. Gold features remain locked.',
+                                  ),
+                                  backgroundColor: Color(0xFF64748B),
+                                ),
+                              );
+                            }
                           }
                         },
                         child: Text(
-                          isSubscribed ? 'Manage Subscription' : 'Upgrade (${AppConstants.currencySymbol}999/mo)',
+                          isSubscribed
+                              ? 'Manage Subscription'
+                              : 'Upgrade (${AppConstants.currencySymbol}999/mo)',
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),

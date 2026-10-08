@@ -7,6 +7,7 @@ import '../../../core/colors/account_colors.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/confirm_dialog.dart';
 import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/user_avatar.dart';
@@ -14,6 +15,9 @@ import '../../auth/domain/user_profile.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../location/widgets/customer_location_sheet.dart';
 import '../shell/customer_shell_screen.dart';
+import '../../shared/data/admin_financial_controller.dart';
+import '../../shared/presentation/payment_portal_sheet.dart';
+import 'data/customer_membership_controller.dart';
 import 'widgets/change_avatar_sheet.dart';
 
 /// Customer Account management screen (Section 26 & Account update).
@@ -552,21 +556,234 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          '🎉 Welcome to Super Saver! Exclusive perks activated.',
-                        ),
-                        backgroundColor: AppColors.success,
-                      ),
+                    final userProfile =
+                        ref.read(currentUserProfileProvider);
+                    final customerName =
+                        userProfile?.fullName?.trim().isNotEmpty == true
+                            ? userProfile!.fullName!
+                            : 'Valued Food Rescuer';
+
+                    final result = await showPaymentPortalSheet(
+                      context: context,
+                      title: 'Super Saver VIP Membership',
+                      subtitle: '1 Month (30 Days) • Auto-Renews',
+                      amount: 99.0,
+                      customerOrBusinessName: customerName,
+                      perkHighlights: const [
+                        'Free Delivery on Orders > ৳200',
+                        'Extra 10% Off Surplus Bags',
+                        '15-Min Early Deal Drop Access',
+                        'Exclusive Super Saver VIP Badge',
+                      ],
+                      itemType: 'customer_membership',
                     );
+
+                    if (result != null && result.isSuccess) {
+                      await ref
+                          .read(customerMembershipProvider.notifier)
+                          .activateMembership(amount: 99.0);
+
+                      ref
+                          .read(adminFinancialProvider.notifier)
+                          .recordSubscriptionPayment(
+                            payerName: '$customerName (Consumer)',
+                            payerType: 'customer',
+                            planName: 'Super Saver VIP Club',
+                            amount: 99.0,
+                            paymentGateway: result.gateway ?? 'bKash',
+                            transactionId:
+                                result.transactionId ?? 'TXN-SS-891',
+                          );
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '🎉 Payment Approved via ${result.gateway}! Welcome to Super Saver VIP! ✨',
+                            ),
+                            backgroundColor: AppColors.success,
+                          ),
+                        );
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Payment was not completed. Super Saver perks remain locked.',
+                            ),
+                            backgroundColor: Color(0xFF64748B),
+                          ),
+                        );
+                      }
+                    }
                   },
                   child: const Text(
-                    'Join Super Saver Now',
+                    'Join Super Saver Now (৳99/mo)',
                     style: TextStyle(
                       fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).whenComplete(() {
+      ref.read(customerNavbarVisibleProvider.notifier).show();
+    });
+  }
+
+  void _showActiveMembershipSheet(
+      BuildContext context, CustomerMembershipState membership) {
+    ref.read(customerNavbarVisibleProvider.notifier).hide();
+    final targetContext = rootNavigatorKey.currentContext ?? context;
+    showModalBottomSheet<void>(
+      context: targetContext,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE11D48), Color(0xFFBE123C)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.stars_rounded,
+                        color: Colors.white, size: 36),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Super Saver VIP Member',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            membership.expiresAt != null
+                                ? 'Renews on ${membership.expiresAt!.day}/${membership.expiresAt!.month}/${membership.expiresAt!.year}'
+                                : '30-Day Auto-Renewing Membership',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'ACTIVE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'YOUR ACTIVE VIP PRIVILEGES',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildPerkRow(Icons.local_shipping_outlined,
+                  'Free Delivery on Orders > ৳200', 'Active across Dhaka city'),
+              _buildPerkRow(Icons.discount_outlined,
+                  'Extra 10% Off Surplus Bags', 'Stacked automatically at checkout'),
+              _buildPerkRow(Icons.bolt_rounded,
+                  '15-Min Priority Early Deal Drops', 'Notifications enabled'),
+              _buildPerkRow(Icons.verified_rounded,
+                  'Exclusive Super Saver Badge', 'Displayed on your public profile'),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFE11D48),
+                    side: const BorderSide(color: Color(0xFFFFCCD3)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    final confirm = await ConfirmDialog.show(
+                      context,
+                      title: 'Cancel Super Saver Membership?',
+                      message:
+                          'Are you sure you want to cancel your VIP membership? You will lose free delivery and 10% discounts at the end of the current billing period.',
+                      confirmLabel: 'Cancel Membership',
+                    );
+                    if (confirm == true) {
+                      await ref
+                          .read(customerMembershipProvider.notifier)
+                          .cancelMembership();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Super Saver membership canceled.'),
+                            backgroundColor: Color(0xFF64748B),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text(
+                    'Cancel Membership',
+                    style: TextStyle(
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1879,6 +2096,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(currentUserProfileProvider);
+    final membership = ref.watch(customerMembershipProvider);
 
     final displayName = profile?.fullName?.trim().isNotEmpty == true
         ? profile!.fullName!
@@ -2005,7 +2223,13 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
               child: InkWell(
-                onTap: () => _showSuperSaverModal(context),
+                onTap: () {
+                  if (membership.isSuperSaver) {
+                    _showActiveMembershipSheet(context, membership);
+                  } else {
+                    _showSuperSaverModal(context);
+                  }
+                },
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
                   padding:
@@ -2027,30 +2251,50 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Expanded(
+                      if (membership.isSuperSaver) ...[
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE11D48),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.stars_rounded,
+                              color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Become a Super Saver',
+                              membership.isSuperSaver
+                                  ? 'Super Saver VIP Active ⭐'
+                                  : 'Become a Super Saver',
                               style: TextStyle(
                                 fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E293B),
+                                fontWeight: FontWeight.w800,
+                                color: membership.isSuperSaver
+                                    ? const Color(0xFF9F1239)
+                                    : const Color(0xFF1E293B),
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            'Unlock exclusive benefits',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF64748B),
+                            const SizedBox(height: 3),
+                            Text(
+                              membership.isSuperSaver
+                                  ? 'Active Member • Free delivery & perks unlocked'
+                                  : 'Unlock exclusive benefits',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: membership.isSuperSaver
+                                    ? const Color(0xFFBE123C)
+                                    : const Color(0xFF64748B),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    _buildSuperSaverBadge(),
+                      _buildSuperSaverBadge(isActive: membership.isSuperSaver),
                   ],
                 ),
               ),
@@ -2423,7 +2667,46 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   // WIDGET HELPER BUILDERS
   // ==========================================
 
-  Widget _buildSuperSaverBadge() {
+  Widget _buildSuperSaverBadge({bool isActive = false}) {
+    if (isActive) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE11D48),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFE11D48).withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'VIP',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.8,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              'MEMBER',
+              style: TextStyle(
+                fontSize: 8.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
