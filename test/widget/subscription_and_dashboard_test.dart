@@ -133,8 +133,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify 13 Tools count and 1st symbol 'Dashboard' with 'Live KPI' badge
-    expect(find.text('13 Tools'), findsOneWidget);
+    // Verify 11 Tools count and 1st symbol 'Dashboard' with 'Live KPI' badge
+    expect(find.text('11 Tools'), findsOneWidget);
     expect(find.text('Live KPI'), findsOneWidget);
 
     // Tap Dashboard quick access button via its unique Live KPI badge or tile

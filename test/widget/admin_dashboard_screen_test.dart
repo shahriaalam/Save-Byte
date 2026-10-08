@@ -54,13 +54,14 @@ void main() {
     expect(find.text('ADMIN • ACTIVE'), findsOneWidget);
 
     // Verify KPI Telemetry Cards
-    expect(find.text('FOOD RESCUED'), findsOneWidget);
+    expect(find.text('TOTAL ORDERS'), findsOneWidget);
     expect(find.text('PARTNER KITCHENS'), findsOneWidget);
     expect(find.text('ACTIVE POSTS'), findsOneWidget);
     expect(find.text('PLATFORM VOLUME'), findsOneWidget);
 
     // Verify Quick Access Section & symbols
     expect(find.text('QUICK ACCESS COMMANDS'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Partners'), findsWidgets);
     expect(find.text('Posts'), findsWidgets);
     expect(find.text('Banners'), findsWidgets);
@@ -68,11 +69,10 @@ void main() {
     expect(find.text('Vouchers'), findsOneWidget);
     expect(find.text('Ad Sales'), findsOneWidget);
     expect(find.text('Accounts'), findsOneWidget);
-    expect(find.text('Telemetry'), findsOneWidget);
     expect(find.text('Broadcast'), findsOneWidget);
-    expect(find.text('Console'), findsWidgets);
     expect(find.text('Reviews'), findsOneWidget);
     expect(find.text('Audit Log'), findsOneWidget);
+    expect(find.text('Telemetry'), findsNothing);
 
     // Verify Floating Nav Bar items
     expect(find.text('Overview'), findsOneWidget);

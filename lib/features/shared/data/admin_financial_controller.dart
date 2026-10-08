@@ -170,7 +170,7 @@ class AdminFinancialState {
         iconKey: 'banner',
       ),
       const RevenueSlice(
-        category: 'Order Rescue Commission (5%)',
+        category: 'Order Commission (5%)',
         amount: 28400.0,
         colorHex: 0xFF10B981,
         iconKey: 'fee',

@@ -240,7 +240,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         'id': 'off-4',
         'restaurantId': 'rest-4',
         'restaurantName': 'Kacchi Bhai Express',
-        'title': 'Chicken Roast & Polao Evening Rescue',
+        'title': 'Chicken Roast & Polao Evening Deal',
         'category': 'Rice',
         'originalPrice': 260.0,
         'discountedPrice': 130.0,
@@ -276,8 +276,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         'usedCount': 342,
       },
       {
-        'code': 'RESCUE20',
-        'title': '20% Mystery Bag Discount',
+        'code': 'SAVE20',
+        'title': '20% Surplus Bag Discount',
         'discount': '20% OFF (Min ৳150)',
         'type': 'Percentage',
         'status': 'Active',
@@ -705,103 +705,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero System Status Banner (Signature SaveBite Gradient)
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.28),
-                  blurRadius: 16,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF4ADE80),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'SYSTEM: 100% ONLINE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3.5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3)),
-                      ),
-                      child: const Text(
-                        'DHAKA CLUSTER',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Autonomous Surplus Food Rescue Network',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Real-time ingestion monitoring, restaurant verification approvals & dynamic promotion engine.',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // KPI Telemetry Cards (2x2 Grid)
           Row(
             children: [
               Expanded(
                 child: _buildTelemetryCard(
-                  title: 'Food Rescued',
-                  value: '1,428 kg',
+                  title: 'Total Orders',
+                  value: '1,428',
                   subtext: '+22.4% this week',
                   trendColor: const Color(0xFF16A34A),
-                  icon: Icons.eco_rounded,
+                  icon: Icons.receipt_long_rounded,
                   accentColor: const Color(0xFF16A34A),
                 ),
               ),
@@ -851,10 +764,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           // ==========================================
           // QUICK ACCESS SYMBOLS (MANDATORY REQUIREMENT)
           // ==========================================
-          _buildSectionHeader('QUICK ACCESS COMMANDS', countBadge: '13 Tools'),
+          _buildSectionHeader('QUICK ACCESS COMMANDS', countBadge: '11 Tools'),
           const SizedBox(height: 14),
 
-          // 13 Squircle Quick Access Symbols Grid matching app action tiles
+          // 11 Squircle Quick Access Symbols Grid matching app action tiles
           GridView.count(
             crossAxisCount: 4,
             shrinkWrap: true,
@@ -926,25 +839,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 onTap: () => _showUserDirectoryModal(context),
               ),
               _buildQuickAccessSymbol(
-                label: 'Telemetry',
-                badge: 'Eco Pulse',
-                icon: Icons.query_stats_rounded,
-                gradient: const [Color(0xFF0D9488), Color(0xFF0F766E)],
-                onTap: () => _showTelemetryModal(context),
-              ),
-              _buildQuickAccessSymbol(
                 label: 'Broadcast',
                 badge: 'Push',
                 icon: Icons.campaign_rounded,
                 gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
                 onTap: () => _showBroadcastNotificationModal(context),
-              ),
-              _buildQuickAccessSymbol(
-                label: 'Console',
-                badge: 'DB v2.0',
-                icon: Icons.terminal_rounded,
-                gradient: const [Color(0xFF475569), Color(0xFF334155)],
-                onTap: () => setState(() => _currentTab = 4),
               ),
               _buildQuickAccessSymbol(
                 label: 'Reviews',
@@ -5322,45 +5221,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  void _showTelemetryModal(BuildContext context) {
-    _showSheet(
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('Environmental Telemetry & Impact',
-                style: TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            _buildDossierRow('Total Surplus Food Saved', '1,428.5 kg'),
-            _buildDossierRow('Atmospheric CO₂ Prevented', '3,571.2 kg'),
-            _buildDossierRow('Equivalent Trees Planted', '178 Trees'),
-            _buildDossierRow('Top Rescue Hub', 'Dhanmondi (38% volume)'),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showBroadcastNotificationModal(BuildContext context) {
     final titleCtrl = TextEditingController();
     final bodyCtrl = TextEditingController();
@@ -5500,7 +5360,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             _buildActionItemCard(
               title: "Sultan's Dine • 5.0★ (Rahim Ahmed)",
               subtitle:
-                  '"Hot biryani rescued at 50% discount! Amazing taste and fresh packaging."',
+                  '"Hot biryani ordered at 50% discount! Amazing taste and fresh packaging."',
               actionLabel: 'Verified Review',
               icon: Icons.star_rounded,
               iconColor: const Color(0xFFD97706),

@@ -478,7 +478,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                       ),
                       Text(
-                        'Unlock VIP Food Rescue Perks',
+                        'Unlock VIP Membership Perks',
                         style: TextStyle(
                           fontSize: 12.5,
                           color: Color(0xFF64748B),
@@ -563,7 +563,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                     final customerName =
                         userProfile?.fullName?.trim().isNotEmpty == true
                             ? userProfile!.fullName!
-                            : 'Valued Food Rescuer';
+                            : 'Valued Customer';
 
                     final result = await showPaymentPortalSheet(
                       context: context,
@@ -960,7 +960,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               _buildVoucherTile(
                   context, 'SAVEBITE50', '৳50 OFF on orders above ৳200', 'Expires in 3 days'),
               _buildVoucherTile(
-                  context, 'RESCUE20', '20% OFF mystery bags', 'Expires in 7 days'),
+                  context, 'SAVE20', '20% OFF surplus bags', 'Expires in 7 days'),
               _buildVoucherTile(
                   context, 'SUPERSAVER', 'Free delivery anywhere in Dhaka', 'Super Saver Exclusive'),
             ],
@@ -1063,7 +1063,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Food Rescue Rewards',
+                'SaveBite Rewards',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -1086,7 +1086,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '280 Rescue Points',
+                          '280 Reward Points',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -1094,7 +1094,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                           ),
                         ),
                         Text(
-                          'Tier: Silver Rescuer (7 meals saved)',
+                          'Tier: Silver Member (7 orders placed)',
                           style: TextStyle(fontSize: 12, color: Colors.white70),
                         ),
                       ],
@@ -1106,7 +1106,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
               const SizedBox(height: 14),
               const Text(
-                'Environmental Impact:',
+                'Tier Benefits:',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
@@ -1115,7 +1115,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
               const SizedBox(height: 4),
               const Text(
-                '🌱 17.5 kg CO₂ prevented from entering the atmosphere.\n🍔 Rescued surplus food from 4 local bakeries and restaurants.',
+                '✨ 5% bonus discount on orders above ৳500.\n🎟️ Earn 10 points for every completed order.',
                 style: TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.4),
               ),
             ],
@@ -1356,7 +1356,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               const SizedBox(height: 12),
               const Text(
                 '• Data Protection: SaveBite encrypts all customer identifiers and transactions.\n\n'
-                '• Location Privacy: Your GPS location is solely utilized to display nearby food rescue offers within your delivery zone.\n\n'
+                '• Location Privacy: Your GPS location is solely utilized to display nearby food offers within your delivery zone.\n\n'
                 '• No Third-Party Selling: We never sell or transfer your personal contact data to marketing agencies.\n\n'
                 '• Account Deletion: You can request complete profile and transaction data erasure at any time.',
                 style: TextStyle(
@@ -1441,7 +1441,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                       ),
                       Text(
-                        'Rescue meals together with friends',
+                        'Order meals together with friends',
                         style: TextStyle(
                           fontSize: 12.5,
                           color: Color(0xFF64748B),
@@ -1453,7 +1453,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Group food rescues let coworkers, roommates, and families combine multiple surplus orders into one pickup run while unlocking free delivery!',
+                'Group orders let coworkers, roommates, and families combine multiple surplus orders into one pickup run while unlocking free delivery!',
                 style: TextStyle(
                   fontSize: 12.5,
                   color: Color(0xFF475569),
@@ -1480,10 +1480,10 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   onPressed: () {
                     Navigator.pop(ctx);
                     Clipboard.setData(const ClipboardData(
-                        text: 'https://savebite.app/group/rescue-dhaka-741'));
+                        text: 'https://savebite.app/group/order-dhaka-741'));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Group rescue link copied to clipboard!'),
+                        content: Text('Group order link copied to clipboard!'),
                         backgroundColor: AppColors.success,
                       ),
                     );
@@ -1573,7 +1573,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               Text(
                 '• All your personal profile and address data will be erased.\n'
                 '• Any active food reservations will be cancelled.\n'
-                '• Saved vouchers, favourite spots, and Rescue Points will be permanently lost.',
+                '• Saved vouchers, favourite spots, and Reward Points will be permanently lost.',
                 style: TextStyle(
                   fontSize: 12,
                   color: Color(0xFF64748B),
@@ -1719,7 +1719,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Smart Surplus Food Rescue Platform',
+                          'Smart Surplus Food & Deals Platform',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -1797,7 +1797,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'SaveBite is a mission-driven surplus food rescue platform founded to combat urban food waste in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects conscious customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality surplus meals accessible at 50% to 70% discounts before closing time.',
+                          'SaveBite is a premier surplus food and discount dining platform in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects smart customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality surplus meals accessible at 50% to 70% discounts before closing time.',
                           style: TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF475569),
@@ -1809,144 +1809,59 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Key Impact Metrics Grid
-                  const Text(
-                    'Our Community Impact',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.restaurant_rounded,
-                          title: '10,000+',
-                          subtitle: 'Meals Rescued',
-                          color: const Color(0xFFE11D48),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.eco_rounded,
-                          title: '15+ Tons',
-                          subtitle: 'CO₂ Prevented',
-                          color: const Color(0xFF15803D),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.savings_outlined,
-                          title: '৳2.5M+',
-                          subtitle: 'Saved by Users',
-                          color: const Color(0xFF0284C7),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.storefront_outlined,
-                          title: '150+',
-                          subtitle: 'Partner Outlets',
-                          color: const Color(0xFFD97706),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // App Features & Details
-                  const Text(
-                    'Key Features',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildAboutFeatureTile(
-                    icon: Icons.local_fire_department_rounded,
-                    color: const Color(0xFFEA580C),
-                    title: 'Hot Deals & Mystery Bags',
-                    description:
-                        'Rescue daily surplus bags with freshly prepared dishes at unbeatable prices.',
-                  ),
-                  _buildAboutFeatureTile(
-                    icon: Icons.near_me_rounded,
-                    color: const Color(0xFF0284C7),
-                    title: 'Dhaka Neighborhood Coverage',
-                    description:
-                        'Discover nearby partner restaurants in Mirpur, Dhanmondi, Gulshan, Banani, and Uttara.',
-                  ),
-                  _buildAboutFeatureTile(
-                    icon: Icons.workspace_premium_rounded,
-                    color: const Color(0xFFE11D48),
-                    title: 'Super Saver Membership',
-                    description:
-                        'Enjoy free deliveries, extra 10% discounts, and 15-minute priority deal drops.',
-                  ),
-                  _buildAboutFeatureTile(
-                    icon: Icons.qr_code_2_rounded,
-                    color: const Color(0xFF15803D),
-                    title: 'Seamless Contactless Pickup',
-                    description:
-                        'Pick up meals quickly with secure digital verification and order tracking.',
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Technical Specs & Organization
+                  // Company Information & Credits
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'SaveBite Technologies Ltd.',
+                          'SaveBite Ltd',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF0F172A),
                           ),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Dhaka, Bangladesh • Made with ❤️ for sustainable living',
+                          'Dhaka, Bangladesh',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             color: Color(0xFF64748B),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Email: support@savebite.com • Helpline: +880 1700-112233',
+                          'Email: contactshahria@gmail.com, Helpline: 16600',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             color: Color(0xFF475569),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        SizedBox(height: 4),
                         Text(
-                          '© 2026 SaveBite Technologies Ltd. All rights reserved.',
+                          '© 2026 SaveBite Ltd. All rights reserved',
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Developed by B. M. Shahria Alam',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF64748B),
                           ),
                         ),
                       ],
@@ -1987,107 +1902,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     });
   }
 
-  static Widget _buildAboutStatCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  static Widget _buildAboutFeatureTile({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String description,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    color: Color(0xFF64748B),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ==========================================
   // MAIN BUILD METHOD
@@ -2589,7 +2404,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         iconColor: const Color(0xFF475569),
                         iconBgColor: const Color(0xFFF1F5F9),
                         title: 'About',
-                        subtitle: 'Version 1.1.0 • App Info & Impact',
+                        subtitle: 'Version 1.1.0 • App Information',
                         onTap: () => _showAboutModal(context),
                       ),
                       const Divider(

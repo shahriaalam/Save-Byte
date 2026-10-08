@@ -474,12 +474,13 @@ void main() {
 
       // Verify rich About sheet contents matching user app
       expect(find.text('SaveBite'), findsWidgets);
-      expect(find.text('Smart Surplus Food Rescue Platform'), findsOneWidget);
+      expect(find.text('Smart Surplus Food & Deals Platform'), findsOneWidget);
       expect(find.text('Version 1.1.0 (Build 110)'), findsOneWidget);
       expect(find.text('About SaveBite'), findsOneWidget);
-      expect(find.text('Our Community Impact'), findsOneWidget);
-      expect(find.text('Key Features'), findsOneWidget);
-      expect(find.text('SaveBite Technologies Ltd.'), findsOneWidget);
+      expect(find.text('Our Community Impact'), findsNothing);
+      expect(find.text('Key Features'), findsNothing);
+      expect(find.text('SaveBite Ltd'), findsOneWidget);
+      expect(find.text('Developed by B. M. Shahria Alam'), findsOneWidget);
     });
 
     testWidgets('Hero Banner button is locked (gray) for normal restaurant and opens locked modal', (tester) async {

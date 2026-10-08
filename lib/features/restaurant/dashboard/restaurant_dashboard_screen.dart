@@ -2485,7 +2485,7 @@ class _RestaurantDashboardScreenState
                         ),
                       ),
                       Text(
-                        'Top-selling dishes, impact metrics & Banasree reach',
+                        'Top-selling dishes, customer reach & ordering trends',
                         style:
                             TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                       ),
@@ -2530,7 +2530,7 @@ class _RestaurantDashboardScreenState
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Ranked by lifetime portions rescued & customer ratings',
+                    'Ranked by lifetime orders & customer ratings',
                     style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 14),
@@ -2586,61 +2586,6 @@ class _RestaurantDashboardScreenState
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 18),
-
-            // SECTION 2: SUSTAINABILITY & IMPACT DATA
-            const Text(
-              'Environmental Impact Rescued',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildImpactCard(
-                    icon: Icons.scale_rounded,
-                    color: const Color(0xFF16A34A),
-                    value: '214 kg',
-                    label: 'Food Rescued',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildImpactCard(
-                    icon: Icons.fastfood_rounded,
-                    color: const Color(0xFF2563EB),
-                    value: '428',
-                    label: 'Meals Saved',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildImpactCard(
-                    icon: Icons.cloud_done_rounded,
-                    color: const Color(0xFF0F766E),
-                    value: '535 kg',
-                    label: 'CO₂e Abated',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildImpactCard(
-                    icon: Icons.water_drop_rounded,
-                    color: const Color(0xFF0284C7),
-                    value: '85,600 L',
-                    label: 'Water Preserved',
-                  ),
-                ),
-              ],
             ),
             const SizedBox(height: 18),
 
@@ -3432,7 +3377,7 @@ class _RestaurantDashboardScreenState
                           iconColor: const Color(0xFF475569),
                           iconBgColor: const Color(0xFFF1F5F9),
                           title: 'About',
-                          subtitle: 'Version 1.1.0 • App Info & Impact',
+                          subtitle: 'Version 1.1.0 • App Information',
                           borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(20)),
                           onTap: () => _showAboutModal(context),
@@ -3580,7 +3525,7 @@ class _RestaurantDashboardScreenState
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Smart Surplus Food Rescue Platform',
+                          'Smart Surplus Food & Deals Platform',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -3660,7 +3605,7 @@ class _RestaurantDashboardScreenState
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'SaveBite is a mission-driven surplus food rescue platform founded to combat urban food waste in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects conscious customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality surplus meals accessible at 50% to 70% discounts before closing time.',
+                          'SaveBite is a premier surplus food and discount dining platform in Bangladesh. Every single day, freshly cooked meals and quality baked items remain unsold. SaveBite connects smart customers with trusted restaurants, cafes, and bakeries across Dhaka, making high-quality surplus meals accessible at 50% to 70% discounts before closing time.',
                           style: TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF475569),
@@ -3672,144 +3617,59 @@ class _RestaurantDashboardScreenState
                   ),
                   const SizedBox(height: 16),
 
-                  // Key Impact Metrics Grid
-                  const Text(
-                    'Our Community Impact',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.restaurant_rounded,
-                          title: '10,000+',
-                          subtitle: 'Meals Rescued',
-                          color: const Color(0xFFE11D48),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.eco_rounded,
-                          title: '15+ Tons',
-                          subtitle: 'CO₂ Prevented',
-                          color: const Color(0xFF15803D),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.savings_outlined,
-                          title: '৳2.5M+',
-                          subtitle: 'Saved by Users',
-                          color: const Color(0xFF0284C7),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildAboutStatCard(
-                          icon: Icons.storefront_outlined,
-                          title: '150+',
-                          subtitle: 'Partner Outlets',
-                          color: const Color(0xFFD97706),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // App Features & Details
-                  const Text(
-                    'Key Features',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildAboutFeatureTile(
-                    icon: Icons.local_fire_department_rounded,
-                    color: const Color(0xFFEA580C),
-                    title: 'Hot Deals & Mystery Bags',
-                    description:
-                        'Rescue daily surplus bags with freshly prepared dishes at unbeatable prices.',
-                  ),
-                  _buildAboutFeatureTile(
-                    icon: Icons.near_me_rounded,
-                    color: const Color(0xFF0284C7),
-                    title: 'Dhaka Neighborhood Coverage',
-                    description:
-                        'Discover nearby partner restaurants in Mirpur, Dhanmondi, Gulshan, Banani, and Uttara.',
-                  ),
-                  _buildAboutFeatureTile(
-                    icon: Icons.workspace_premium_rounded,
-                    color: const Color(0xFFE11D48),
-                    title: 'Super Saver Membership',
-                    description:
-                        'Enjoy free deliveries, extra 10% discounts, and 15-minute priority deal drops.',
-                  ),
-                  _buildAboutFeatureTile(
-                    icon: Icons.qr_code_2_rounded,
-                    color: const Color(0xFF15803D),
-                    title: 'Seamless Contactless Pickup',
-                    description:
-                        'Pick up meals quickly with secure digital verification and order tracking.',
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Technical Specs & Organization
+                  // Company Information & Credits
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'SaveBite Technologies Ltd.',
+                          'SaveBite Ltd',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF0F172A),
                           ),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Dhaka, Bangladesh • Made with ❤️ for sustainable living',
+                          'Dhaka, Bangladesh',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             color: Color(0xFF64748B),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Email: support@savebite.com • Helpline: +880 1700-112233',
+                          'Email: contactshahria@gmail.com, Helpline: 16600',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             color: Color(0xFF475569),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        SizedBox(height: 4),
                         Text(
-                          '© 2026 SaveBite Technologies Ltd. All rights reserved.',
+                          '© 2026 SaveBite Ltd. All rights reserved',
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Developed by B. M. Shahria Alam',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF64748B),
                           ),
                         ),
                       ],
@@ -3852,107 +3712,7 @@ class _RestaurantDashboardScreenState
   // SHARED BUILDERS & HELPERS (Matching Customer Profile Screen)
   // ==========================================
 
-  Widget _buildAboutStatCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildAboutFeatureTile({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String description,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    color: Color(0xFF64748B),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildGoldMerchantBadge(bool hasGold) {
     return Container(
@@ -4227,7 +3987,7 @@ class _RestaurantDashboardScreenState
               ),
               const SizedBox(height: 2),
               Text(
-                '$soldCount sold • $revenue rescued • $rating',
+                '$soldCount sold • ৳$revenue total • $rating',
                 style: const TextStyle(
                   fontSize: 11,
                   color: Color(0xFF64748B),
@@ -4252,58 +4012,6 @@ class _RestaurantDashboardScreenState
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildImpactCard({
-    required IconData icon,
-    required Color color,
-    required String value,
-    required String label,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    color: color,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -5524,7 +5232,7 @@ class _RestaurantDashboardScreenState
       text: '20% OFF SURPLUS FEAST AT ${restaurant.name.toUpperCase()}',
     );
     final subtitleController = TextEditingController(
-      text: 'Freshly prepared specialty dishes rescued daily in ${restaurant.area ?? "Dhaka"}.',
+      text: 'Freshly prepared specialty dishes available daily in ${restaurant.area ?? "Dhaka"}.',
     );
     final badgeController = TextEditingController(text: '🔥 SPECIAL OFFER');
     String selectedTheme = 'yellow';
