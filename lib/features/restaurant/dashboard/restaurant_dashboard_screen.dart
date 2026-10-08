@@ -57,6 +57,18 @@ class _RestaurantDashboardScreenState
   bool _hasActive24hBanner = false;
   bool _hasActive24hBoost = false;
 
+  // Café Intelligence & Info Tab State
+  String _selectedInfoTimeframe = 'This Week';
+  int _manuallySoldPortions = 0;
+  double _manuallySoldRevenue = 0.0;
+
+  String _formatNumber(int n) {
+    return n.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
   // ==========================================
   // MODAL RUNNER WITH FLOATING NAVBAR AUTO-HIDE
   // ==========================================
@@ -1295,9 +1307,11 @@ class _RestaurantDashboardScreenState
       BuildContext context, Restaurant restaurant, List<FoodOffer> offers) {
     List<FoodOffer> filtered = offers;
     if (_selectedPostsFilter == 'active') {
-      filtered = offers.where((o) => o.isActive).toList();
+      filtered = offers.where((o) => o.isActive && !o.isDone).toList();
+    } else if (_selectedPostsFilter == 'done') {
+      filtered = offers.where((o) => o.isDone).toList();
     } else if (_selectedPostsFilter == 'boosted') {
-      filtered = offers.where((o) => o.isBoosted).toList();
+      filtered = offers.where((o) => o.isBoosted && !o.isDone).toList();
     }
 
     final isComplete = restaurant.isProfileComplete;
@@ -1371,13 +1385,19 @@ class _RestaurantDashboardScreenState
                     ),
                     const SizedBox(width: 6),
                     _buildFilterChip(
-                      'Active (${offers.where((o) => o.isActive).length})',
+                      'Active (${offers.where((o) => o.isActive && !o.isDone).length})',
                       _selectedPostsFilter == 'active',
                       () => setState(() => _selectedPostsFilter = 'active'),
                     ),
                     const SizedBox(width: 6),
                     _buildFilterChip(
-                      'Boosted 🔥 (${offers.where((o) => o.isBoosted).length})',
+                      'Done (${offers.where((o) => o.isDone).length})',
+                      _selectedPostsFilter == 'done',
+                      () => setState(() => _selectedPostsFilter = 'done'),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildFilterChip(
+                      'Boosted 🔥 (${offers.where((o) => o.isBoosted && !o.isDone).length})',
                       _selectedPostsFilter == 'boosted',
                       () => setState(() => _selectedPostsFilter = 'boosted'),
                     ),
@@ -1391,10 +1411,14 @@ class _RestaurantDashboardScreenState
                 EmptyState(
                   title: _selectedPostsFilter == 'boosted'
                       ? 'No boosted posts'
-                      : 'No food offers posted yet',
-                  message: isComplete
-                      ? 'Tap "+ New Surplus Post" to list fresh discounted food for hungry neighbors in Banasree!'
-                      : 'Complete your restaurant profile to start posting surplus food offers.',
+                      : _selectedPostsFilter == 'done'
+                          ? 'No completed posts yet'
+                          : 'No food offers posted yet',
+                  message: _selectedPostsFilter == 'done'
+                      ? 'When you finish an offer and mark it as "Done", it will appear here with its added dashboard value.'
+                      : isComplete
+                          ? 'Tap "+ New Surplus Post" to list fresh discounted food for hungry neighbors in Banasree!'
+                          : 'Complete your restaurant profile to start posting surplus food offers.',
                   icon: Icons.fastfood_outlined,
                   actionText:
                       isComplete ? 'Post Food Offer' : 'Complete Profile',
@@ -2446,56 +2470,6 @@ class _RestaurantDashboardScreenState
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Live Banasree Quick Metrics Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildMetricCol(
-                        '${offers.where((o) => o.isActive).length}',
-                        'Active Posts',
-                        const Color(0xFF1E293B),
-                      ),
-                    ),
-                    _buildMetricDivider(),
-                    Expanded(
-                      child: _buildMetricCol(
-                        '${offers.where((o) => o.isBoosted).length} 🔥',
-                        'Boosted',
-                        const Color(0xFFFF5722),
-                      ),
-                    ),
-                    _buildMetricDivider(),
-                    Expanded(
-                      child: _buildMetricCol(
-                        '1.8k',
-                        'Discovery',
-                        const Color(0xFF2563EB),
-                      ),
-                    ),
-                    _buildMetricDivider(),
-                    Expanded(
-                      child: _buildMetricCol(
-                        '4.9 ★',
-                        'Rating',
-                        const Color(0xFFD97706),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             const SizedBox(height: 18),
 
             // Prominent "Post Surplus Food" Button (tested by widget test!)
@@ -2601,59 +2575,411 @@ class _RestaurantDashboardScreenState
   // ==========================================
   Widget _buildInfoTab(
       BuildContext context, Restaurant restaurant, List<FoodOffer> offers) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF059669).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.insights_rounded,
-                    color: Color(0xFF059669),
-                    size: 24,
-                  ),
+    final activePostsCount = offers.where((o) => o.isActive && !o.isDone).length;
+    final boostedPostsCount = offers.where((o) => o.isBoosted && !o.isDone).length;
+    final doneOffers = offers.where((o) => o.isDone).toList();
+    final donePortionsFromOffers =
+        doneOffers.fold<int>(0, (sum, o) => sum + o.quantity);
+    final doneRevenueFromOffers = doneOffers.fold<double>(
+        0.0, (sum, o) => sum + (o.quantity * o.discountedPrice));
+
+    final totalPortionsSold =
+        459 + donePortionsFromOffers + _manuallySoldPortions;
+    final totalRevenue =
+        96450.0 + doneRevenueFromOffers + _manuallySoldRevenue;
+    final avgDealPrice = totalPortionsSold > 0
+        ? (totalRevenue / totalPortionsSold).round()
+        : 210;
+    final areaName = restaurant.area?.trim().isNotEmpty == true
+        ? restaurant.area!
+        : 'Banasree';
+
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 120),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ==========================================
+          // 1. WARM PEACH AMBIENT HEADER (Matching App Theme)
+          // ==========================================
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFECE5),
+                  Color(0xFFFFF7F2),
+                  Colors.white,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFE23744), Color(0xFF8B0000)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFE23744)
+                                    .withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.insights_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      'Café Intelligence & Info',
+                                      style: const TextStyle(
+                                        fontSize: 18.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF0F0F10),
+                                        letterSpacing: -0.3,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDCFCE7),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.circle,
+                                            size: 6, color: Color(0xFF16A34A)),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Live',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF16A34A),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Live business metrics, sales telemetry & dish rankings',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF52525B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Timeframe Selector Chips
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: [
+                          _buildTimeframeChip('Today'),
+                          const SizedBox(width: 8),
+                          _buildTimeframeChip('This Week'),
+                          const SizedBox(width: 8),
+                          _buildTimeframeChip('This Month'),
+                          const SizedBox(width: 8),
+                          _buildTimeframeChip('All Time'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // ==========================================
+          // 2. HERO TOTAL FOOD SOLD & RESCUED REVENUE
+          // ==========================================
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFFFFF), Color(0xFFFFF9F8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFFFDED9), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE23744).withValues(alpha: 0.05),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Café Intelligence & Info',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE5E7),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'REVENUE & IMPACT',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFFE23744),
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                      Text(
-                        'Top-selling dishes, customer reach & ordering trends',
-                        style:
-                            TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.trending_up_rounded,
+                                size: 14, color: Color(0xFF16A34A)),
+                            SizedBox(width: 3),
+                            Text(
+                              '+24.6%',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF16A34A),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '৳${_formatNumber(totalRevenue.toInt())}',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F0F10),
+                          letterSpacing: -0.8,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'earned from surplus',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildMetricCol(
+                              '$totalPortionsSold',
+                              'Portions Sold',
+                              const Color(0xFF0F0F10)),
+                        ),
+                        _buildMetricDivider(),
+                        Expanded(
+                          child: _buildMetricCol(
+                              '৳$avgDealPrice',
+                              'Avg Deal Price',
+                              const Color(0xFF2563EB)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ==========================================
+          // 3. CORE 2x2 METRICS DASHBOARD
+          // (Running on Boost, Active Posts, Favorited, Subscriptions)
+          // ==========================================
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Live Dashboard Overview',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    // Metric 1: Running on Boost
+                    Expanded(
+                      child: _buildInfoMetricCard(
+                        value: '$boostedPostsCount Live 🔥',
+                        label: 'Running on Boost',
+                        badgeText: boostedPostsCount > 0
+                            ? 'BOOSTED'
+                            : 'STANDBY',
+                        icon: Icons.local_fire_department_rounded,
+                        color: const Color(0xFFFF5722),
+                        bgTint: const Color(0xFFFFEDE6),
+                        onTap: () => _showBoostOffersModal(
+                            context, offers, restaurant),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Metric 2: Total Active Posts
+                    Expanded(
+                      child: _buildInfoMetricCard(
+                        value: '$activePostsCount Posts',
+                        label: 'Total Active Posts',
+                        badgeText: activePostsCount > 0
+                            ? 'IN FEED'
+                            : 'NONE',
+                        icon: Icons.fastfood_rounded,
+                        color: const Color(0xFF059669),
+                        bgTint: const Color(0xFFECFDF5),
+                        onTap: () => setState(() => _navIndex = 0),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    // Metric 3: Favorited Count
+                    Expanded(
+                      child: _buildInfoMetricCard(
+                        value: '312 Foodies',
+                        label: 'Favorited Café',
+                        badgeText: '+18 NEW',
+                        icon: Icons.favorite_rounded,
+                        color: const Color(0xFFE11D48),
+                        bgTint: const Color(0xFFFFF1F2),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Metric 4: Active Subscriptions
+                    Expanded(
+                      child: _buildInfoMetricCard(
+                        value: restaurant.hasGoldSubscription
+                            ? 'Gold Tier ⭐'
+                            : '28 Plans',
+                        label: 'Active Subscriptions',
+                        badgeText: restaurant.hasGoldSubscription
+                            ? 'GOLD VIP'
+                            : 'MEAL PASS',
+                        icon: Icons.card_membership_rounded,
+                        color: const Color(0xFF7C3AED),
+                        bgTint: const Color(0xFFF5F3FF),
+                        onTap: () => _showGoldSubscriptionModal(
+                            context, restaurant),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+          ),
+          const SizedBox(height: 18),
 
-            // SECTION 1: TOP SELLING POSTS LEADERBOARD
-            Container(
+          // ==========================================
+          // 4. TOP SELLER PRODUCT SPOTLIGHT & BOTTOM SHEET TRIGGER
+          // (Requested by user: "like top sellet product can be show using with bottom sheet function")
+          // ==========================================
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
@@ -2666,185 +2992,341 @@ class _RestaurantDashboardScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Text('🏆', style: TextStyle(fontSize: 20)),
-                      SizedBox(width: 8),
-                      Text(
-                        'Top Selling Surplus Posts',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('🏆',
+                            style: TextStyle(fontSize: 16)),
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Top Selling Surplus Posts',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _showTopSellersBottomSheet(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'View All (5)',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              ),
+                              SizedBox(width: 2),
+                              Icon(Icons.arrow_forward_rounded,
+                                  size: 13, color: Color(0xFF2563EB)),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Ranked by lifetime orders & customer ratings',
-                    style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
 
-                  _buildTopSellingRow(
-                    rank: 1,
-                    title: 'Belgium Dark Chocolate Pastry',
-                    soldCount: 142,
-                    revenue: '${AppConstants.currencySymbol}28,400',
-                    rating: '4.9 ★',
-                    badge: '#1 BEST SELLER',
-                    badgeColor: const Color(0xFFD97706),
+                  // Highlighted #1 Best Seller Card
+                  InkWell(
+                    onTap: () => _showTopSellersBottomSheet(context),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFFD97706),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '#1',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFD97706),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Belgium Dark Chocolate Pastry',
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  '142 sold • ৳28,400 total • 4.9 ★',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              '#1 BEST SELLER',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFD97706),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const Divider(height: 18, color: Color(0xFFF1F5F9)),
-                  _buildTopSellingRow(
-                    rank: 2,
-                    title: 'Hazelnut Cappuccino & Croissant',
-                    soldCount: 98,
-                    revenue: '${AppConstants.currencySymbol}19,600',
-                    rating: '4.9 ★',
-                    badge: '#2 COFFEE PAIRING',
-                    badgeColor: const Color(0xFF2563EB),
-                  ),
-                  const Divider(height: 18, color: Color(0xFFF1F5F9)),
-                  _buildTopSellingRow(
-                    rank: 3,
-                    title: 'Blue Bell Club Chicken Sandwich',
-                    soldCount: 84,
-                    revenue: '${AppConstants.currencySymbol}16,800',
-                    rating: '4.8 ★',
-                    badge: '#3 LUNCH RUSH',
-                    badgeColor: const Color(0xFF059669),
-                  ),
-                  const Divider(height: 18, color: Color(0xFFF1F5F9)),
-                  _buildTopSellingRow(
-                    rank: 4,
-                    title: 'Truffle Beef Lasagna (Surplus Box)',
-                    soldCount: 76,
-                    revenue: '${AppConstants.currencySymbol}22,800',
-                    rating: '5.0 ★',
-                    badge: '#4 DINNER HIT',
-                    badgeColor: const Color(0xFF7C3AED),
-                  ),
-                  const Divider(height: 18, color: Color(0xFFF1F5F9)),
-                  _buildTopSellingRow(
-                    rank: 5,
-                    title: 'Artisan Garlic Sourdough Loaf',
-                    soldCount: 59,
-                    revenue: '${AppConstants.currencySymbol}8,850',
-                    rating: '4.7 ★',
-                    badge: '#5 BAKERY PICK',
-                    badgeColor: const Color(0xFFE11D48),
+                  const SizedBox(height: 12),
+
+                  // Bottom sheet launcher button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 42,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(
+                            color: Color(0xFFCBD5E1), width: 1.2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.leaderboard_rounded,
+                          size: 17, color: Color(0xFF1E293B)),
+                      label: const Text(
+                        'Open Full Top Sellers Leaderboard',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      onPressed: () => _showTopSellersBottomSheet(context),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+          ),
+          const SizedBox(height: 18),
 
-            // SECTION 3: BANASREE DISCOVERY TELEMETRY
-            Container(
+          // ==========================================
+          // 5. BANASREE DISCOVERY & REACH TELEMETRY
+          // ==========================================
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Banasree Neighborhood Reach',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                    ),
+                  Row(
+                    children: [
+                      const Icon(Icons.near_me_rounded,
+                          size: 18, color: Color(0xFF2563EB)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$areaName Neighborhood Reach',
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  const SizedBox(height: 3),
+                  Text(
                     'Live customer discovery stats around House 14, Road 4',
-                    style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                    style: const TextStyle(
+                        fontSize: 11.5, color: Color(0xFF64748B)),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     physics: const ClampingScrollPhysics(),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildMetricCol('3,420', 'Local Views', const Color(0xFF1E293B)),
-                        const SizedBox(width: 8),
+                        _buildMetricCol(
+                            '3,420', 'Local Views', const Color(0xFF1E293B)),
+                        const SizedBox(width: 10),
                         _buildMetricDivider(),
-                        const SizedBox(width: 8),
-                        _buildMetricCol('312', 'Favorited', const Color(0xFFE11D48)),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
+                        _buildMetricCol(
+                            '312', 'Favorited', const Color(0xFFE11D48)),
+                        const SizedBox(width: 10),
                         _buildMetricDivider(),
-                        const SizedBox(width: 8),
-                        _buildMetricCol('46.8%', 'Repeat Rate', const Color(0xFF16A34A)),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
+                        _buildMetricCol(
+                            '46.8%', 'Repeat Rate', const Color(0xFF16A34A)),
+                        const SizedBox(width: 10),
                         _buildMetricDivider(),
-                        const SizedBox(width: 8),
-                        _buildMetricCol('42 min', 'Avg Sellout', const Color(0xFF2563EB)),
+                        const SizedBox(width: 10),
+                        _buildMetricCol(
+                            '42 min', 'Avg Sellout', const Color(0xFF2563EB)),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+          ),
+          const SizedBox(height: 16),
 
-            // SECTION 4: PEAK ORDERING SURGE WINDOW
-            Container(
+          // ==========================================
+          // 6. PEAK ORDERING SURGE WINDOW (Smart timing advice)
+          // ==========================================
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                    color: const Color(0xFFFDE68A), width: 1.2),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.timer_rounded,
-                      color: Color(0xFFB45309),
-                      size: 24,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.timer_rounded,
+                          color: Color(0xFFB45309),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Peak Ordering: 08:30 – 10:30 PM',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF92400E),
+                              ),
+                            ),
+                            SizedBox(height: 1),
+                            Text(
+                              '68% of surplus orders occur during late hours',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFFB45309),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Listing deals before 08:00 PM maximizes sell-through by 68%. Foodies in Banasree are actively looking for evening dinners.',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF92400E),
+                      height: 1.35,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Peak Ordering Window: 08:30 – 10:30 PM',
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF92400E),
-                          ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 38,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFD97706),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          '68% of surplus orders occur during late evening café closing hours. Listing deals by 08:00 PM maximizes sell-through.',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: Color(0xFFB45309),
-                            height: 1.35,
-                          ),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.bolt_rounded, size: 16),
+                      label: const Text(
+                        'Post Deal for Tonight’s Rush',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
                         ),
-                      ],
+                      ),
+                      onPressed: () =>
+                          _onPostSurplusTapped(context, restaurant),
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -4093,6 +4575,577 @@ class _RestaurantDashboardScreenState
     );
   }
 
+  Widget _buildTimeframeChip(String timeframe) {
+    final isSelected = _selectedInfoTimeframe == timeframe;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedInfoTimeframe = timeframe),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0F0F10) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color:
+                isSelected ? const Color(0xFF0F0F10) : const Color(0xFFE4E4E7),
+            width: 1.2,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.10),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          timeframe,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF52525B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoMetricCard({
+    required String value,
+    required String label,
+    required String badgeText,
+    required IconData icon,
+    required Color color,
+    required Color bgTint,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: bgTint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: bgTint,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16.5,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F0F10),
+                letterSpacing: -0.3,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0F0F10) : const Color(0xFFF4F4F5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF0F0F10)
+                : const Color(0xFFE4E4E7),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF52525B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTopSellersBottomSheet(BuildContext context) {
+    String localCategoryFilter = 'all';
+
+    final topDishes = [
+      {
+        'rank': 1,
+        'title': 'Belgium Dark Chocolate Pastry',
+        'category': 'bakery',
+        'categoryLabel': 'Bakery & Dessert',
+        'soldCount': 142,
+        'revenue': '28,400',
+        'rating': '4.9',
+        'reviews': 88,
+        'badge': '#1 BEST SELLER',
+        'badgeColor': const Color(0xFFD97706),
+      },
+      {
+        'rank': 2,
+        'title': 'Hazelnut Cappuccino & Croissant',
+        'category': 'drinks',
+        'categoryLabel': 'Drinks & Coffee',
+        'soldCount': 98,
+        'revenue': '19,600',
+        'rating': '4.9',
+        'reviews': 64,
+        'badge': '#2 COFFEE PAIRING',
+        'badgeColor': const Color(0xFF2563EB),
+      },
+      {
+        'rank': 3,
+        'title': 'Blue Bell Club Chicken Sandwich',
+        'category': 'meals',
+        'categoryLabel': 'Main Dishes',
+        'soldCount': 84,
+        'revenue': '16,800',
+        'rating': '4.8',
+        'reviews': 52,
+        'badge': '#3 LUNCH RUSH',
+        'badgeColor': const Color(0xFF059669),
+      },
+      {
+        'rank': 4,
+        'title': 'Truffle Beef Lasagna (Surplus Box)',
+        'category': 'meals',
+        'categoryLabel': 'Main Dishes',
+        'soldCount': 76,
+        'revenue': '22,800',
+        'rating': '5.0',
+        'reviews': 49,
+        'badge': '#4 DINNER HIT',
+        'badgeColor': const Color(0xFF7C3AED),
+      },
+      {
+        'rank': 5,
+        'title': 'Artisan Garlic Sourdough Loaf',
+        'category': 'bakery',
+        'categoryLabel': 'Bakery & Dessert',
+        'soldCount': 59,
+        'revenue': '8,850',
+        'rating': '4.7',
+        'reviews': 36,
+        'badge': '#5 BAKERY PICK',
+        'badgeColor': const Color(0xFFE11D48),
+      },
+    ];
+
+    _showSheet<void>(
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final filteredDishes = localCategoryFilter == 'all'
+              ? topDishes
+              : topDishes
+                  .where((d) => d['category'] == localCategoryFilter)
+                  .toList();
+
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetCtx).size.height * 0.88,
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Header with Trophy & Close Button
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Text('🏆', style: TextStyle(fontSize: 22)),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Top Selling Surplus Posts',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Ranked by lifetime orders & 5-star customer ratings',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded,
+                          color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.of(sheetCtx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Category Filter Pills inside Bottom Sheet
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _buildSheetFilterChip(
+                        label: 'All (${topDishes.length})',
+                        isSelected: localCategoryFilter == 'all',
+                        onTap: () =>
+                            setSheetState(() => localCategoryFilter = 'all'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSheetFilterChip(
+                        label: 'Bakery & Dessert',
+                        isSelected: localCategoryFilter == 'bakery',
+                        onTap: () => setSheetState(
+                            () => localCategoryFilter = 'bakery'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSheetFilterChip(
+                        label: 'Main Dishes',
+                        isSelected: localCategoryFilter == 'meals',
+                        onTap: () => setSheetState(
+                            () => localCategoryFilter = 'meals'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSheetFilterChip(
+                        label: 'Drinks & Coffee',
+                        isSelected: localCategoryFilter == 'drinks',
+                        onTap: () => setSheetState(
+                            () => localCategoryFilter = 'drinks'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Aggregate summary banner
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.stars_rounded,
+                          color: Color(0xFFD97706), size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '459 total surplus orders rescued across top items',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '৳96,450',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Scrollable Dish List
+                Expanded(
+                  child: ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: filteredDishes.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, idx) {
+                      final dish = filteredDishes[idx];
+                      final rank = dish['rank'] as int;
+                      final badgeColor = dish['badgeColor'] as Color;
+
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // Rank circle
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: badgeColor.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: badgeColor.withValues(alpha: 0.35),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '#$rank',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: badgeColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+
+                            // Dish info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          dish['title'] as String,
+                                          style: const TextStyle(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Wrap(
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    spacing: 4,
+                                    runSpacing: 2,
+                                    children: [
+                                      Text(
+                                        '${dish['soldCount']} sold',
+                                        style: const TextStyle(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF0F0F10),
+                                        ),
+                                      ),
+                                      const Text('•',
+                                          style: TextStyle(
+                                              color: Color(0xFF94A3B8),
+                                              fontSize: 10)),
+                                      Text(
+                                        '৳${dish['revenue']}',
+                                        style: const TextStyle(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF16A34A),
+                                        ),
+                                      ),
+                                      const Text('•',
+                                          style: TextStyle(
+                                              color: Color(0xFF94A3B8),
+                                              fontSize: 10)),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.star_rounded,
+                                            size: 13,
+                                            color: Color(0xFFD97706),
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            '${dish['rating']}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // Badge pill
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: badgeColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                dish['badge'] as String,
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: badgeColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Quick Action
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 0,
+                    ),
+                    icon:
+                        const Icon(Icons.add_circle_outline_rounded, size: 18),
+                    label: const Text(
+                      'Post Surplus for Top Items',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(sheetCtx).pop();
+                      final currentRest =
+                          ref.read(currentRestaurantProvider).asData?.value;
+                      if (currentRest != null) {
+                        _onPostSurplusTapped(context, currentRest);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildTopSellingRow({
     required int rank,
     required String title,
@@ -4233,10 +5286,12 @@ class _RestaurantDashboardScreenState
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: offer.isBoosted
-              ? const Color(0xFFFF5722).withValues(alpha: 0.4)
-              : const Color(0xFFE2E8F0),
-          width: offer.isBoosted ? 1.5 : 1,
+          color: offer.isDone
+              ? const Color(0xFFBBF7D0)
+              : offer.isBoosted
+                  ? const Color(0xFFFF5722).withValues(alpha: 0.4)
+                  : const Color(0xFFE2E8F0),
+          width: offer.isBoosted || offer.isDone ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -4287,7 +5342,25 @@ class _RestaurantDashboardScreenState
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (offer.isBoosted)
+                        if (offer.isDone)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '✓ DONE',
+                              style: TextStyle(
+                                color: Color(0xFF15803D),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          )
+                        else if (offer.isBoosted)
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
@@ -4309,13 +5382,90 @@ class _RestaurantDashboardScreenState
                           ),
                       ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Category: ${offer.category} • ${offer.quantity} available',
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: Color(0xFF64748B),
-                      ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Category: ${offer.category}',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF64748B),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // Quick Stock Decrement/Increment Stepper
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFCBD5E1)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              InkWell(
+                                onTap: offer.isDone
+                                    ? null
+                                    : () => _decrementOfferQuantity(offer),
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 2),
+                                  child: Icon(
+                                    Icons.remove,
+                                    size: 13,
+                                    color: offer.isDone
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFFE23744),
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: offer.isDone
+                                    ? null
+                                    : () => _showEditQuantityDialog(offer),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4),
+                                  child: Text(
+                                    '${offer.quantity} available',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: offer.quantity == 0
+                                          ? AppColors.error
+                                          : const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: offer.isDone
+                                    ? null
+                                    : () => _incrementOfferQuantity(offer),
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 2),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 13,
+                                    color: offer.isDone
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF16A34A),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -4363,122 +5513,893 @@ class _RestaurantDashboardScreenState
           ),
           const SizedBox(height: 10),
 
-          // Actions row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          // Actions row with responsive wrap
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            runSpacing: 6,
             children: [
-              // Boost button
-              InkWell(
-                onTap: () async {
-                  if (offer.isBoosted) {
-                    await ref
-                        .read(restaurantActionNotifierProvider.notifier)
-                        .unboostOffer(offer.id);
-                  } else {
-                    await ref
-                        .read(restaurantActionNotifierProvider.notifier)
-                        .boostOffer(offer.id);
-                  }
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          offer.isBoosted
-                              ? 'Boost paused.'
-                              : '🚀 "${offer.title}" boosted!',
+              // DONE BUTTON
+              if (!offer.isDone)
+                InkWell(
+                  onTap: () => _confirmMarkOfferDone(offer),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF86EFAC)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_outline_rounded,
+                            size: 14, color: Color(0xFF15803D)),
+                        SizedBox(width: 4),
+                        Text(
+                          'Done',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF15803D),
+                          ),
                         ),
-                        backgroundColor: offer.isBoosted
-                            ? const Color(0xFF475569)
-                            : const Color(0xFFFF5722),
-                      ),
-                    );
-                  }
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: offer.isBoosted
-                        ? const Color(0xFFFFEDE6)
-                        : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: offer.isBoosted
-                          ? const Color(0xFFFF5722).withValues(alpha: 0.3)
-                          : const Color(0xFFCBD5E1),
+                      ],
                     ),
                   ),
-                  child: Row(
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.local_fire_department_rounded,
-                        size: 14,
-                        color: offer.isBoosted
-                            ? const Color(0xFFFF5722)
-                            : const Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 4),
+                      Icon(Icons.check_rounded,
+                          size: 13, color: Color(0xFF64748B)),
+                      SizedBox(width: 3),
                       Text(
-                        offer.isBoosted ? 'Boosted' : 'Boost',
+                        'Completed',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: offer.isBoosted
-                              ? const Color(0xFFFF5722)
-                              : const Color(0xFF475569),
+                          color: Color(0xFF64748B),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
 
-              // Active / Inactive toggle
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: Icon(
-                  offer.isActive
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  size: 19,
-                  color: offer.isActive
-                      ? const Color(0xFF16A34A)
-                      : const Color(0xFF94A3B8),
-                ),
-                tooltip: offer.isActive ? 'Deactivate' : 'Activate',
-                onPressed: () async {
-                  await ref
-                      .read(restaurantActionNotifierProvider.notifier)
-                      .toggleOfferStatus(offer.id, !offer.isActive);
-                },
-              ),
+              // Action buttons group
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // EDIT POST BUTTON
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.edit_outlined,
+                        size: 18, color: Color(0xFF2563EB)),
+                    tooltip: 'Edit Post',
+                    onPressed: () => _showEditOfferBottomSheet(context, offer),
+                  ),
+                  const SizedBox(width: 6),
 
-              // Delete button (tested by widget test!)
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.delete_outline_rounded,
-                    size: 19, color: AppColors.error),
-                tooltip: 'Delete Post',
-                onPressed: () async {
-                  final confirmed = await ConfirmDialog.show(
-                    context,
-                    title: 'Delete Food Post',
-                    message: 'Are you sure you want to remove "${offer.title}"?',
-                    confirmLabel: 'Delete',
-                  );
-                  if (confirmed) {
-                    await ref
-                        .read(restaurantActionNotifierProvider.notifier)
-                        .deleteOffer(offer.id);
-                  }
-                },
+                  // Boost button
+                  InkWell(
+                    onTap: () async {
+                      if (offer.isBoosted) {
+                        await ref
+                            .read(restaurantActionNotifierProvider.notifier)
+                            .unboostOffer(offer.id);
+                      } else {
+                        await ref
+                            .read(restaurantActionNotifierProvider.notifier)
+                            .boostOffer(offer.id);
+                      }
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              offer.isBoosted
+                                  ? 'Boost paused.'
+                                  : '🚀 "${offer.title}" boosted!',
+                            ),
+                            backgroundColor: offer.isBoosted
+                                ? const Color(0xFF475569)
+                                : const Color(0xFFFF5722),
+                          ),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: offer.isBoosted
+                            ? const Color(0xFFFFEDE6)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: offer.isBoosted
+                              ? const Color(0xFFFF5722).withValues(alpha: 0.3)
+                              : const Color(0xFFCBD5E1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department_rounded,
+                            size: 13,
+                            color: offer.isBoosted
+                                ? const Color(0xFFFF5722)
+                                : const Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            offer.isBoosted ? 'Boosted' : 'Boost',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: offer.isBoosted
+                                  ? const Color(0xFFFF5722)
+                                  : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Active / Inactive toggle
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    icon: Icon(
+                      offer.isActive
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 18,
+                      color: offer.isActive
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFF94A3B8),
+                    ),
+                    tooltip: offer.isActive ? 'Deactivate' : 'Activate',
+                    onPressed: () async {
+                      await ref
+                          .read(restaurantActionNotifierProvider.notifier)
+                          .toggleOfferStatus(offer.id, !offer.isActive);
+                    },
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Delete button (tested by widget test!)
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        size: 18, color: AppColors.error),
+                    tooltip: 'Delete Post',
+                    onPressed: () async {
+                      final confirmed = await ConfirmDialog.show(
+                        context,
+                        title: 'Delete Food Post',
+                        message:
+                            'Are you sure you want to remove "${offer.title}"?',
+                        confirmLabel: 'Delete',
+                      );
+                      if (confirmed) {
+                        await ref
+                            .read(restaurantActionNotifierProvider.notifier)
+                            .deleteOffer(offer.id);
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _confirmMarkOfferDone(FoodOffer offer) async {
+    final portionsToSell = offer.quantity;
+    final totalOfferValue = portionsToSell * offer.discountedPrice;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.check_circle_rounded,
+                  color: Color(0xFF16A34A), size: 24),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Mark Post as Done?',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Are you sure you want to finish and close this surplus food post?',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Item Title',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          offer.title,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 14),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Completed Portions',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$portionsToSell portions',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F0F10),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Value Added to Dashboard',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '৳${totalOfferValue.toInt()}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF15803D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.insights_rounded,
+                      size: 16, color: Color(0xFF15803D)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This revenue & portions sold will be added to your Café Intelligence Dashboard.',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF15803D)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF15803D),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: const Icon(Icons.check, size: 16),
+            label: const Text('Confirm & Mark Done'),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await ref
+          .read(restaurantActionNotifierProvider.notifier)
+          .markOfferAsDone(offer.id);
+
+      setState(() {
+        _manuallySoldPortions += portionsToSell;
+        _manuallySoldRevenue += totalOfferValue;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '🎉 "${offer.title}" marked as done! ৳${totalOfferValue.toInt()} added to dashboard.'),
+            backgroundColor: const Color(0xFF15803D),
+            duration: const Duration(milliseconds: 2000),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _decrementOfferQuantity(FoodOffer offer) async {
+    if (offer.quantity <= 1) {
+      final markDone = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Sell Last Portion?'),
+          content: Text(
+            'This is the last available portion of "${offer.title}". Selling it will mark this post as Done & Sold Out.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF15803D)),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Sell & Mark Done'),
+            ),
+          ],
+        ),
+      );
+      if (markDone == true) {
+        await _confirmMarkOfferDone(offer);
+      }
+      return;
+    }
+
+    final newQty = offer.quantity - 1;
+    await ref
+        .read(restaurantActionNotifierProvider.notifier)
+        .updateOfferQuantity(offer.id, newQty);
+    setState(() {
+      _manuallySoldPortions += 1;
+      _manuallySoldRevenue += offer.discountedPrice;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Sold 1 portion of "${offer.title}" ($newQty remaining, ৳${offer.discountedPrice.toInt()} added to dashboard)'),
+          backgroundColor: const Color(0xFF0F172A),
+          duration: const Duration(milliseconds: 1800),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        ),
+      );
+    }
+  }
+
+  Future<void> _incrementOfferQuantity(FoodOffer offer) async {
+    final newQty = offer.quantity + 1;
+    await ref
+        .read(restaurantActionNotifierProvider.notifier)
+        .updateOfferQuantity(offer.id, newQty);
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Added 1 portion to "${offer.title}" ($newQty available)'),
+          backgroundColor: const Color(0xFF16A34A),
+          duration: const Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showEditQuantityDialog(FoodOffer offer) async {
+    final controller = TextEditingController(text: '${offer.quantity}');
+    final newQuantity = await showDialog<int>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'Update Stock for "${offer.title}"',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter current available food portions:',
+              style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Available Portions',
+                suffixText: 'portions',
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              if (parsed != null && parsed >= 0) {
+                Navigator.pop(dialogCtx, parsed);
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+
+    if (newQuantity != null && mounted) {
+      if (newQuantity == 0) {
+        await _confirmMarkOfferDone(offer);
+      } else {
+        final diff = offer.quantity - newQuantity;
+        await ref
+            .read(restaurantActionNotifierProvider.notifier)
+            .updateOfferQuantity(offer.id, newQuantity);
+        if (diff > 0) {
+          setState(() {
+            _manuallySoldPortions += diff;
+            _manuallySoldRevenue += (diff * offer.discountedPrice);
+          });
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Updated "${offer.title}" stock to $newQuantity available portions.'),
+              backgroundColor: const Color(0xFF1E293B),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _showEditOfferBottomSheet(BuildContext context, FoodOffer offer) {
+    final titleController = TextEditingController(text: offer.title);
+    final descController = TextEditingController(text: offer.description ?? '');
+    final originalPriceController =
+        TextEditingController(text: offer.originalPrice.toInt().toString());
+    final discountedPriceController =
+        TextEditingController(text: offer.discountedPrice.toInt().toString());
+    final quantityController =
+        TextEditingController(text: offer.quantity.toString());
+
+    String selectedCategory = offer.category;
+    String currentImageUrl = offer.imageUrl ?? '';
+
+    final categories = [
+      'Rice',
+      'Snacks',
+      'Bakery',
+      'Italian',
+      'Fast Food',
+      'Dessert',
+      'Curry',
+      'Beverage',
+      'Other',
+    ];
+
+    _showSheet<void>(
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (modalCtx, setModalState) {
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.90,
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.edit_note_rounded,
+                            color: Color(0xFF2563EB),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Edit Food Post',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Update pricing, portion quantity, and post details',
+                                style: TextStyle(
+                                    fontSize: 12, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded,
+                              color: Color(0xFF64748B)),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Title
+                    const Text('Dish / Item Title',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B))),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Tuscan Slow-Baked Lasagna',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Description
+                    const Text('Description',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B))),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: descController,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: 'Brief description of ingredients or preparation',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Category Dropdown
+                    const Text('Category',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B))),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: categories.contains(selectedCategory)
+                              ? selectedCategory
+                              : 'Other',
+                          isExpanded: true,
+                          items: categories
+                              .map((cat) => DropdownMenuItem(
+                                    value: cat,
+                                    child: Text(cat),
+                                  ))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setModalState(() => selectedCategory = val);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Price and Quantity Row
+                    Row(
+                      children: [
+                        // Original Price
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Regular Price (৳)',
+                                  style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1E293B))),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: originalPriceController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  prefixText: '৳ ',
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Discounted Price
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Offer Price (৳)',
+                                  style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFE23744))),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: discountedPriceController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  prefixText: '৳ ',
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Available Quantity
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Stock Quantity',
+                                  style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1E293B))),
+                              const SizedBox(height: 6),
+                              TextField(
+                                controller: quantityController,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  suffixText: 'qty',
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Save Changes Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.check_rounded, size: 18),
+                        label: const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        onPressed: () async {
+                          final title = titleController.text.trim();
+                          final origPrice =
+                              double.tryParse(originalPriceController.text.trim()) ??
+                                  offer.originalPrice;
+                          final discPrice = double.tryParse(
+                                  discountedPriceController.text.trim()) ??
+                              offer.discountedPrice;
+                          final qty =
+                              int.tryParse(quantityController.text.trim()) ??
+                                  offer.quantity;
+
+                          if (title.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a dish title'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                            return;
+                          }
+
+                          final updated = offer.copyWith(
+                            title: title,
+                            description: descController.text.trim(),
+                            category: selectedCategory,
+                            originalPrice: origPrice,
+                            discountedPrice: discPrice,
+                            quantity: qty,
+                            imageUrl: currentImageUrl,
+                          );
+
+                          await ref
+                              .read(restaurantActionNotifierProvider.notifier)
+                              .updateOffer(updated);
+
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Post "${updated.title}" updated successfully!'),
+                                backgroundColor: const Color(0xFF16A34A),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

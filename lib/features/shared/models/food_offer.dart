@@ -25,6 +25,7 @@ class FoodOffer {
     this.area,
     this.isBoosted = false,
     this.boostedUntil,
+    this.isDone = false,
   });
 
   final String id;
@@ -45,6 +46,7 @@ class FoodOffer {
   final DateTime? updatedAt;
   final bool isBoosted;
   final DateTime? boostedUntil;
+  final bool isDone;
 
   // Joined presentation fields
   final String? restaurantName;
@@ -65,10 +67,10 @@ class FoodOffer {
       );
 
   /// Section 13 & 44 visibility check:
-  /// is_active = true AND admin_blocked = false AND available_until > current_time
+  /// is_active = true AND admin_blocked = false AND is_done = false AND available_until > current_time
   bool isVisibleToCustomer([DateTime? currentTime]) {
     final now = currentTime ?? DateTime.now();
-    return isActive && !adminBlocked && availableUntil.isAfter(now);
+    return isActive && !adminBlocked && !isDone && availableUntil.isAfter(now);
   }
 
   factory FoodOffer.fromJson(Map<String, dynamic> json) {
@@ -119,6 +121,7 @@ class FoodOffer {
       boostedUntil: json['boosted_until'] != null
           ? DateTime.tryParse(json['boosted_until'] as String)
           : null,
+      isDone: (json['is_done'] as bool?) ?? false,
     );
   }
 
@@ -144,6 +147,7 @@ class FoodOffer {
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
       'is_boosted': isBoosted,
       if (boostedUntil != null) 'boosted_until': boostedUntil!.toIso8601String(),
+      'is_done': isDone,
     };
   }
 
@@ -170,6 +174,7 @@ class FoodOffer {
     String? area,
     bool? isBoosted,
     DateTime? boostedUntil,
+    bool? isDone,
   }) {
     return FoodOffer(
       id: id ?? this.id,
@@ -194,6 +199,7 @@ class FoodOffer {
       area: area ?? this.area,
       isBoosted: isBoosted ?? this.isBoosted,
       boostedUntil: boostedUntil ?? this.boostedUntil,
+      isDone: isDone ?? this.isDone,
     );
   }
 }

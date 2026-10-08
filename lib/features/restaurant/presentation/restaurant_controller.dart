@@ -82,6 +82,48 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     }
   }
 
+  Future<bool> updateOffer(FoodOffer offer) async {
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(restaurantRepositoryProvider);
+      await repo.updateOffer(offer);
+      ref.invalidate(currentRestaurantOffersProvider);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
+  Future<bool> updateOfferQuantity(String offerId, int quantity) async {
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(restaurantRepositoryProvider);
+      await repo.updateOfferQuantity(offerId, quantity);
+      ref.invalidate(currentRestaurantOffersProvider);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
+  Future<bool> markOfferAsDone(String offerId) async {
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(restaurantRepositoryProvider);
+      await repo.markOfferAsDone(offerId);
+      ref.invalidate(currentRestaurantOffersProvider);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
   Future<bool> toggleOfferStatus(String offerId, bool isActive) async {
     state = const AsyncLoading();
     try {

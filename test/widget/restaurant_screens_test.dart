@@ -126,6 +126,7 @@ void main() {
     Widget child, {
     Restaurant? restaurant = incompleteRestaurant,
     FakeAuthRepository? authRepo,
+    bool overrideOffers = true,
   }) {
     return ProviderScope(
       overrides: [
@@ -135,7 +136,8 @@ void main() {
           () => FakeCurrentUserNotifier(restaurantUser),
         ),
         currentRestaurantProvider.overrideWith((ref) => restaurant),
-        currentRestaurantOffersProvider.overrideWith((ref) => []),
+        if (overrideOffers)
+          currentRestaurantOffersProvider.overrideWith((ref) => []),
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme,
@@ -638,6 +640,155 @@ void main() {
           find.text('Your restaurant account has been permanently deleted.'),
           findsOneWidget,
         );
+      },
+    );
+
+    testWidgets(
+      'Café Intelligence tab renders modern KPI dashboard and opens Top Sellers Bottom Sheet',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(createTestWidget(
+          const RestaurantDashboardScreen(),
+          restaurant: completeRestaurant,
+        ));
+        await tester.pumpAndSettle();
+
+        // 1. Navigate to Info tab using key
+        final infoTabFinder = find.byKey(const ValueKey('restaurant_nav_Info'));
+        expect(infoTabFinder, findsOneWidget);
+        await tester.tap(infoTabFinder);
+        await tester.pumpAndSettle();
+
+        // 2. Verify modern ambient header and title
+        expect(find.text('Café Intelligence & Info'), findsOneWidget);
+        expect(find.text('Live'), findsOneWidget);
+        expect(find.text('This Week'), findsOneWidget);
+
+        // 3. Verify core metrics dashboard
+        expect(find.text('৳96,450'), findsOneWidget);
+        expect(find.text('459'), findsOneWidget);
+        expect(find.text('Running on Boost'), findsOneWidget);
+        expect(find.text('Total Active Posts'), findsOneWidget);
+        expect(find.text('Favorited Café'), findsOneWidget);
+        expect(find.text('Active Subscriptions'), findsOneWidget);
+        expect(find.text('312 Foodies'), findsOneWidget);
+
+        // 4. Verify Top Selling Product preview card on page
+        expect(find.text('Top Selling Surplus Posts'), findsOneWidget);
+        expect(find.text('Belgium Dark Chocolate Pastry'), findsOneWidget);
+        expect(find.text('Open Full Top Sellers Leaderboard'), findsOneWidget);
+
+        // 5. Tap Open Full Top Sellers Leaderboard to trigger Bottom Sheet
+        final openLeaderboardBtn = find.text('Open Full Top Sellers Leaderboard');
+        await tester.ensureVisible(openLeaderboardBtn);
+        await tester.tap(openLeaderboardBtn);
+        await tester.pumpAndSettle();
+
+        // 6. Verify Top Sellers Bottom Sheet opened with ranked dishes and filters
+        expect(find.text('Ranked by lifetime orders & 5-star customer ratings'), findsOneWidget);
+        expect(find.text('Bakery & Dessert'), findsWidgets);
+        expect(find.text('Hazelnut Cappuccino & Croissant'), findsOneWidget);
+        expect(find.text('Blue Bell Club Chicken Sandwich'), findsOneWidget);
+        expect(find.text('Truffle Beef Lasagna (Surplus Box)'), findsOneWidget);
+        expect(find.text('Artisan Garlic Sourdough Loaf'), findsOneWidget);
+        expect(find.text('Post Surplus for Top Items'), findsOneWidget);
+
+        // 7. Close bottom sheet
+        await tester.tap(find.byIcon(Icons.close_rounded));
+        await tester.pumpAndSettle();
+
+        // 8. Verify Neighborhood Reach and Peak Ordering window are present on page
+        expect(find.textContaining('Neighborhood Reach'), findsOneWidget);
+        expect(find.textContaining('Peak Ordering'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Posts tab allows editing post details, adjusting available quantity, and marking post as Done with confirmation popup updating dashboard',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(createTestWidget(
+          const RestaurantDashboardScreen(),
+          restaurant: completeRestaurant,
+          overrideOffers: false,
+        ));
+        await tester.pumpAndSettle();
+
+        // 1. Navigate to Posts tab
+        final postsTabFinder =
+            find.byKey(const ValueKey('restaurant_nav_Posts'));
+        expect(postsTabFinder, findsOneWidget);
+        await tester.tap(postsTabFinder);
+        await tester.pumpAndSettle();
+
+        // 2. Verify filter chips include All, Active, Done, Boosted
+        expect(find.textContaining('All ('), findsOneWidget);
+        expect(find.textContaining('Active ('), findsOneWidget);
+        expect(find.textContaining('Done ('), findsOneWidget);
+        expect(find.textContaining('Boosted 🔥 ('), findsOneWidget);
+
+        // 3. Verify stock counter controls are rendered
+        expect(find.byIcon(Icons.remove), findsWidgets);
+        expect(find.byIcon(Icons.add), findsWidgets);
+        expect(find.text('6 available'), findsOneWidget);
+
+        // 4. Tap '-' to sell 1 portion
+        await tester.tap(find.byIcon(Icons.remove).first);
+        await tester.pumpAndSettle();
+
+        // 5. Verify quantity decreased to 5 available
+        expect(find.text('5 available'), findsOneWidget);
+
+        // 6. Test Edit Post sheet
+        final editBtn = find.byTooltip('Edit Post').first;
+        await tester.tap(editBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Edit Food Post'), findsOneWidget);
+        expect(find.text('Save Changes'), findsOneWidget);
+
+        // Close edit sheet
+        await tester.tap(find.byIcon(Icons.close_rounded));
+        await tester.pumpAndSettle();
+
+        // 7. Test Mark as Done button
+        final doneBtn = find.widgetWithText(InkWell, 'Done').first;
+        await tester.tap(doneBtn);
+        await tester.pumpAndSettle();
+
+        // 8. Verify confirmation popup appears with exact value details
+        expect(find.text('Mark Post as Done?'), findsOneWidget);
+        expect(find.text('Completed Portions'), findsOneWidget);
+        expect(find.text('Value Added to Dashboard'), findsOneWidget);
+        expect(find.text('Confirm & Mark Done'), findsOneWidget);
+
+        // 9. Confirm Done
+        await tester.tap(find.text('Confirm & Mark Done'));
+        await tester.pumpAndSettle();
+
+        // 10. Verify post status changed to Completed
+        expect(find.text('Completed'), findsWidgets);
+
+        // 11. Switch to Info tab and verify dashboard numbers increased
+        ScaffoldMessenger.of(tester.element(find.byType(Scaffold).first))
+            .clearSnackBars();
+        await tester.pumpAndSettle();
+
+        final infoTabFinder = find.byKey(const ValueKey('restaurant_nav_Info'));
+        await tester.tap(infoTabFinder);
+        await tester.pumpAndSettle();
+
+        // Verify the value was added to the dashboard (greater than base ৳96,450)
+        expect(find.text('৳96,450'), findsNothing);
+        expect(find.text('Portions Sold'), findsOneWidget);
       },
     );
   });

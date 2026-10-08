@@ -11,6 +11,7 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
     return SupabaseClient(
       'https://placeholder.supabase.co',
       'placeholder-anon-key',
+      authOptions: const AuthClientOptions(autoRefreshToken: false),
     );
   }
 });

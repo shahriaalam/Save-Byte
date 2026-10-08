@@ -504,4 +504,84 @@ class RestaurantRepository {
       } catch (_) {}
     }
   }
+
+  /// Updates an existing offer (title, prices, quantity, category, etc.)
+  Future<void> updateOffer(FoodOffer updatedOffer) async {
+    final idx = _createdOffers.indexWhere((o) => o.id == updatedOffer.id);
+    if (idx != -1) {
+      _createdOffers[idx] = updatedOffer;
+    } else {
+      _seedOfferOverrides[updatedOffer.id] = updatedOffer;
+    }
+
+    if (!_isLocalOnly) {
+      try {
+        await _client
+            .from(SupabaseConstants.tableOffers)
+            .update(updatedOffer.toJson())
+            .eq('id', updatedOffer.id);
+      } catch (e) {
+        debugPrint('Supabase updateOffer notice: $e');
+      }
+    }
+  }
+
+  /// Updates quantity of an existing offer.
+  Future<void> updateOfferQuantity(String offerId, int newQuantity) async {
+    final idx = _createdOffers.indexWhere((o) => o.id == offerId);
+    if (idx != -1) {
+      _createdOffers[idx] =
+          _createdOffers[idx].copyWith(quantity: newQuantity.clamp(0, 9999));
+    } else {
+      final current = (await getRestaurantOffers('res-1'))
+          .where((o) => o.id == offerId)
+          .firstOrNull;
+      if (current != null) {
+        _seedOfferOverrides[offerId] =
+            current.copyWith(quantity: newQuantity.clamp(0, 9999));
+      }
+    }
+
+    if (!_isLocalOnly) {
+      try {
+        await _client
+            .from(SupabaseConstants.tableOffers)
+            .update({'quantity': newQuantity.clamp(0, 9999)})
+            .eq('id', offerId);
+      } catch (_) {}
+    }
+  }
+
+  /// Marks an offer as done / completed.
+  Future<void> markOfferAsDone(String offerId) async {
+    final idx = _createdOffers.indexWhere((o) => o.id == offerId);
+    if (idx != -1) {
+      _createdOffers[idx] = _createdOffers[idx].copyWith(
+        isDone: true,
+        isActive: false,
+      );
+    } else {
+      final current = (await getRestaurantOffers('res-1'))
+          .where((o) => o.id == offerId)
+          .firstOrNull;
+      if (current != null) {
+        _seedOfferOverrides[offerId] = current.copyWith(
+          isDone: true,
+          isActive: false,
+        );
+      }
+    }
+
+    if (!_isLocalOnly) {
+      try {
+        await _client
+            .from(SupabaseConstants.tableOffers)
+            .update({
+              'is_done': true,
+              'is_active': false,
+            })
+            .eq('id', offerId);
+      } catch (_) {}
+    }
+  }
 }
