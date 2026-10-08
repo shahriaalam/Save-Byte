@@ -276,7 +276,7 @@ void main() {
       expect(find.text('Help & Support'), findsOneWidget);
       expect(find.text('Refund policy'), findsNothing);
       expect(find.text('Privacy policy'), findsOneWidget);
-      expect(find.text('Join group order'), findsOneWidget);
+      expect(find.text('Join group order'), findsNothing);
       expect(find.text('About'), findsOneWidget);
       expect(find.text('Log out'), findsOneWidget);
 

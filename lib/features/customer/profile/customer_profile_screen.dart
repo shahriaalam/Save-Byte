@@ -26,7 +26,7 @@ import 'widgets/change_avatar_sheet.dart';
 /// - Warm peach gradient profile header with View Profile action
 /// - Super Saver membership banner & subscription details
 /// - 7 Quick Action tiles (Orders, Addresses, Favourites, Vouchers, Rewards, Help Center, Contact Us)
-/// - Account options list (Super Saver, Refund Policy, Privacy Policy, Group Order, About, Log Out, Delete account)
+/// - Account options list (Super Saver, Refund Policy, Privacy Policy, About, Log Out, Delete account)
 class CustomerProfileScreen extends ConsumerStatefulWidget {
   const CustomerProfileScreen({super.key});
 
@@ -1387,115 +1387,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
     );
   }
 
-  void _showGroupOrderModal(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.group_add_rounded,
-                      color: Color(0xFF2563EB),
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Join Group Order',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                      Text(
-                        'Order meals together with friends',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Group orders let coworkers, roommates, and families combine multiple surplus orders into one pickup run while unlocking free delivery!',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF475569),
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE11D48),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: const Icon(Icons.share_rounded, size: 18),
-                  label: const Text(
-                    'Create & Share Group Link',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Clipboard.setData(const ClipboardData(
-                        text: 'https://savebite.app/group/order-dhaka-741'));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Group order link copied to clipboard!'),
-                        backgroundColor: AppColors.success,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   void _confirmLogout(BuildContext context) {
     showDialog<void>(
@@ -2265,54 +2157,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         ),
                         onTap: () => _showSuperSaverModal(context),
                       ),
-                      const Divider(
-                        height: 1,
-                        thickness: 1,
-                        indent: 70,
-                        endIndent: 16,
-                        color: Color(0xFFF1F5F9),
-                      ),
-                      _buildMenuItem(
-                        icon: Icons.group_add_outlined,
-                        iconColor: const Color(0xFF2563EB),
-                        iconBgColor: const Color(0xFFEFF6FF),
-                        title: 'Join group order',
-                        subtitle:
-                            'Order surplus food together with nearby friends',
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFFBFDBFE),
-                              width: 0.8,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.groups_rounded,
-                                size: 10,
-                                color: Color(0xFF2563EB),
-                              ),
-                              SizedBox(width: 3.5),
-                              Text(
-                                'SOCIAL',
-                                style: TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF2563EB),
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        onTap: () => _showGroupOrderModal(context),
-                      ),
+
                       const Divider(
                         height: 1,
                         thickness: 1,
