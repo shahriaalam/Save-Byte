@@ -346,7 +346,134 @@ class _RestaurantDashboardScreenState
               _buildOwnerFieldTile('National ID (NID)', nid, Icons.credit_card_outlined),
               _buildOwnerFieldTile('Assigned Restaurant', restaurantName, Icons.storefront_outlined),
               _buildOwnerFieldTile('Restaurant Address', address, Icons.place_outlined),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // Owner Takeaway Profit & Sales Live Card
+              Consumer(
+                builder: (context, ref, _) {
+                  final stats = ref.watch(restaurantSalesStatsProvider(restaurant.id));
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.25),
+                        width: 1.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.monetization_on_rounded,
+                                color: AppColors.primary, size: 18),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Takeaway Revenue & Profit',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Profit / Earnings',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary)),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '৳${stats.totalRevenue.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.primary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Portions Sold',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary)),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '${stats.totalPortionsSold}',
+                                      style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.secondary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Active Pickups',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary)),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '${stats.activeOrdersCount}',
+                                      style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF059669)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
 
               // Action button to request updates
               SizedBox(
@@ -3676,6 +3803,15 @@ class _RestaurantDashboardScreenState
                   ),
                 ),
               ),
+
+            // ==========================================
+            // LIVE TAKEAWAY ORDERS, PICKUPS & PROFIT CARD
+            // ==========================================
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+              child: _buildTakeawayOrdersLiveCard(context, restaurant),
+            ),
+            const SizedBox(height: 6),
 
             // ==========================================
             // 3. QUICK ACTION TILES (4 items in balanced row)
@@ -8082,21 +8218,19 @@ class _RestaurantDashboardScreenState
 
         return Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFF7ED), Color(0xFFFFFBEB)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: activeOrders.isNotEmpty
-                  ? const Color(0xFFFDBA74)
-                  : const Color(0xFFFDE68A),
+                  ? AppColors.primary.withValues(alpha: 0.35)
+                  : const Color(0xFFE4E4E7),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFD97706).withValues(alpha: 0.08),
+                color: activeOrders.isNotEmpty
+                    ? AppColors.primary.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -8118,8 +8252,8 @@ class _RestaurantDashboardScreenState
                           padding: const EdgeInsets.all(9),
                           decoration: BoxDecoration(
                             color: activeOrders.isNotEmpty
-                                ? const Color(0xFFEA580C)
-                                : const Color(0xFFD97706),
+                                ? AppColors.primary
+                                : AppColors.secondary,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -8133,17 +8267,17 @@ class _RestaurantDashboardScreenState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Wrap(
+                              Wrap(
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 spacing: 6,
                                 runSpacing: 2,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'Takeaway Pickups',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF1E293B),
+                                      color: AppColors.textPrimary,
                                     ),
                                   ),
                                   Text(
@@ -8151,7 +8285,9 @@ class _RestaurantDashboardScreenState
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFFEA580C),
+                                      color: activeOrders.isNotEmpty
+                                          ? AppColors.primary
+                                          : AppColors.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -8163,7 +8299,7 @@ class _RestaurantDashboardScreenState
                                     : 'No active pickups right now',
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.textSecondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -8175,8 +8311,8 @@ class _RestaurantDashboardScreenState
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: activeOrders.isNotEmpty
-                                ? const Color(0xFFEA580C)
-                                : const Color(0xFFF1F5F9),
+                                ? AppColors.primary
+                                : const Color(0xFFF4F4F5),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -8186,7 +8322,7 @@ class _RestaurantDashboardScreenState
                             style: TextStyle(
                               color: activeOrders.isNotEmpty
                                   ? Colors.white
-                                  : const Color(0xFF475569),
+                                  : AppColors.textSecondary,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
@@ -8202,10 +8338,10 @@ class _RestaurantDashboardScreenState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: const Color(0xFFF9F9FA),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFFFED7AA),
+                            color: AppColors.primary.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -8213,7 +8349,7 @@ class _RestaurantDashboardScreenState
                             const Icon(
                               Icons.alarm_on_rounded,
                               size: 16,
-                              color: Color(0xFFEA580C),
+                              color: AppColors.primary,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -8222,7 +8358,7 @@ class _RestaurantDashboardScreenState
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E293B),
+                                  color: AppColors.textPrimary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -8233,7 +8369,7 @@ class _RestaurantDashboardScreenState
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFFEA580C),
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -8253,7 +8389,7 @@ class _RestaurantDashboardScreenState
                           style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF78350F),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const Row(
@@ -8264,14 +8400,14 @@ class _RestaurantDashboardScreenState
                               style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFFEA580C),
+                                color: AppColors.primary,
                               ),
                             ),
                             SizedBox(width: 4),
                             Icon(
                               Icons.arrow_forward_rounded,
                               size: 13,
-                              color: Color(0xFFEA580C),
+                              color: AppColors.primary,
                             ),
                           ],
                         ),

@@ -7,6 +7,7 @@ import '../../../../core/supabase/supabase_client_provider.dart';
 import '../../../auth/domain/user_profile.dart';
 import '../../../shared/models/food_offer.dart';
 import '../../../shared/models/restaurant.dart';
+import '../../../restaurant/data/restaurant_repository.dart';
 
 /// Provider for CustomerOfferRepository.
 final customerOfferRepositoryProvider =
@@ -739,8 +740,15 @@ class CustomerOfferRepository {
       }
     }
 
-    // Filter seed offers based on parameters
-    final results = _seedOffers.where((offer) {
+    // Filter seed and restaurant-created offers based on parameters
+    final combinedOffers = <FoodOffer>[..._seedOffers];
+    for (final created in RestaurantRepository.createdOffers) {
+      if (!combinedOffers.any((o) => o.id == created.id)) {
+        combinedOffers.insert(0, created);
+      }
+    }
+
+    final results = combinedOffers.where((offer) {
       if (!offer.isVisibleToCustomer()) return false;
       if (category != null && category.isNotEmpty && category != 'All') {
         if (!matchesCategory(offer, category)) return false;
@@ -797,7 +805,11 @@ class CustomerOfferRepository {
       } catch (_) {}
     }
 
-    return _seedOffers.where((o) => o.id == id).firstOrNull;
+    final seed = _seedOffers.where((o) => o.id == id).firstOrNull;
+    if (seed != null) return seed;
+    return RestaurantRepository.createdOffers
+        .where((o) => o.id == id)
+        .firstOrNull;
   }
 
   /// Retrieves restaurant details by ID (Section 23).
@@ -816,7 +828,11 @@ class CustomerOfferRepository {
       } catch (_) {}
     }
 
-    return _seedRestaurants.where((r) => r.id == id).firstOrNull;
+    final seed = _seedRestaurants.where((r) => r.id == id).firstOrNull;
+    if (seed != null) return seed;
+    return RestaurantRepository.allRegisteredRestaurants
+        .where((r) => r.id == id)
+        .firstOrNull;
   }
 
   /// Retrieves active offers for a specific restaurant (Section 23).
@@ -841,9 +857,19 @@ class CustomerOfferRepository {
       } catch (_) {}
     }
 
-    return _seedOffers
-        .where((o) => o.restaurantId == restaurantId && o.isVisibleToCustomer())
-        .toList();
+    final List<FoodOffer> resOffers = [];
+    resOffers.addAll(
+      _seedOffers
+          .where((o) => o.restaurantId == restaurantId && o.isVisibleToCustomer()),
+    );
+    for (final o in RestaurantRepository.createdOffers) {
+      if (o.restaurantId == restaurantId && o.isVisibleToCustomer()) {
+        if (!resOffers.any((existing) => existing.id == o.id)) {
+          resOffers.add(o);
+        }
+      }
+    }
+    return resOffers;
   }
 
   /// Retrieves active restaurants that have available food offers right now,
@@ -877,7 +903,17 @@ class CustomerOfferRepository {
       } catch (_) {}
     }
 
-    return _seedRestaurants
+    final allApprovedRestaurants = <Restaurant>[
+      ..._seedRestaurants,
+      ...RestaurantRepository.allRegisteredRestaurants
+          .where((r) => r.status == AppConstants.statusApproved),
+    ];
+    final Map<String, Restaurant> uniqueMap = {};
+    for (final r in allApprovedRestaurants) {
+      uniqueMap[r.id] = r;
+    }
+
+    return uniqueMap.values
         .where((r) =>
             activeRestaurantIds.contains(r.id) &&
             (division == null || r.division == division) &&
@@ -944,6 +980,8 @@ class CustomerOfferRepository {
         isActive: newQty > 0,
       );
     }
+    // Also decrease globally in restaurant repository
+    RestaurantRepository.decreaseOfferQuantity(offerId, quantityToDecrease);
   }
 }
 

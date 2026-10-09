@@ -28,38 +28,7 @@ class OrderRepository {
       _client.rest.url.contains('test');
 
   // In-memory persistent order state for offline/demo/testing and instant UI sync
-  static final List<Order> _seedOrders = [
-    Order(
-      id: 'ord-bb-101',
-      orderNumber: 'SB-849201',
-      customerId: 'demo-customer-id',
-      customerName: 'Shahriar Alam',
-      customerPhone: '01712345678',
-      customerEmail: 'shahriar@savebite.app',
-      restaurantId: 'res-blue-bell',
-      restaurantName: 'Blue Bell Café',
-      restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
-      restaurantPhone: '01711234567',
-      restaurantEmail: 'bluebell@savebite.app',
-      offerId: 'offer-bb-1',
-      title: 'Tuscan Slow-Baked Lasagna',
-      imageUrl: 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600',
-      category: 'Italian',
-      quantity: 2,
-      unitPrice: 420,
-      originalUnitPrice: 750,
-      totalPrice: 840,
-      totalSavings: 660,
-      pickupTime: 'Today at 7:30 PM',
-      pickupCode: '4821',
-      paymentMethod: 'bKash',
-      paymentStatus: 'paid',
-      transactionId: 'TXN-BK-7391024',
-      status: 'ready_for_pickup',
-      notes: 'Please pack with extra napkins.',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
-    ),
-  ];
+  static final List<Order> _seedOrders = [];
 
   /// Creates a new takeaway pickup order after online payment is approved.
   /// - Deducts ordered portions from available food inventory
@@ -239,9 +208,17 @@ class OrderRepository {
       } catch (_) {}
     }
 
-    return _seedOrders
-        .where((o) => o.restaurantId == restaurantId || restaurantId == 'res-blue-bell' || restaurantId == 'demo-restaurant-id')
-        .toList();
+    return _seedOrders.where((o) {
+      if (o.restaurantId == restaurantId) return true;
+      final isBlueBellQuery = restaurantId == 'res-blue-bell' ||
+          restaurantId == 'res-1' ||
+          restaurantId == 'demo-restaurant-id';
+      final isBlueBellOrder = o.restaurantId == 'res-blue-bell' ||
+          o.restaurantId == 'res-1' ||
+          o.restaurantId == 'demo-restaurant-id';
+      if (isBlueBellQuery && isBlueBellOrder) return true;
+      return false;
+    }).toList();
   }
 
   /// Updates an order status (e.g. from 'confirmed' to 'ready_for_pickup' or 'completed').

@@ -96,13 +96,13 @@ class Order {
   Color get statusColor {
     switch (status) {
       case 'confirmed':
-        return const Color(0xFF2563EB); // Blue
+        return AppColors.primary; // Signature Brand Red
       case 'ready_for_pickup':
-        return const Color(0xFFD97706); // Amber
+        return const Color(0xFF059669); // Emerald Green
       case 'completed':
-        return const Color(0xFF16A34A); // Green
+        return const Color(0xFF16A34A); // Success Green (Picked Up)
       case 'cancelled':
-        return const Color(0xFFDC2626); // Red
+        return const Color(0xFFDC2626); // Error Red
       default:
         return AppColors.primary;
     }
@@ -113,11 +113,11 @@ class Order {
   Color get statusBgColor {
     switch (status) {
       case 'confirmed':
-        return const Color(0xFFEFF6FF);
+        return const Color(0xFFFFECEC); // Soft Brand Red
       case 'ready_for_pickup':
-        return const Color(0xFFFFFBEB);
+        return const Color(0xFFECFDF5); // Soft Emerald Green
       case 'completed':
-        return const Color(0xFFDCFCE7);
+        return const Color(0xFFDCFCE7); // Soft Success Green
       case 'cancelled':
         return const Color(0xFFFEF2F2);
       default:

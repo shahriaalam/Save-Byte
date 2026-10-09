@@ -46,6 +46,39 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
     super.dispose();
   }
 
+  Future<void> _completeOrderAndMoveToHistory(Order order) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final success = await ref
+        .read(orderControllerProvider.notifier)
+        .updateStatus(
+          order.id,
+          'completed',
+          restaurantId: widget.restaurantId,
+          customerId: order.customerId,
+        );
+    if (!mounted) return;
+    if (success) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Order #${order.orderNumber} picked up! Moved to Order History.'),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF059669),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      // Smoothly jump to Order History tab so the owner sees the completed order immediately
+      _tabController.animateTo(1);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ordersAsync = ref.watch(restaurantOrdersProvider(widget.restaurantId));
@@ -54,7 +87,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
     return Container(
       height: MediaQuery.of(context).size.height * 0.88,
       decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
@@ -66,14 +99,14 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
               width: 44,
               height: 4.5,
               decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
+                color: const Color(0xFFD4D4D8),
                 borderRadius: BorderRadius.circular(2.5),
               ),
             ),
           ),
           const SizedBox(height: 12),
 
-          // Header
+          // Header (Aligned with SaveBite Red, White & Black Core Theme)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -100,7 +133,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       Text(
@@ -108,21 +141,21 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF64748B),
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B)),
+                  icon: const Icon(Icons.refresh_rounded, color: AppColors.secondary),
                   tooltip: 'Refresh Orders',
                   onPressed: () {
                     ref.invalidate(restaurantOrdersProvider(widget.restaurantId));
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  icon: const Icon(Icons.close_rounded, color: AppColors.secondary),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -160,7 +193,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
           ),
           const SizedBox(height: 12),
 
-          // Mini Sales Summary
+          // Mini Sales Summary (Red, Black, Emerald Accents)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -170,7 +203,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                     title: 'Active Pickups',
                     value: '${salesStats.activeOrdersCount}',
                     icon: Icons.access_time_filled_rounded,
-                    color: const Color(0xFFD97706),
+                    color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -179,7 +212,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                     title: 'Portions Sold',
                     value: '${salesStats.totalPortionsSold}',
                     icon: Icons.fastfood_rounded,
-                    color: const Color(0xFF2563EB),
+                    color: AppColors.secondary,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -196,23 +229,23 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
           ),
           const SizedBox(height: 12),
 
-          // Tabs
+          // Tabs (Core Red, White, Slate design)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              color: const Color(0xFFE2E8F0),
+              color: const Color(0xFFF4F4F5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: TabBar(
               controller: _tabController,
               labelColor: AppColors.primary,
-              unselectedLabelColor: const Color(0xFF64748B),
+              unselectedLabelColor: const Color(0xFF71717A),
               indicator: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -361,20 +394,25 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
     final statusColor = Color(order.statusColorHex);
     final formattedTime = _formatOrderTime(order.createdAt);
     final pickupTimeStr = order.pickupTime;
+    final isReady = order.isReadyForPickup;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isReady ? const Color(0xFFF0FDF4) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: order.isReadyForPickup
+          color: isReady
               ? const Color(0xFF10B981)
-              : const Color(0xFFE2E8F0),
-          width: order.isReadyForPickup ? 1.5 : 1.0,
+              : (order.isCompleted
+                  ? const Color(0xFF86EFAC)
+                  : const Color(0xFFE4E4E7)),
+          width: isReady ? 2.0 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: isReady
+                ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -387,9 +425,9 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: isReady ? const Color(0xFFECFDF5) : const Color(0xFFFAFAFA),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              border: Border(bottom: BorderSide(color: isReady ? const Color(0xFFA7F3D0) : const Color(0xFFE4E4E7))),
             ),
             child: Row(
               children: [
@@ -397,19 +435,31 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '#${order.orderNumber}',
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              '#${order.orderNumber}',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          if (isReady) ...[
+                            const SizedBox(width: 6),
+                            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 15),
+                          ],
+                        ],
                       ),
                       Text(
                         'Ordered at $formattedTime',
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -418,16 +468,16 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
+                    color: isReady ? const Color(0xFFD1FAE5) : statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                    border: Border.all(color: isReady ? const Color(0xFF10B981) : statusColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     order.statusLabel.toUpperCase(),
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w900,
-                      color: statusColor,
+                      color: isReady ? const Color(0xFF047857) : statusColor,
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -463,7 +513,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E293B),
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -472,7 +522,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                             style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -486,7 +536,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         Container(
@@ -514,21 +564,25 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7ED),
+                    color: isReady ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFFFEDD5)),
+                    border: Border.all(color: isReady ? const Color(0xFFA7F3D0) : const Color(0xFFFFEDD5)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.alarm_on_rounded, color: Color(0xFFEA580C), size: 18),
+                      Icon(
+                        isReady ? Icons.alarm_on_rounded : Icons.schedule_rounded,
+                        color: isReady ? const Color(0xFF059669) : const Color(0xFFEA580C),
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Scheduled Pickup: Today at $pickupTimeStr',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFFC2410C),
+                            color: isReady ? const Color(0xFF065F46) : const Color(0xFFC2410C),
                           ),
                         ),
                       ),
@@ -538,14 +592,16 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFFDBA74)),
+                          border: Border.all(
+                            color: isReady ? const Color(0xFF10B981) : const Color(0xFFFDBA74),
+                          ),
                         ),
                         child: Text(
                           'PIN: ${order.pickupCode}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFFC2410C),
+                            color: isReady ? const Color(0xFF059669) : const Color(0xFFC2410C),
                             letterSpacing: 1,
                           ),
                         ),
@@ -559,13 +615,13 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: const Color(0xFFF4F4F5),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: const Color(0xFFE4E4E7)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.person_outline_rounded, size: 16, color: Color(0xFF64748B)),
+                      const Icon(Icons.person_outline_rounded, size: 16, color: AppColors.textSecondary),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -573,12 +629,12 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF334155),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
                       if (order.customerPhone.isNotEmpty) ...[
-                        const Icon(Icons.phone_rounded, size: 14, color: Color(0xFF2563EB)),
+                        const Icon(Icons.phone_rounded, size: 14, color: AppColors.primary),
                         const SizedBox(width: 4),
                         InkWell(
                           onTap: () {
@@ -596,7 +652,7 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2563EB),
+                              color: AppColors.primary,
                               decoration: TextDecoration.underline,
                             ),
                           ),
@@ -613,99 +669,134 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                     style: const TextStyle(
                       fontSize: 11.5,
                       fontStyle: FontStyle.italic,
-                      color: Color(0xFF64748B),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
 
                 // Action Buttons for Restaurant
-                if (order.isConfirmed || order.isReadyForPickup) ...[
+                if (order.isConfirmed || isReady) ...[
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      if (order.isConfirmed) ...[
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                            label: const Text(
-                              'Mark Ready for Pickup',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                            ),
-                            onPressed: () async {
-                              final messenger = ScaffoldMessenger.of(context);
-                              final success = await ref
-                                  .read(orderControllerProvider.notifier)
-                                  .updateStatus(
-                                    order.id,
-                                    'ready_for_pickup',
-                                    restaurantId: widget.restaurantId,
-                                    customerId: order.customerId,
-                                  );
-                              if (!mounted) return;
-                              if (success) {
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Order marked as Ready for Pickup! Customer notified.'),
-                                    backgroundColor: Color(0xFF2563EB),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              }
-                            },
+                  if (order.isConfirmed) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                      ],
-                      if (order.isReadyForPickup) ...[
-                        Expanded(
+                        icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                        label: const Text(
+                          'Mark Ready for Pickup',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        ),
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final success = await ref
+                              .read(orderControllerProvider.notifier)
+                              .updateStatus(
+                                order.id,
+                                'ready_for_pickup',
+                                restaurantId: widget.restaurantId,
+                                customerId: order.customerId,
+                              );
+                          if (!mounted) return;
+                          if (success) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Order marked as Ready for Pickup! Customer notified.'),
+                                backgroundColor: Color(0xFF059669),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                  if (isReady) ...[
+                    Column(
+                      children: [
+                        // 1. Mark as Picked Up button (Emerald Green)
+                        SizedBox(
+                          width: double.infinity,
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF059669),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             icon: const Icon(Icons.task_alt_rounded, size: 18),
                             label: const Text(
                               'Mark as Picked Up',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                             ),
-                            onPressed: () async {
-                              final messenger = ScaffoldMessenger.of(context);
-                              final success = await ref
-                                  .read(orderControllerProvider.notifier)
-                                  .updateStatus(
-                                    order.id,
-                                    'completed',
-                                    restaurantId: widget.restaurantId,
-                                    customerId: order.customerId,
-                                  );
-                              if (!mounted) return;
-                              if (success) {
-                                messenger.showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Order completed! Package handed over to customer.'),
-                                    backgroundColor: Color(0xFF059669),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              }
-                            },
+                            onPressed: () => _completeOrderAndMoveToHistory(order),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // 2. Done button below of Marked as Picked Up (Core Obsidian Black)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.secondary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(color: Color(0xFF27272A), width: 1),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                            ),
+                            icon: const Icon(Icons.check_circle_rounded, size: 18, color: Color(0xFF10B981)),
+                            label: const Text(
+                              'Done',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                            onPressed: () => _completeOrderAndMoveToHistory(order),
                           ),
                         ),
                       ],
-                    ],
+                    ),
+                  ],
+                ],
+
+                // Completed state banner in Order History
+                if (order.isCompleted) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF86EFAC)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'Picked Up • Order Handover Completed',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF15803D),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],

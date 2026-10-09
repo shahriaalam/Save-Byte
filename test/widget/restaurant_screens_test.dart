@@ -11,8 +11,11 @@ import 'package:save_bite/features/auth/domain/user_profile.dart';
 import 'package:save_bite/features/auth/presentation/auth_controller.dart';
 import 'package:save_bite/features/restaurant/dashboard/restaurant_dashboard_screen.dart';
 import 'package:save_bite/features/restaurant/offers/presentation/create_offer_screen.dart';
+import 'package:save_bite/features/restaurant/orders/presentation/restaurant_orders_sheet.dart';
 import 'package:save_bite/features/restaurant/presentation/restaurant_controller.dart';
 import 'package:save_bite/features/restaurant/profile/restaurant_profile_screen.dart';
+import 'package:save_bite/features/shared/data/order_controller.dart';
+import 'package:save_bite/features/shared/models/order.dart';
 import 'package:save_bite/features/shared/models/restaurant.dart';
 
 import '../helpers/fake_auth_repository.dart';
@@ -791,5 +794,105 @@ void main() {
         expect(find.text('Portions Sold'), findsOneWidget);
       },
     );
+  });
+
+  group('Restaurant Orders Sheet - Pickup Flow, Green State and Done Button', () {
+    final confirmedOrder = Order(
+      id: 'ord-101',
+      orderNumber: 'SB-100101',
+      customerId: 'cust-1',
+      customerName: 'Rahim Ahmed',
+      customerPhone: '01700112233',
+      restaurantId: 'res-1',
+      restaurantName: "Rahman's Kitchen",
+      restaurantAddress: 'Dhanmondi, Dhaka',
+      title: 'Venetian Espresso Tiramisu',
+      category: 'Dessert',
+      quantity: 1,
+      unitPrice: 240,
+      originalUnitPrice: 400,
+      totalPrice: 240,
+      totalSavings: 160,
+      pickupTime: 'Today at 10:43 AM',
+      pickupCode: '4115',
+      paymentMethod: 'bKash',
+      paymentStatus: 'paid',
+      status: 'confirmed',
+      createdAt: DateTime.now(),
+    );
+
+    final readyOrder = confirmedOrder.copyWith(
+      status: 'ready_for_pickup',
+    );
+
+    testWidgets('renders active pickups and "Mark Ready for Pickup" button for confirmed order', (tester) async {
+      tester.view.physicalSize = const Size(420, 950);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            restaurantOrdersProvider('res-1').overrideWith(
+              (ref) => [confirmedOrder],
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const Scaffold(
+              body: RestaurantOrdersSheet(restaurantId: 'res-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Takeaway Pickups & Orders'), findsOneWidget);
+      expect(find.text('Active Pickups (1)'), findsOneWidget);
+      expect(find.text('Venetian Espresso Tiramisu'), findsOneWidget);
+      expect(find.text('Rahim Ahmed'), findsOneWidget);
+      expect(find.text('Mark Ready for Pickup'), findsOneWidget);
+    });
+
+    testWidgets('ready_for_pickup order renders green card, "Mark as Picked Up" and "Done" button', (tester) async {
+      tester.view.physicalSize = const Size(420, 950);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            restaurantOrdersProvider('res-1').overrideWith(
+              (ref) => [readyOrder],
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const Scaffold(
+              body: RestaurantOrdersSheet(restaurantId: 'res-1'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Card is in ready state:
+      expect(find.text('READY FOR PICKUP'), findsOneWidget);
+      expect(find.text('Mark as Picked Up'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+
+      // Ensure visible in scrollable list
+      await tester.ensureVisible(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      // Tap Done button
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      // Should show SnackBar
+      expect(find.textContaining('Moved to Order History'), findsOneWidget);
+    });
   });
 }

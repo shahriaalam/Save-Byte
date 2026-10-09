@@ -11,6 +11,8 @@ import '../../../core/constants/supabase_constants.dart';
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../domain/user_profile.dart';
+import '../../restaurant/data/restaurant_repository.dart';
+import '../../shared/models/restaurant.dart';
 
 /// Provider for AuthRepository.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -478,25 +480,29 @@ class AuthRepository {
     // Save into persistent credentials registry
     await _persistAccount(email, password, profile);
 
-    // Persist local restaurant record
-    final initialRestaurant = {
-      'id': 'res_${DateTime.now().millisecondsSinceEpoch}',
-      'owner_id': userId,
-      'name': restaurantName.trim(),
-      'description': description.trim(),
-      'phone': phone.trim(),
-      'address': address.trim(),
-      'division': division.trim(),
-      if (area != null) 'area': area.trim(),
-      'cuisine_type': cuisineType.trim(),
-      'status': AppConstants.statusPending,
-    };
+    // Persist local restaurant record & register in global repository
+    final restaurantId = 'res_${DateTime.now().millisecondsSinceEpoch}';
+    final restaurantObj = Restaurant(
+      id: restaurantId,
+      ownerId: userId,
+      name: restaurantName.trim(),
+      description: description.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      division: division.trim(),
+      area: area?.trim(),
+      cuisineType: cuisineType.trim(),
+      status: AppConstants.statusPending,
+    );
+
+    // Register into memory and persistence across repositories
+    RestaurantRepository.registerRestaurantStatic(restaurantObj);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         'sb_restaurant_$userId',
-        jsonEncode(initialRestaurant),
+        jsonEncode(restaurantObj.toJson()),
       );
     } catch (_) {}
 

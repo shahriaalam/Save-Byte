@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../customer/offers/presentation/customer_offers_controller.dart';
+import '../../restaurant/presentation/restaurant_controller.dart';
 import '../models/order.dart';
 import 'order_repository.dart';
 
@@ -88,9 +90,34 @@ class OrderController extends AsyncNotifier<void> {
         notes: notes,
       );
 
-      // Invalidate relevant providers to force instant refresh
+      // Invalidate customer and restaurant orders & profit stats
       ref.invalidate(customerOrdersProvider(customerId));
       ref.invalidate(restaurantOrdersProvider(restaurantId));
+      ref.invalidate(restaurantOrdersProvider('res-blue-bell'));
+      ref.invalidate(restaurantOrdersProvider('res-1'));
+      ref.invalidate(restaurantOrdersProvider('demo-restaurant-id'));
+      ref.invalidate(restaurantSalesStatsProvider(restaurantId));
+      ref.invalidate(restaurantSalesStatsProvider('res-blue-bell'));
+      ref.invalidate(restaurantSalesStatsProvider('res-1'));
+      ref.invalidate(restaurantSalesStatsProvider('demo-restaurant-id'));
+
+      // Invalidate customer offer inventory providers so counts decrease instantly
+      ref.invalidate(activeOffersProvider);
+      ref.invalidate(nearbyOffersProvider);
+      ref.invalidate(allHomeOffersProvider);
+      ref.invalidate(hotDealsProvider);
+      ref.invalidate(allDhakaHotDealsProvider);
+      ref.invalidate(searchResultsProvider);
+      ref.invalidate(activeRestaurantsProvider);
+      if (offerId != null) {
+        ref.invalidate(offerDetailsProvider(offerId));
+      }
+
+      // Invalidate restaurant side offer providers
+      ref.invalidate(currentRestaurantOffersProvider);
+      ref.invalidate(restaurantActiveOffersProvider(restaurantId));
+      ref.invalidate(restaurantActiveOffersProvider('res-blue-bell'));
+      ref.invalidate(restaurantActiveOffersProvider('res-1'));
 
       state = const AsyncData(null);
       return order;
@@ -113,7 +140,15 @@ class OrderController extends AsyncNotifier<void> {
 
       if (restaurantId != null) {
         ref.invalidate(restaurantOrdersProvider(restaurantId));
+        ref.invalidate(restaurantSalesStatsProvider(restaurantId));
       }
+      ref.invalidate(restaurantOrdersProvider('res-blue-bell'));
+      ref.invalidate(restaurantOrdersProvider('res-1'));
+      ref.invalidate(restaurantOrdersProvider('demo-restaurant-id'));
+      ref.invalidate(restaurantSalesStatsProvider('res-blue-bell'));
+      ref.invalidate(restaurantSalesStatsProvider('res-1'));
+      ref.invalidate(restaurantSalesStatsProvider('demo-restaurant-id'));
+
       if (customerId != null) {
         ref.invalidate(customerOrdersProvider(customerId));
       }

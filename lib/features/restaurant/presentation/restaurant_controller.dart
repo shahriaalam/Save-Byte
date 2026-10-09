@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/auth_controller.dart';
+import '../../customer/offers/presentation/customer_offers_controller.dart';
 import '../../shared/data/promo_banner_controller.dart';
 import '../../shared/models/food_offer.dart';
 import '../../shared/models/promo_banner.dart';
@@ -49,6 +50,17 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     }
   }
 
+  void _invalidateAllOfferCaches() {
+    ref.invalidate(currentRestaurantOffersProvider);
+    ref.invalidate(activeOffersProvider);
+    ref.invalidate(nearbyOffersProvider);
+    ref.invalidate(allHomeOffersProvider);
+    ref.invalidate(hotDealsProvider);
+    ref.invalidate(allDhakaHotDealsProvider);
+    ref.invalidate(searchResultsProvider);
+    ref.invalidate(activeRestaurantsProvider);
+  }
+
   Future<bool> createOffer(FoodOffer offer) async {
     state = const AsyncLoading();
     try {
@@ -59,7 +71,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
 
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.createOffer(offer: offer, restaurant: restaurant);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -73,7 +85,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.deleteOffer(offerId);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -87,7 +99,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.updateOffer(offer);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -101,7 +113,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.updateOfferQuantity(offerId, quantity);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -115,7 +127,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.markOfferAsDone(offerId);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -129,7 +141,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.toggleOfferStatus(offerId, isActive);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -143,7 +155,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.boostOffer(offerId);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {
@@ -157,7 +169,7 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.unboostOffer(offerId);
-      ref.invalidate(currentRestaurantOffersProvider);
+      _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;
     } catch (e, st) {

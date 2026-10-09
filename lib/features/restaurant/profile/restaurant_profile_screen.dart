@@ -10,6 +10,7 @@ import '../../../core/utils/platform_file_picker.dart';
 import '../../../core/widgets/double_pull_reload.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../shared/models/restaurant.dart';
+import '../../shared/data/order_controller.dart';
 import '../presentation/restaurant_controller.dart';
 
 /// Curated restaurant preset photos
@@ -366,6 +367,67 @@ class _RestaurantProfileScreenState
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Live Takeaway Profit & Sales Card
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final stats = ref.watch(restaurantSalesStatsProvider(restaurant.id));
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.monetization_on_rounded, color: Colors.white, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Takeaway Profit & Revenue',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    Text(
+                                      '৳${stats.totalRevenue.toStringAsFixed(0)} earned • ${stats.totalPortionsSold} portions sold (${stats.activeOrdersCount} active)',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
 

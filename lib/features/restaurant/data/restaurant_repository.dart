@@ -33,6 +33,113 @@ class RestaurantRepository {
 
   /// In-memory cache of created offers
   static final List<FoodOffer> _createdOffers = [];
+  static List<FoodOffer> get createdOffers => List.unmodifiable(_createdOffers);
+
+  /// In-memory cache of registered restaurants across the platform
+  static final List<Restaurant> _registeredRestaurants = [];
+  static List<Restaurant> get allRegisteredRestaurants =>
+      List.unmodifiable(_registeredRestaurants);
+
+  /// Registers a newly signed up restaurant and persists it locally
+  static void registerRestaurantStatic(Restaurant restaurant) {
+    final idx = _registeredRestaurants.indexWhere(
+      (r) => r.id == restaurant.id || r.ownerId == restaurant.ownerId,
+    );
+    if (idx != -1) {
+      _registeredRestaurants[idx] = restaurant;
+    } else {
+      _registeredRestaurants.insert(0, restaurant);
+    }
+    _memoryRestaurants[restaurant.ownerId] = restaurant;
+    try {
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString(
+          'sb_restaurant_${restaurant.ownerId}',
+          jsonEncode(restaurant.toJson()),
+        );
+        final list = _registeredRestaurants.map((r) => r.toJson()).toList();
+        prefs.setString('sb_registered_restaurants_list', jsonEncode(list));
+      });
+    } catch (_) {}
+  }
+
+  /// Updates status of a restaurant (e.g. 'approved', 'pending', 'suspended')
+  static void updateRestaurantStatus(String restaurantId, String status) {
+    for (int i = 0; i < _registeredRestaurants.length; i++) {
+      if (_registeredRestaurants[i].id == restaurantId) {
+        _registeredRestaurants[i] = _registeredRestaurants[i].copyWith(
+          status: status,
+        );
+      }
+    }
+    _memoryRestaurants.forEach((ownerId, res) {
+      if (res.id == restaurantId) {
+        _memoryRestaurants[ownerId] = res.copyWith(status: status);
+      }
+    });
+    try {
+      SharedPreferences.getInstance().then((prefs) {
+        final list = _registeredRestaurants.map((r) => r.toJson()).toList();
+        prefs.setString('sb_registered_restaurants_list', jsonEncode(list));
+      });
+    } catch (_) {}
+  }
+
+  /// Loads persisted restaurants into repository memory cache
+  static Future<void> loadPersistedRegisteredRestaurants() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('sb_registered_restaurants_list');
+      if (raw != null) {
+        final List<dynamic> list = jsonDecode(raw) as List<dynamic>;
+        for (final item in list) {
+          final res = Restaurant.fromJson(item as Map<String, dynamic>);
+          final idx = _registeredRestaurants.indexWhere((r) => r.id == res.id);
+          if (idx != -1) {
+            _registeredRestaurants[idx] = res;
+          } else {
+            _registeredRestaurants.add(res);
+          }
+          _memoryRestaurants[res.ownerId] = res;
+        }
+      }
+    } catch (_) {}
+  }
+
+  /// Globally decrements offer quantity when an order is placed
+  static void decreaseOfferQuantity(String offerId, int quantityToDecrease) {
+    // 1. Decrement in created offers
+    final idx = _createdOffers.indexWhere((o) => o.id == offerId);
+    if (idx != -1) {
+      final old = _createdOffers[idx];
+      final newQty = (old.quantity - quantityToDecrease).clamp(0, 9999);
+      _createdOffers[idx] = old.copyWith(
+        quantity: newQty,
+        isActive: newQty > 0,
+      );
+    }
+
+    // 2. Decrement in seed offer overrides
+    final existing = _seedOfferOverrides[offerId];
+    if (existing != null) {
+      final newQty = (existing.quantity - quantityToDecrease).clamp(0, 9999);
+      _seedOfferOverrides[offerId] = existing.copyWith(
+        quantity: newQty,
+        isActive: newQty > 0,
+      );
+    } else {
+      // Find from initial seed template
+      final defaultSeed = _getDefaultSeedOffers();
+      final seed = defaultSeed.where((o) => o.id == offerId).firstOrNull;
+      if (seed != null) {
+        final newQty = (seed.quantity - quantityToDecrease).clamp(0, 9999);
+        _seedOfferOverrides[offerId] = seed.copyWith(
+          quantity: newQty,
+          isActive: newQty > 0,
+        );
+      }
+    }
+  }
 
   /// Retrieves the restaurant owned by [ownerId].
   Future<Restaurant> getRestaurantByOwnerId(String ownerId, {String? defaultName, String? defaultPhone}) async {
@@ -78,7 +185,7 @@ class RestaurantRepository {
     // 4. Fallback for demo restaurant account
     if (ownerId == 'demo-restaurant-id' || ownerId == 'owner-1') {
       const demoRes = Restaurant(
-        id: 'res-1',
+        id: 'res-blue-bell',
         ownerId: 'demo-restaurant-id',
         name: 'Blue Bell Café',
         description:
@@ -232,124 +339,12 @@ class RestaurantRepository {
       }
     }
 
-    // Fallback seed offers for Blue Bell Café (res-1 or demo)
+    // Fallback seed offers for Blue Bell Café (res-blue-bell, res-1 or demo)
     if (results.isEmpty &&
-        (restaurantId == 'res-1' || restaurantId.contains('demo'))) {
-      final defaultSeed = [
-        FoodOffer(
-          id: 'offer-bb-1',
-          restaurantId: restaurantId,
-          restaurantName: 'Blue Bell Café',
-          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
-          division: 'Dhaka',
-          area: 'Banasree',
-          title: 'Tuscan Slow-Baked Lasagna',
-          description:
-              'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner discovery.',
-          category: 'Italian',
-          originalPrice: 750,
-          discountedPrice: 420,
-          quantity: 6,
-          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
-          availableUntil: DateTime.now().add(const Duration(hours: 4)),
-          imageUrl:
-              'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600',
-          isActive: true,
-          adminBlocked: false,
-          isBoosted: true,
-          boostedUntil: DateTime.now().add(const Duration(hours: 24)),
-        ),
-        FoodOffer(
-          id: 'offer-bb-2',
-          restaurantId: restaurantId,
-          restaurantName: 'Blue Bell Café',
-          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
-          division: 'Dhaka',
-          area: 'Banasree',
-          title: 'Artisan Café Club Sandwich',
-          description:
-              'Triple-decker sourdough bread layered with smoked chicken, organic fried egg, crisp lettuce, cheddar, and Dijon mayo.',
-          category: 'Snacks',
-          originalPrice: 380,
-          discountedPrice: 220,
-          quantity: 8,
-          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
-          availableUntil: DateTime.now().add(const Duration(hours: 3)),
-          imageUrl:
-              'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600',
-          isActive: true,
-          adminBlocked: false,
-          isBoosted: true,
-          boostedUntil: DateTime.now().add(const Duration(hours: 18)),
-        ),
-        FoodOffer(
-          id: 'offer-bb-3',
-          restaurantId: restaurantId,
-          restaurantName: 'Blue Bell Café',
-          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
-          division: 'Dhaka',
-          area: 'Banasree',
-          title: 'Pistachio Flaky Brioche',
-          description:
-              'Golden French brioche swirl infused with Bronte pistachio cream and white chocolate crumble, baked fresh this afternoon.',
-          category: 'Bakery',
-          originalPrice: 290,
-          discountedPrice: 160,
-          quantity: 10,
-          availableFrom: DateTime.now().subtract(const Duration(hours: 2)),
-          availableUntil: DateTime.now().add(const Duration(hours: 5)),
-          imageUrl:
-              'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600',
-          isActive: true,
-          adminBlocked: false,
-          isBoosted: false,
-        ),
-        FoodOffer(
-          id: 'offer-bb-4',
-          restaurantId: restaurantId,
-          restaurantName: 'Blue Bell Café',
-          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
-          division: 'Dhaka',
-          area: 'Banasree',
-          title: 'Truffle Fettuccine Alfredo',
-          description:
-              'Handcrafted bronze-cut fettuccine tossed in aromatic black truffle butter, heavy cream, garlic, and freshly cracked black pepper.',
-          category: 'Italian',
-          originalPrice: 850,
-          discountedPrice: 480,
-          quantity: 4,
-          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
-          availableUntil: DateTime.now().add(const Duration(hours: 3)),
-          imageUrl:
-              'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600',
-          isActive: true,
-          adminBlocked: false,
-          isBoosted: false,
-        ),
-        FoodOffer(
-          id: 'offer-bb-5',
-          restaurantId: restaurantId,
-          restaurantName: 'Blue Bell Café',
-          restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
-          division: 'Dhaka',
-          area: 'Banasree',
-          title: 'Venetian Espresso Tiramisu',
-          description:
-              'Traditional savoiardi ladyfingers soaked in single-origin Blue Bell espresso roast, whipped mascarpone, and Valrhona cocoa.',
-          category: 'Dessert',
-          originalPrice: 420,
-          discountedPrice: 240,
-          quantity: 7,
-          availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
-          availableUntil: DateTime.now().add(const Duration(hours: 4)),
-          imageUrl:
-              'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600',
-          isActive: true,
-          adminBlocked: false,
-          isBoosted: false,
-        ),
-      ];
-
+        (restaurantId == 'res-blue-bell' ||
+            restaurantId == 'res-1' ||
+            restaurantId.contains('demo'))) {
+      final defaultSeed = _getDefaultSeedOffers(restaurantId);
       for (final seed in defaultSeed) {
         if (_seedOfferOverrides.containsKey(seed.id)) {
           results.add(_seedOfferOverrides[seed.id]!);
@@ -362,6 +357,124 @@ class RestaurantRepository {
     return results;
   }
 
+  /// Default seed offers for Blue Bell Café
+  static List<FoodOffer> _getDefaultSeedOffers([String restaurantId = 'res-blue-bell']) {
+    return [
+      FoodOffer(
+        id: 'offer-bb-1',
+        restaurantId: restaurantId,
+        restaurantName: 'Blue Bell Café',
+        restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+        division: 'Dhaka',
+        area: 'Banasree',
+        title: 'Tuscan Slow-Baked Lasagna',
+        description:
+            'Layers of fresh egg pasta, slow-simmered bolognese ragù, creamy béchamel, and melted parmesan. Packaged fresh for dinner discovery.',
+        category: 'Italian',
+        originalPrice: 750,
+        discountedPrice: 420,
+        quantity: 6,
+        availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+        availableUntil: DateTime.now().add(const Duration(hours: 4)),
+        imageUrl:
+            'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600',
+        isActive: true,
+        adminBlocked: false,
+        isBoosted: true,
+        boostedUntil: DateTime.now().add(const Duration(hours: 24)),
+      ),
+      FoodOffer(
+        id: 'offer-bb-2',
+        restaurantId: restaurantId,
+        restaurantName: 'Blue Bell Café',
+        restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+        division: 'Dhaka',
+        area: 'Banasree',
+        title: 'Artisan Café Club Sandwich',
+        description:
+            'Triple-decker sourdough bread layered with smoked chicken, organic fried egg, crisp lettuce, cheddar, and Dijon mayo.',
+        category: 'Snacks',
+        originalPrice: 380,
+        discountedPrice: 220,
+        quantity: 8,
+        availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+        availableUntil: DateTime.now().add(const Duration(hours: 3)),
+        imageUrl:
+            'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600',
+        isActive: true,
+        adminBlocked: false,
+        isBoosted: true,
+        boostedUntil: DateTime.now().add(const Duration(hours: 18)),
+      ),
+      FoodOffer(
+        id: 'offer-bb-3',
+        restaurantId: restaurantId,
+        restaurantName: 'Blue Bell Café',
+        restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+        division: 'Dhaka',
+        area: 'Banasree',
+        title: 'Pistachio Flaky Brioche',
+        description:
+            'Golden French brioche swirl infused with Bronte pistachio cream and white chocolate crumble, baked fresh this afternoon.',
+        category: 'Bakery',
+        originalPrice: 290,
+        discountedPrice: 160,
+        quantity: 10,
+        availableFrom: DateTime.now().subtract(const Duration(hours: 2)),
+        availableUntil: DateTime.now().add(const Duration(hours: 5)),
+        imageUrl:
+            'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600',
+        isActive: true,
+        adminBlocked: false,
+        isBoosted: false,
+      ),
+      FoodOffer(
+        id: 'offer-bb-4',
+        restaurantId: restaurantId,
+        restaurantName: 'Blue Bell Café',
+        restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+        division: 'Dhaka',
+        area: 'Banasree',
+        title: 'Truffle Fettuccine Alfredo',
+        description:
+            'Handcrafted bronze-cut fettuccine tossed in aromatic black truffle butter, heavy cream, garlic, and freshly cracked black pepper.',
+        category: 'Italian',
+        originalPrice: 850,
+        discountedPrice: 480,
+        quantity: 4,
+        availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+        availableUntil: DateTime.now().add(const Duration(hours: 3)),
+        imageUrl:
+            'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600',
+        isActive: true,
+        adminBlocked: false,
+        isBoosted: false,
+      ),
+      FoodOffer(
+        id: 'offer-bb-5',
+        restaurantId: restaurantId,
+        restaurantName: 'Blue Bell Café',
+        restaurantAddress: 'House 14, Road 4, Block D, Banasree, Dhaka',
+        division: 'Dhaka',
+        area: 'Banasree',
+        title: 'Venetian Espresso Tiramisu',
+        description:
+            'Traditional savoiardi ladyfingers soaked in single-origin Blue Bell espresso roast, whipped mascarpone, and Valrhona cocoa.',
+        category: 'Dessert',
+        originalPrice: 420,
+        discountedPrice: 240,
+        quantity: 7,
+        availableFrom: DateTime.now().subtract(const Duration(hours: 1)),
+        availableUntil: DateTime.now().add(const Duration(hours: 4)),
+        imageUrl:
+            'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600',
+        isActive: true,
+        adminBlocked: false,
+        isBoosted: false,
+      ),
+    ];
+  }
+
   /// Boosts a food offer for 24 hours (increases discovery ranking).
   Future<void> boostOffer(String offerId) async {
     final idx = _createdOffers.indexWhere((o) => o.id == offerId);
@@ -372,7 +485,7 @@ class RestaurantRepository {
       );
     } else {
       // Check in seeded offers
-      final current = (await getRestaurantOffers('res-1'))
+      final current = (await getRestaurantOffers('res-blue-bell'))
           .where((o) => o.id == offerId)
           .firstOrNull;
       if (current != null) {
@@ -403,7 +516,7 @@ class RestaurantRepository {
         boostedUntil: null,
       );
     } else {
-      final current = (await getRestaurantOffers('res-1'))
+      final current = (await getRestaurantOffers('res-blue-bell'))
           .where((o) => o.id == offerId)
           .firstOrNull;
       if (current != null) {
@@ -487,7 +600,7 @@ class RestaurantRepository {
     if (idx != -1) {
       _createdOffers[idx] = _createdOffers[idx].copyWith(isActive: isActive);
     } else {
-      final current = (await getRestaurantOffers('res-1'))
+      final current = (await getRestaurantOffers('res-blue-bell'))
           .where((o) => o.id == offerId)
           .firstOrNull;
       if (current != null) {
@@ -533,7 +646,7 @@ class RestaurantRepository {
       _createdOffers[idx] =
           _createdOffers[idx].copyWith(quantity: newQuantity.clamp(0, 9999));
     } else {
-      final current = (await getRestaurantOffers('res-1'))
+      final current = (await getRestaurantOffers('res-blue-bell'))
           .where((o) => o.id == offerId)
           .firstOrNull;
       if (current != null) {
@@ -561,7 +674,7 @@ class RestaurantRepository {
         isActive: false,
       );
     } else {
-      final current = (await getRestaurantOffers('res-1'))
+      final current = (await getRestaurantOffers('res-blue-bell'))
           .where((o) => o.id == offerId)
           .firstOrNull;
       if (current != null) {

@@ -5,11 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/supabase_constants.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/supabase/supabase_client_provider.dart';
 import '../../../core/utils/platform_file_picker.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/confirm_dialog.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../restaurant/data/restaurant_repository.dart';
 import '../../restaurant/notifications/restaurant_notification_controller.dart';
 import '../../shared/data/promo_banner_controller.dart';
 import '../../shared/data/admin_financial_controller.dart';
@@ -59,9 +62,111 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   void initState() {
     super.initState();
     _initMockData();
+    _loadRegisteredRestaurants();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncFinancialCounts();
     });
+  }
+
+  Future<void> _loadRegisteredRestaurants() async {
+    await RestaurantRepository.loadPersistedRegisteredRestaurants();
+    final registered = RestaurantRepository.allRegisteredRestaurants;
+
+    List<dynamic> remoteRows = [];
+    try {
+      final client = ref.read(supabaseClientProvider);
+      if (!client.rest.url.contains('placeholder') &&
+          !client.rest.url.contains('test')) {
+        remoteRows = await client
+            .from(SupabaseConstants.tableRestaurants)
+            .select()
+            .order('created_at', ascending: false);
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    setState(() {
+      for (final row in remoteRows) {
+        final map = row as Map<String, dynamic>;
+        final id = map['id']?.toString() ?? '';
+        final existingIdx =
+            _restaurantsData.indexWhere((r) => r['id'] == id);
+        final entry = {
+          'id': id,
+          'name': map['name'] ?? 'Partner Café',
+          'cuisine': map['cuisine_type'] ?? 'Café & Restaurant',
+          'area': map['area'] ?? 'Dhaka',
+          'division': map['division'] ?? 'Dhaka',
+          'phone': map['phone'] ?? '01700000000',
+          'tradeLicense': map['trade_license'] ??
+              'TRAD/DSCC/0${id.hashCode.abs().toString().padLeft(6, '0')}/2024',
+          'nid': 'NID-8291-0021-4912',
+          'status': map['status'] ?? 'pending',
+          'isVerified': map['status'] == 'approved',
+          'isPremium': map['is_premium'] == true,
+          'rating': 4.8,
+          'offersCount': 2,
+          'imageUrl': map['image_url'] ?? 'assets/images/blue_bell_logo.jpg',
+        };
+        if (existingIdx != -1) {
+          _restaurantsData[existingIdx] = entry;
+        } else {
+          _restaurantsData.insert(0, entry);
+        }
+      }
+
+      for (final res in registered) {
+        final existingIdx =
+            _restaurantsData.indexWhere((r) => r['id'] == res.id);
+        final entry = {
+          'id': res.id,
+          'name': res.name,
+          'cuisine': res.cuisineType ?? 'Café & Restaurant',
+          'area': res.area ?? 'Banasree',
+          'division': res.division ?? 'Dhaka',
+          'phone': res.phone ?? '01700000000',
+          'tradeLicense':
+              'TRAD/DSCC/0${res.id.hashCode.abs().toString().padLeft(6, '0')}/2024',
+          'nid': 'NID-8291-0021-4912',
+          'status': res.status,
+          'isVerified': res.status == 'approved',
+          'isPremium': res.isPremium,
+          'rating': 4.8,
+          'offersCount': 2,
+          'imageUrl': res.imageUrl ?? 'assets/images/blue_bell_logo.jpg',
+        };
+        if (existingIdx != -1) {
+          _restaurantsData[existingIdx] = entry;
+        } else {
+          _restaurantsData.insert(0, entry);
+        }
+      }
+    });
+
+    _syncFinancialCounts();
+  }
+
+  Future<void> _updateRestaurantStatus(String id, String newStatus) async {
+    setState(() {
+      final idx = _restaurantsData.indexWhere((r) => r['id'] == id);
+      if (idx != -1) {
+        _restaurantsData[idx]['status'] = newStatus;
+        _restaurantsData[idx]['isVerified'] = newStatus == 'approved';
+      }
+    });
+
+    RestaurantRepository.updateRestaurantStatus(id, newStatus);
+
+    try {
+      final client = ref.read(supabaseClientProvider);
+      await client
+          .from(SupabaseConstants.tableRestaurants)
+          .update({'status': newStatus})
+          .eq('id', id);
+    } catch (_) {}
+
+    _syncFinancialCounts();
   }
 
   void _syncFinancialCounts() {
@@ -873,21 +978,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             actionLabel: 'Approve Kitchen',
             icon: Icons.storefront_rounded,
             iconColor: const Color(0xFFD97706),
-            onAction: () {
-              setState(() {
-                final idx = _restaurantsData
-                    .indexWhere((r) => r['id'] == 'rest-4');
-                if (idx != -1) {
-                  _restaurantsData[idx]['status'] = 'approved';
-                  _restaurantsData[idx]['isVerified'] = true;
-                }
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Kacchi Bhai Express approved and verified!'),
-                  backgroundColor: Color(0xFF16A34A),
-                ),
-              );
+            onAction: () async {
+              await _updateRestaurantStatus('rest-4', 'approved');
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Kacchi Bhai Express approved and verified!'),
+                    backgroundColor: Color(0xFF16A34A),
+                  ),
+                );
+              }
             },
           ),
           const SizedBox(height: 10),
@@ -1548,17 +1648,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   const SizedBox(width: 8),
                   if (status == 'pending') ...[
                     ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          r['status'] = 'approved';
-                          r['isVerified'] = true;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${r['name']} approved!'),
-                            backgroundColor: const Color(0xFF16A34A),
-                          ),
-                        );
+                      onPressed: () async {
+                        await _updateRestaurantStatus(r['id'], 'approved');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${r['name']} approved!'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF16A34A),
@@ -1568,8 +1667,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             horizontal: 10, vertical: 5),
                         minimumSize: Size.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Approve',
                           style: TextStyle(
@@ -1577,14 +1675,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                   ] else if (status == 'approved') ...[
                     ElevatedButton(
-                      onPressed: () {
-                        setState(() => r['status'] = 'suspended');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${r['name']} suspended.'),
-                            backgroundColor: const Color(0xFFDC2626),
-                          ),
-                        );
+                      onPressed: () async {
+                        await _updateRestaurantStatus(r['id'], 'suspended');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${r['name']} suspended.'),
+                              backgroundColor: const Color(0xFFDC2626),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFDC2626),
@@ -1594,8 +1694,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             horizontal: 10, vertical: 5),
                         minimumSize: Size.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Suspend',
                           style: TextStyle(
@@ -1603,14 +1702,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                   ] else ...[
                     ElevatedButton(
-                      onPressed: () {
-                        setState(() => r['status'] = 'approved');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${r['name']} reinstated.'),
-                            backgroundColor: const Color(0xFF16A34A),
-                          ),
-                        );
+                      onPressed: () async {
+                        await _updateRestaurantStatus(r['id'], 'approved');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${r['name']} reinstated.'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF16A34A),
@@ -1620,8 +1721,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             horizontal: 10, vertical: 5),
                         minimumSize: Size.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Reinstate',
                           style: TextStyle(
