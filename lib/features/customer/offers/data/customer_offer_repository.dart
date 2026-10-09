@@ -932,4 +932,18 @@ class CustomerOfferRepository {
       throw ServerException('Failed to update profile: $e');
     }
   }
+
+  /// Decreases the available quantity of an offer in the local cache when ordered.
+  void decreaseOfferQuantityLocally(String offerId, int quantityToDecrease) {
+    final index = _seedOffers.indexWhere((o) => o.id == offerId);
+    if (index != -1) {
+      final current = _seedOffers[index];
+      final newQty = (current.quantity - quantityToDecrease).clamp(0, 9999);
+      _seedOffers[index] = current.copyWith(
+        quantity: newQty,
+        isActive: newQty > 0,
+      );
+    }
+  }
 }
+

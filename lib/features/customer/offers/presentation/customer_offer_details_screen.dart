@@ -7,6 +7,7 @@ import '../../../../core/widgets/double_pull_reload.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/loading_state.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../orders/presentation/order_checkout_sheet.dart';
 import 'customer_offers_controller.dart';
 
 class CustomerOfferDetailsScreen extends ConsumerWidget {
@@ -274,30 +275,70 @@ class CustomerOfferDetailsScreen extends ConsumerWidget {
                                   value: offer.restaurantAddress!,
                                 ),
                               ],
+                              const Divider(height: 24),
+                              _buildDetailRow(
+                                context,
+                                icon: Icons.takeout_dining_rounded,
+                                label: 'Fulfillment',
+                                value: 'Takeaway / Self-Pickup Only (No Delivery)',
+                              ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
-                      // [View Restaurant] Button (Section 22)
+                      // [Order for Pickup] Button
                       PrimaryButton(
-                        text: 'View Restaurant Details',
-                        icon: const Icon(Icons.storefront_rounded, size: 20),
-                        onPressed: () {
-                          context.push(
-                            '/customer/restaurants/${offer.restaurantId}',
-                          );
-                        },
+                        text: offer.quantity > 0
+                            ? 'Order for Pickup (৳${offer.discountedPrice.toStringAsFixed(0)})'
+                            : 'Sold Out',
+                        icon: const Icon(Icons.shopping_bag_rounded, size: 20),
+                        onPressed: offer.quantity > 0
+                            ? () => showOrderCheckoutSheet(
+                                  context: context,
+                                  offer: offer,
+                                )
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // [View Restaurant Details] Secondary Action (Section 22)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.storefront_rounded, size: 18, color: Color(0xFF1E293B)),
+                          label: const Text(
+                            'View Restaurant Details',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          onPressed: () {
+                            context.push(
+                              '/customer/restaurants/${offer.restaurantId}',
+                            );
+                          },
+                        ),
                       ),
                       const SizedBox(height: 16),
 
-                      // V1 notice banner: In-store purchase only
+                      // No home delivery notice
                       Center(
                         child: Text(
-                          'ℹ️ Visit the restaurant during the pickup window to purchase this offer.',
+                          '🛍️ Takeaway / Self-Pickup Only • Pay online & pick up at the scheduled time.',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textMuted,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
                               ),
                           textAlign: TextAlign.center,
                         ),

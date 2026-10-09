@@ -176,9 +176,56 @@ CREATE TABLE IF NOT EXISTS public.orders (
     payment_method TEXT NOT NULL DEFAULT 'cash_on_pickup' CHECK (payment_method IN ('cash_on_pickup', 'bKash', 'Nagad', 'card', 'wallet')),
     payment_status TEXT NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'refunded')),
     notes TEXT,
+    customer_name TEXT,
+    customer_phone TEXT,
+    customer_email TEXT,
+    restaurant_name TEXT,
+    restaurant_address TEXT,
+    unit_price NUMERIC DEFAULT 0,
+    total_savings NUMERIC DEFAULT 0,
+    pickup_time TIMESTAMP WITH TIME ZONE,
+    transaction_id TEXT,
+    email_sent_customer BOOLEAN DEFAULT TRUE,
+    email_sent_restaurant BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_phone TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_email TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_name TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_address TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS unit_price NUMERIC DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total_savings NUMERIC DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS pickup_time TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS transaction_id TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS email_sent_customer BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS email_sent_restaurant BOOLEAN DEFAULT TRUE;
+
+-- Function to automatically decrease offer quantity when an order is placed
+CREATE OR REPLACE FUNCTION public.decrease_offer_quantity()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.offer_id IS NOT NULL THEN
+        UPDATE public.offers
+        SET quantity = GREATEST(0, quantity - NEW.quantity),
+            is_active = CASE 
+                WHEN (quantity - NEW.quantity) <= 0 THEN FALSE 
+                ELSE is_active 
+            END,
+            updated_at = timezone('utc'::text, now())
+        WHERE id = NEW.offer_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_decrease_offer_quantity ON public.orders;
+CREATE TRIGGER trg_decrease_offer_quantity
+    AFTER INSERT ON public.orders
+    FOR EACH ROW
+    EXECUTE FUNCTION public.decrease_offer_quantity();
 
 -- 3.2 CUSTOMER ADDRESSES TABLE (Saved Delivery / Pickup Locations)
 CREATE TABLE IF NOT EXISTS public.customer_addresses (

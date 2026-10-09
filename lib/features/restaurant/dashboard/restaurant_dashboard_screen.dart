@@ -23,6 +23,8 @@ import '../../shared/data/admin_financial_controller.dart';
 import '../../shared/presentation/payment_portal_sheet.dart';
 import '../notifications/restaurant_notification_controller.dart';
 import '../presentation/restaurant_controller.dart';
+import '../../shared/data/order_controller.dart';
+import '../orders/presentation/restaurant_orders_sheet.dart';
 
 /// Restaurant Management Portal Screen.
 /// Floating Bottom Navigation Bar order:
@@ -2483,6 +2485,13 @@ class _RestaurantDashboardScreenState
             ),
             const SizedBox(height: 18),
 
+            // Live Takeaway Pickups & Customer Orders Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: _buildTakeawayOrdersLiveCard(context, restaurant),
+            ),
+            const SizedBox(height: 18),
+
             // Recent Active Offers Preview
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -2566,10 +2575,11 @@ class _RestaurantDashboardScreenState
     final doneRevenueFromOffers = doneOffers.fold<double>(
         0.0, (sum, o) => sum + (o.quantity * o.discountedPrice));
 
+    final salesStats = ref.watch(restaurantSalesStatsProvider(restaurant.id));
     final totalPortionsSold =
-        459 + donePortionsFromOffers + _manuallySoldPortions;
+        459 + donePortionsFromOffers + _manuallySoldPortions + salesStats.totalPortionsSold;
     final totalRevenue =
-        96450.0 + doneRevenueFromOffers + _manuallySoldRevenue;
+        96450.0 + doneRevenueFromOffers + _manuallySoldRevenue + salesStats.totalRevenue;
     final avgDealPrice = totalPortionsSold > 0
         ? (totalRevenue / totalPortionsSold).round()
         : 210;
@@ -8057,6 +8067,224 @@ class _RestaurantDashboardScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTakeawayOrdersLiveCard(
+      BuildContext context, Restaurant restaurant) {
+    final ordersAsync = ref.watch(restaurantOrdersProvider(restaurant.id));
+    final salesStats = ref.watch(restaurantSalesStatsProvider(restaurant.id));
+
+    return ordersAsync.maybeWhen(
+      data: (orders) {
+        final activeOrders =
+            orders.where((o) => o.isConfirmed || o.isReadyForPickup).toList();
+
+        return Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFF7ED), Color(0xFFFFFBEB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: activeOrders.isNotEmpty
+                  ? const Color(0xFFFDBA74)
+                  : const Color(0xFFFDE68A),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFD97706).withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => showRestaurantOrdersSheet(context, restaurant.id),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: activeOrders.isNotEmpty
+                                ? const Color(0xFFEA580C)
+                                : const Color(0xFFD97706),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.shopping_bag_outlined,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 6,
+                                runSpacing: 2,
+                                children: [
+                                  Text(
+                                    'Takeaway Pickups',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  Text(
+                                    '• No Delivery',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFEA580C),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                activeOrders.isNotEmpty
+                                    ? '${activeOrders.length} customer pickup${activeOrders.length > 1 ? 's' : ''} scheduled'
+                                    : 'No active pickups right now',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: activeOrders.isNotEmpty
+                                ? const Color(0xFFEA580C)
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            activeOrders.isNotEmpty
+                                ? '${activeOrders.length} ACTIVE'
+                                : 'VIEW ALL',
+                            style: TextStyle(
+                              color: activeOrders.isNotEmpty
+                                  ? Colors.white
+                                  : const Color(0xFF475569),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    if (activeOrders.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFFED7AA),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.alarm_on_rounded,
+                              size: 16,
+                              color: Color(0xFFEA580C),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Next: ${activeOrders.first.customerName} (${activeOrders.first.quantity}x ${activeOrders.first.title})',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1E293B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              'PIN: ${activeOrders.first.pickupCode}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFEA580C),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 10),
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          'Total Sales: ৳${salesStats.totalRevenue.toStringAsFixed(0)} (${salesStats.totalPortionsSold} portions)',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF78350F),
+                          ),
+                        ),
+                        const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Manage Pickups',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFEA580C),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 13,
+                              color: Color(0xFFEA580C),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
     );
   }
 

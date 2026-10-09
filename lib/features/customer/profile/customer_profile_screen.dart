@@ -20,6 +20,7 @@ import '../../shared/data/admin_financial_controller.dart';
 import '../../shared/presentation/payment_portal_sheet.dart';
 import 'data/customer_favorites_controller.dart';
 import 'data/customer_membership_controller.dart';
+import '../orders/presentation/customer_orders_sheet.dart';
 import 'widgets/change_avatar_sheet.dart';
 
 /// Customer Account management screen (Section 26 & Account update).
@@ -1982,6 +1983,76 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
               ),
             ),
           ),
+          // ==========================================
+          // 2.5 MY ORDERS & PICKUPS BANNER
+          // ==========================================
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => showCustomerOrdersSheet(context: context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long_rounded,
+                          color: Color(0xFF2563EB),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'My Orders & Pickups',
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Track scheduled takeaway & view receipts',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF94A3B8)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
 
           // ==========================================
@@ -2133,6 +2204,21 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         onTap: () => _showSuperSaverModal(context),
                       ),
 
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 70,
+                        endIndent: 16,
+                        color: Color(0xFFF1F5F9),
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.receipt_long_rounded,
+                        iconColor: const Color(0xFF2563EB),
+                        iconBgColor: const Color(0xFFEFF6FF),
+                        title: 'My Orders & Pickups',
+                        subtitle: 'Track scheduled takeaway collections & receipts',
+                        onTap: () => showCustomerOrdersSheet(context: context),
+                      ),
                       const Divider(
                         height: 1,
                         thickness: 1,
