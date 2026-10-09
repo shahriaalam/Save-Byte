@@ -238,7 +238,9 @@ class _CreateOfferScreenState extends ConsumerState<CreateOfferScreen> {
                           CircleAvatar(
                             radius: 18,
                             backgroundImage: restaurant.imageUrl != null
-                                ? NetworkImage(restaurant.imageUrl!)
+                                ? (restaurant.imageUrl!.startsWith('assets/')
+                                    ? AssetImage(restaurant.imageUrl!)
+                                    : NetworkImage(restaurant.imageUrl!))
                                 : null,
                             child: restaurant.imageUrl == null
                                 ? const Icon(Icons.storefront_rounded, size: 18)

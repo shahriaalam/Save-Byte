@@ -2090,16 +2090,27 @@ class _RestaurantDashboardScreenState
                           child: restaurant.imageUrl != null &&
                                   restaurant.imageUrl!.isNotEmpty
                               ? ClipOval(
-                                  child: Image.network(
-                                    restaurant.imageUrl!,
-                                    width: 70,
-                                    height: 70,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => UserAvatar(
-                                      name: restaurantName,
-                                      radius: 35,
-                                    ),
-                                  ),
+                                  child: restaurant.imageUrl!.startsWith('assets/')
+                                      ? Image.asset(
+                                          restaurant.imageUrl!,
+                                          width: 70,
+                                          height: 70,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => UserAvatar(
+                                            name: restaurantName,
+                                            radius: 35,
+                                          ),
+                                        )
+                                      : Image.network(
+                                          restaurant.imageUrl!,
+                                          width: 70,
+                                          height: 70,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => UserAvatar(
+                                            name: restaurantName,
+                                            radius: 35,
+                                          ),
+                                        ),
                                 )
                               : UserAvatar(name: restaurantName, radius: 35),
                         ),
@@ -3370,16 +3381,27 @@ class _RestaurantDashboardScreenState
                       child: restaurant.imageUrl != null &&
                               restaurant.imageUrl!.isNotEmpty
                           ? ClipOval(
-                              child: Image.network(
-                                restaurant.imageUrl!,
-                                width: 72,
-                                height: 72,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => UserAvatar(
-                                  name: restaurantName,
-                                  radius: 36,
-                                ),
-                              ),
+                              child: restaurant.imageUrl!.startsWith('assets/')
+                                  ? Image.asset(
+                                      restaurant.imageUrl!,
+                                      width: 72,
+                                      height: 72,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => UserAvatar(
+                                        name: restaurantName,
+                                        radius: 36,
+                                      ),
+                                    )
+                                  : Image.network(
+                                      restaurant.imageUrl!,
+                                      width: 72,
+                                      height: 72,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => UserAvatar(
+                                        name: restaurantName,
+                                        radius: 36,
+                                      ),
+                                    ),
                             )
                           : UserAvatar(name: restaurantName, radius: 36),
                     ),
@@ -4929,7 +4951,7 @@ class _RestaurantDashboardScreenState
                   child: ListView.separated(
                     physics: const BouncingScrollPhysics(),
                     itemCount: filteredDishes.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, idx) {
                       final dish = filteredDishes[idx];
                       final rank = dish['rank'] as int;
@@ -5118,79 +5140,6 @@ class _RestaurantDashboardScreenState
     );
   }
 
-  Widget _buildTopSellingRow({
-    required int rank,
-    required String title,
-    required int soldCount,
-    required String revenue,
-    required String rating,
-    required String badge,
-    required Color badgeColor,
-  }) {
-    return Row(
-      children: [
-        Container(
-          width: 26,
-          height: 26,
-          decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.15),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              '#$rank',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: badgeColor,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E293B),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '$soldCount sold • ৳$revenue total • $rating',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            badge,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              color: badgeColor,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildMetricCol(String value, String label, Color valueColor) {
     return Column(

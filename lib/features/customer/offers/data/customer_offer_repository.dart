@@ -41,7 +41,7 @@ class CustomerOfferRepository {
       openingTime: '11:00 AM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600',
+      imageUrl: 'assets/images/biryani_logo.jpg',
     ),
     Restaurant(
       id: 'res-2',
@@ -56,7 +56,7 @@ class CustomerOfferRepository {
       openingTime: '12:00 PM',
       closingTime: '10:30 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600',
+      imageUrl: 'assets/images/burger_hub_logo.jpg',
     ),
     Restaurant(
       id: 'res-3',
@@ -71,7 +71,7 @@ class CustomerOfferRepository {
       openingTime: '01:00 PM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600',
+      imageUrl: 'assets/images/woodfire_crust_logo.jpg',
     ),
     Restaurant(
       id: 'res-4',
@@ -86,7 +86,7 @@ class CustomerOfferRepository {
       openingTime: '08:00 AM',
       closingTime: '10:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600',
+      imageUrl: 'assets/images/bakery_logo.jpg',
     ),
     // Additional Dhanmondi restaurants
     Restaurant(
@@ -102,7 +102,7 @@ class CustomerOfferRepository {
       openingTime: '12:00 PM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600',
+      imageUrl: 'assets/images/burger_hub_logo.jpg',
     ),
     Restaurant(
       id: 'res-6',
@@ -117,7 +117,7 @@ class CustomerOfferRepository {
       openingTime: '01:00 PM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600',
+      imageUrl: 'assets/images/woodfire_crust_logo.jpg',
     ),
     Restaurant(
       id: 'res-7',
@@ -132,7 +132,7 @@ class CustomerOfferRepository {
       openingTime: '09:00 AM',
       closingTime: '10:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600',
+      imageUrl: 'assets/images/bakery_logo.jpg',
     ),
     // Banasree restaurants
     Restaurant(
@@ -148,7 +148,7 @@ class CustomerOfferRepository {
       openingTime: '11:30 AM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600',
+      imageUrl: 'assets/images/biryani_logo.jpg',
     ),
     Restaurant(
       id: 'res-9',
@@ -163,7 +163,7 @@ class CustomerOfferRepository {
       openingTime: '12:00 PM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600',
+      imageUrl: 'assets/images/burger_hub_logo.jpg',
     ),
     Restaurant(
       id: 'res-10',
@@ -178,7 +178,7 @@ class CustomerOfferRepository {
       openingTime: '01:00 PM',
       closingTime: '11:30 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600',
+      imageUrl: 'assets/images/woodfire_crust_logo.jpg',
     ),
     Restaurant(
       id: 'res-11',
@@ -193,7 +193,7 @@ class CustomerOfferRepository {
       openingTime: '12:00 PM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600',
+      imageUrl: 'assets/images/hot_crispy_logo.jpg',
     ),
     Restaurant(
       id: 'res-12',
@@ -208,7 +208,7 @@ class CustomerOfferRepository {
       openingTime: '08:00 AM',
       closingTime: '10:30 PM',
       status: AppConstants.statusApproved,
-      imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600',
+      imageUrl: 'assets/images/bakery_logo.jpg',
     ),
     Restaurant(
       id: 'res-blue-bell',
@@ -224,8 +224,7 @@ class CustomerOfferRepository {
       openingTime: '07:30 AM',
       closingTime: '11:00 PM',
       status: AppConstants.statusApproved,
-      imageUrl:
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600',
+      imageUrl: 'assets/images/blue_bell_logo.jpg',
       isPremium: true,
       subscriptionPlan: 'gold',
       boostCredits: 5,

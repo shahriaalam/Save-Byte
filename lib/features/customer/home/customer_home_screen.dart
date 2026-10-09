@@ -780,12 +780,12 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         }
 
                         return SizedBox(
-                          height: 156,
+                          height: 142,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: restaurants.length,
                             separatorBuilder: (context, index) =>
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 8),
                             itemBuilder: (context, idx) {
                               final res = restaurants[idx];
                               return _buildNearbyShopCard(res);
@@ -794,7 +794,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         );
                       },
                       loading: () => const SizedBox(
-                        height: 156,
+                        height: 142,
                         child: Center(child: CircularProgressIndicator()),
                       ),
                       error: (error, stackTrace) => const SizedBox.shrink(),
@@ -1135,103 +1135,177 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     );
   }
 
-  // Nearby Restaurant Card matching 4th screenshot
+  // Nearby Restaurant Card - Compressed compact card with large dominant logo
   Widget _buildNearbyShopCard(Restaurant res) {
-    return GestureDetector(
-      onTap: () => context.push('/customer/restaurants/${res.id}'),
-      child: Container(
-        width: 170,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Restaurant Logo / Banner
-            Container(
-              height: 58,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: res.imageUrl != null
-                    ? Image.network(
-                        res.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Center(
-                              child: Icon(
-                                Icons.storefront_rounded,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                      )
-                    : const Center(
-                        child: Icon(
-                          Icons.storefront_rounded,
-                          color: AppColors.primary,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 6),
-
-            // Restaurant Name
-            Text(
-              res.name,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-
-            // Area & Distance
-            Text(
-              '${res.area ?? 'Dhaka'} • 15-30 mins',
-              style: const TextStyle(
-                fontSize: 10.5,
-                color: AppColors.textSecondary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
-
-            // Discount Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFFFECACA), width: 0.8),
-              ),
-              child: const Text(
-                'Up to 50% OFF',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primary,
+    return Container(
+      width: 108,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 1.5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(13),
+          onTap: () => context.push('/customer/restaurants/${res.id}'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(6, 6, 6, 5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Restaurant Brand Logo Container - Takes majority of the card (~55-60%)
+                Container(
+                  height: 74,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFF1F5F9), width: 0.8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(7),
+                    child: _buildRestaurantLogoImage(res),
+                  ),
                 ),
+                const SizedBox(height: 3),
+
+                // Restaurant Name
+                Text(
+                  res.name,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.2,
+                    height: 1.15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 1.5),
+
+                // Area & Delivery Time
+                Text(
+                  '${res.area ?? 'Dhaka'} • 15-30m',
+                  style: const TextStyle(
+                    fontSize: 8.5,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                    height: 1.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+
+                // Discount Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: const Color(0xFFFECACA),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: const Text(
+                    'Up to 50% OFF',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestaurantLogoImage(Restaurant res) {
+    // Displays the distinct official brand logo corresponding to each individual restaurant
+    final logoPath = res.effectiveLogoUrl;
+
+    if (logoPath.startsWith('assets/')) {
+      return Transform.scale(
+        scale: 1.30,
+        child: Image.asset(
+          logoPath,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => _buildFallbackLogo(res),
+        ),
+      );
+    }
+
+    if (logoPath.startsWith('data:image')) {
+      try {
+        final commaIndex = logoPath.indexOf(',');
+        final base64Str =
+            commaIndex != -1 ? logoPath.substring(commaIndex + 1) : logoPath;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => _buildFallbackLogo(res),
+        );
+      } catch (_) {
+        return _buildFallbackLogo(res);
+      }
+    }
+
+    return Image.network(
+      logoPath,
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) => _buildFallbackLogo(res),
+    );
+  }
+
+  Widget _buildFallbackLogo(Restaurant res) {
+    final initial = res.name.isNotEmpty ? res.name[0].toUpperCase() : 'R';
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              initial,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

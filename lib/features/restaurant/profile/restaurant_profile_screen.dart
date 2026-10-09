@@ -25,32 +25,28 @@ class RestaurantPhotoPreset {
 
 const List<RestaurantPhotoPreset> kRestaurantPhotoPresets = [
   RestaurantPhotoPreset(
-    name: 'Bengali Kitchen',
-    url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
+    name: 'Biryani & Kabab',
+    url: 'assets/images/biryani_logo.jpg',
   ),
   RestaurantPhotoPreset(
-    name: 'Burger Joint',
-    url: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&auto=format&fit=crop&q=80',
+    name: 'Burger Hub',
+    url: 'assets/images/burger_hub_logo.jpg',
   ),
   RestaurantPhotoPreset(
-    name: 'Pizzeria & Oven',
-    url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
+    name: 'Woodfire Pizza',
+    url: 'assets/images/woodfire_crust_logo.jpg',
   ),
   RestaurantPhotoPreset(
-    name: 'Bakery & Cafe',
-    url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80',
+    name: 'Hot & Crispy',
+    url: 'assets/images/hot_crispy_logo.jpg',
   ),
   RestaurantPhotoPreset(
-    name: 'Coffee Bistro',
-    url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
+    name: 'Bakery & Sweets',
+    url: 'assets/images/bakery_logo.jpg',
   ),
   RestaurantPhotoPreset(
-    name: 'Artisanal Roastery & Bistro',
-    url: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80',
-  ),
-  RestaurantPhotoPreset(
-    name: 'Grill & BBQ',
-    url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    name: 'Bistro & Coffee',
+    url: 'assets/images/blue_bell_logo.jpg',
   ),
 ];
 
@@ -399,9 +395,9 @@ class _RestaurantProfileScreenState
                     ),
                     const SizedBox(height: 12),
 
-                    // Restaurant Profile Picture Section
+                    // Restaurant Profile Logo Section
                     Text(
-                      'Restaurant Profile Picture *',
+                      'Restaurant Logo *',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
@@ -409,7 +405,7 @@ class _RestaurantProfileScreenState
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Upload your storefront, kitchen, or logo so customers can recognize your restaurant.',
+                      'Upload your official restaurant brand logo so customers can recognize your shop.',
                       style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 12),
@@ -434,17 +430,31 @@ class _RestaurantProfileScreenState
                           fit: StackFit.expand,
                           children: [
                             if (hasProfilePic)
-                              Image.network(
-                                _imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => const Center(
-                                  child: Icon(
-                                    Icons.broken_image_rounded,
-                                    size: 40,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              )
+                              _imageUrl!.startsWith('assets/')
+                                  ? Image.asset(
+                                      _imageUrl!,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Center(
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          size: 40,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    )
+                                  : Image.network(
+                                      _imageUrl!,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Center(
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          size: 40,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    )
                             else
                               Container(
                                 color: const Color(0xFFF8FAFC),
@@ -458,7 +468,7 @@ class _RestaurantProfileScreenState
                                     ),
                                     SizedBox(height: 8),
                                     Text(
-                                      'No profile picture uploaded yet',
+                                      'No logo uploaded yet',
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
@@ -524,16 +534,16 @@ class _RestaurantProfileScreenState
                       label: Text(
                         _isPickingFile
                             ? 'Selecting Image...'
-                            : 'Upload Photo from Device',
+                            : 'Upload Logo from Device',
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       onPressed: _isPickingFile ? null : _handleDeviceUpload,
                     ),
                     const SizedBox(height: 12),
 
-                    // Photo Presets
+                    // Logo Presets
                     const Text(
-                      'Or choose a restaurant photo preset:',
+                      'Or choose a brand logo preset:',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -558,6 +568,7 @@ class _RestaurantProfileScreenState
                             child: Container(
                               width: 90,
                               decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: isSelected
@@ -571,13 +582,21 @@ class _RestaurantProfileScreenState
                                 child: Stack(
                                   fit: StackFit.expand,
                                   children: [
-                                    Image.network(
-                                      preset.url,
-                                      fit: BoxFit.cover,
+                                    Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: preset.url.startsWith('assets/')
+                                          ? Image.asset(
+                                              preset.url,
+                                              fit: BoxFit.contain,
+                                            )
+                                          : Image.network(
+                                              preset.url,
+                                              fit: BoxFit.contain,
+                                            ),
                                     ),
                                     Container(
                                       color: Colors.black.withValues(
-                                        alpha: isSelected ? 0.3 : 0.45,
+                                        alpha: isSelected ? 0.35 : 0.45,
                                       ),
                                       alignment: Alignment.center,
                                       padding: const EdgeInsets.all(2),

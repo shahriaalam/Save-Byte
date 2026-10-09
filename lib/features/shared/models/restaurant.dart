@@ -58,6 +58,91 @@ class Restaurant {
   bool get isRejected => status == AppConstants.statusRejected;
   bool get hasGoldSubscription => isPremium && (subscriptionPlan == 'gold' || subscriptionPlan == 'premium');
 
+  /// Returns the distinct official brand logo for this restaurant.
+  /// If the restaurant has an uploaded custom logo or dedicated asset logo, it is prioritized.
+  /// If [imageUrl] points to a legacy stock/food photo or is empty, this maps to the distinct
+  /// official brand logo tailored for that specific restaurant.
+  String get effectiveLogoUrl {
+    // 1. If explicitly set to a local logo asset or uploaded base64 data URI, use it
+    if (imageUrl != null) {
+      final clean = imageUrl!.trim();
+      if (clean.startsWith('assets/images/') && clean.contains('logo')) {
+        return clean;
+      }
+      if (clean.startsWith('data:image')) {
+        return clean;
+      }
+    }
+
+    // 2. Map according to restaurant identifier, exact name, or brand cuisine
+    final lowerName = name.toLowerCase();
+    final lowerCuisine = (cuisineType ?? '').toLowerCase();
+
+    if (id == 'res-8' ||
+        id == 'res-1' ||
+        lowerName.contains('biryani') ||
+        lowerName.contains('kabab') ||
+        lowerName.contains('kacchi') ||
+        lowerName.contains('rahman')) {
+      return 'assets/images/biryani_logo.jpg';
+    }
+
+    if (id == 'res-9' ||
+        id == 'res-2' ||
+        id == 'res-5' ||
+        lowerName.contains('burger')) {
+      return 'assets/images/burger_hub_logo.jpg';
+    }
+
+    if (id == 'res-12' ||
+        id == 'res-4' ||
+        id == 'res-7' ||
+        lowerName.contains('crumb') ||
+        lowerName.contains('bakery') ||
+        lowerName.contains('bakehouse') ||
+        lowerName.contains('sweet')) {
+      return 'assets/images/bakery_logo.jpg';
+    }
+
+    if (id == 'res-10' ||
+        id == 'res-3' ||
+        id == 'res-6' ||
+        lowerName.contains('woodfire') ||
+        (lowerName.contains('crust') && !lowerName.contains('crumb')) ||
+        lowerName.contains('pizza')) {
+      return 'assets/images/woodfire_crust_logo.jpg';
+    }
+
+    if (id == 'res-11' ||
+        lowerName.contains('crispy') ||
+        lowerName.contains('hot & crispy') ||
+        lowerName.contains('chicken') ||
+        lowerCuisine.contains('fast food')) {
+      return 'assets/images/hot_crispy_logo.jpg';
+    }
+
+    if (id == 'res-blue-bell' ||
+        lowerName.contains('blue bell') ||
+        lowerName.contains('bell') ||
+        lowerName.contains('coffee') ||
+        lowerName.contains('cafe') ||
+        lowerName.contains('café') ||
+        lowerName.contains('bistro')) {
+      return 'assets/images/blue_bell_logo.jpg';
+    }
+
+    // 3. If it's a custom URL that isn't a stock unsplash food photo, use it
+    if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
+      final clean = imageUrl!.trim();
+      if (!clean.contains('unsplash.com')) {
+        return clean;
+      }
+    }
+
+    // 4. Default fallback brand logo
+    return 'assets/images/app_logo_rounded.png';
+  }
+
   /// Hero Banner access eligibility:
   /// Enabled if the restaurant is a Gold Merchant (1 ad per subscription)
   /// OR has purchased banner facility/credits from the Offers tab.

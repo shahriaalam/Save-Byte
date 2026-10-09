@@ -170,9 +170,9 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      restaurant.imageUrl != null
-                          ? Image.network(
-                              restaurant.imageUrl!,
+                      restaurant.effectiveLogoUrl.startsWith('assets/')
+                          ? Image.asset(
+                              restaurant.effectiveLogoUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, _, _) => Container(
                                 color: AppColors.surfaceVariant,
@@ -183,12 +183,16 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                                 ),
                               ),
                             )
-                          : Container(
-                              color: AppColors.surfaceVariant,
-                              child: const Icon(
-                                Icons.storefront_rounded,
-                                size: 64,
-                                color: AppColors.textMuted,
+                          : Image.network(
+                              restaurant.effectiveLogoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                color: AppColors.surfaceVariant,
+                                child: const Icon(
+                                  Icons.storefront_rounded,
+                                  size: 64,
+                                  color: AppColors.textMuted,
+                                ),
                               ),
                             ),
                       // Gradient overlay for title contrast
