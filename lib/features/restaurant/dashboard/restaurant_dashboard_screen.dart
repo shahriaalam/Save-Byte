@@ -249,12 +249,12 @@ class _RestaurantDashboardScreenState
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDCFCE7),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.person_outline_rounded,
-                      color: Color(0xFF16A34A),
+                      color: AppColors.primary,
                       size: 24,
                     ),
                   ),
@@ -614,12 +614,12 @@ class _RestaurantDashboardScreenState
                     const SizedBox(height: 18),
 
                     // Header
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.edit_note_rounded,
-                            color: Color(0xFF2563EB), size: 26),
-                        SizedBox(width: 10),
-                        Expanded(
+                            color: AppColors.primary, size: 26),
+                        const SizedBox(width: 10),
+                        const Expanded(
                           child: Text(
                             'Request Info Change',
                             style: TextStyle(
@@ -673,11 +673,11 @@ class _RestaurantDashboardScreenState
                         Container(
                           padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFDBEAFE),
+                            color: const Color(0xFFFFF1F2),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Icon(Icons.person_rounded,
-                              size: 14, color: Color(0xFF2563EB)),
+                          child: Icon(Icons.person_rounded,
+                              size: 14, color: AppColors.primary),
                         ),
                         const SizedBox(width: 8),
                         const Expanded(
@@ -844,7 +844,7 @@ class _RestaurantDashboardScreenState
                       height: 48,
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
+                          backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -880,7 +880,7 @@ class _RestaurantDashboardScreenState
                               content: Text(
                                 '📨 Change request submitted! Admin has received your notification for review.',
                               ),
-                              backgroundColor: Color(0xFF2563EB),
+                              backgroundColor: AppColors.primary,
                               duration: Duration(seconds: 4),
                             ),
                           );
@@ -937,10 +937,10 @@ class _RestaurantDashboardScreenState
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
+                    color: const Color(0xFFFFF1F2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: color, size: 26),
+                  child: Icon(icon, color: AppColors.primary, size: 26),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -992,10 +992,10 @@ class _RestaurantDashboardScreenState
                       ),
                       Text(
                         price,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
-                          color: color,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -1035,7 +1035,7 @@ class _RestaurantDashboardScreenState
               height: 48,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: color,
+                  backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1619,22 +1619,22 @@ class _RestaurantDashboardScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: const Color(0xFFFFF1F2),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: const Color(0xFFFECDD3)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.bolt_rounded,
-                          size: 14, color: Color(0xFFD97706)),
+                          size: 14, color: AppColors.primary),
                       SizedBox(width: 3),
                       Text(
                         'PROMO DEALS',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF475569),
+                          color: AppColors.primary,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -1707,7 +1707,7 @@ class _RestaurantDashboardScreenState
             // ADMIN OFFER 1: 1 Banner for 24hrs 2000 tk (Explicitly requested!)
             _buildAdminPackageCard(
               badge: 'POPULAR • HOMEPAGE HERO',
-              badgeColor: const Color(0xFF2563EB),
+              badgeColor: AppColors.primary,
               title: '1 Homepage Hero Banner (24 Hours)',
               priceTag: '${AppConstants.currencySymbol}2,000',
               duration: '24 Hours',
@@ -1715,8 +1715,8 @@ class _RestaurantDashboardScreenState
                   'Promote ${restaurant.name.isNotEmpty ? restaurant.name : "your café"} on the customer home slideshow banner carousel for 24 hours. Includes custom headline, image & direct booking link.',
               reachMetric: '12,500+ Customer Views',
               icon: Icons.view_carousel_rounded,
-              iconColor: const Color(0xFF2563EB),
-              iconBgColor: const Color(0xFFDBEAFE),
+              iconColor: AppColors.primary,
+              iconBgColor: const Color(0xFFFFF1F2),
               isPurchased: _hasActive24hBanner,
               actionLabel: _hasActive24hBanner
                   ? 'Banner Active (Design / Edit)'
@@ -1733,7 +1733,7 @@ class _RestaurantDashboardScreenState
                     description:
                         'Feature your restaurant banner prominently on the top carousel of the Customer Home Screen across Banasree and Dhaka for 24 hours.',
                     icon: Icons.view_carousel_rounded,
-                    color: const Color(0xFF2563EB),
+                    color: AppColors.primary,
                     onConfirm: () async {
                       setState(() => _hasActive24hBanner = true);
                       await ref
@@ -1752,7 +1752,7 @@ class _RestaurantDashboardScreenState
             // ADMIN OFFER 2: Boost for 24hrs 600 tk (Explicitly requested!)
             _buildAdminPackageCard(
               badge: 'HIGH CONVERSION • TOP FEEDS',
-              badgeColor: const Color(0xFFEA580C),
+              badgeColor: AppColors.primary,
               title: 'Post Boost for 24 Hours',
               priceTag: '${AppConstants.currencySymbol}600',
               duration: '24 Hours',
@@ -1760,8 +1760,8 @@ class _RestaurantDashboardScreenState
                   'Boost a post to #1 priority placement in Customer Search & Hot Deals feeds in Banasree for 24 hours.',
               reachMetric: '3.4x Faster Orders',
               icon: Icons.local_fire_department_rounded,
-              iconColor: const Color(0xFFEA580C),
-              iconBgColor: const Color(0xFFFFEDE6),
+              iconColor: AppColors.primary,
+              iconBgColor: const Color(0xFFFFF1F2),
               isPurchased: _hasActive24hBoost,
               actionLabel: _hasActive24hBoost
                   ? 'Boost Active (Manage Posts)'
@@ -1775,7 +1775,7 @@ class _RestaurantDashboardScreenState
                   description:
                       'Pin your dish at the top of customer search and hot deals in Banasree for 24 hours to clear all stock before closing.',
                   icon: Icons.local_fire_department_rounded,
-                  color: const Color(0xFFEA580C),
+                  color: AppColors.primary,
                   onConfirm: () {
                     setState(() => _hasActive24hBoost = true);
                     _showBoostOffersModal(context, offers, restaurant);
@@ -1788,7 +1788,7 @@ class _RestaurantDashboardScreenState
             // ADMIN OFFER 3: 48h Weekend Surge Boost 1000 tk
             _buildAdminPackageCard(
               badge: 'WEEKEND SPECIAL • 48H',
-              badgeColor: const Color(0xFFD97706),
+              badgeColor: AppColors.primary,
               title: 'Weekend 48h Surge Boost Pack',
               priceTag: '${AppConstants.currencySymbol}1,000',
               duration: 'Friday & Saturday (48h)',
@@ -1796,8 +1796,8 @@ class _RestaurantDashboardScreenState
                   'Covers the entire weekend dining rush. Boost up to 2 dishes for 48 hours during Dhaka weekend dining hours.',
               reachMetric: 'Save ${AppConstants.currencySymbol}200 on bundle',
               icon: Icons.bolt_rounded,
-              iconColor: const Color(0xFFD97706),
-              iconBgColor: const Color(0xFFFEF3C7),
+              iconColor: AppColors.primary,
+              iconBgColor: const Color(0xFFFFF1F2),
               actionLabel:
                   'Buy Weekend Pack (${AppConstants.currencySymbol}1,000)',
               onAction: () {
@@ -1809,7 +1809,7 @@ class _RestaurantDashboardScreenState
                   description:
                       'Keep up to 2 dishes boosted throughout Friday and Saturday night closing hours.',
                   icon: Icons.bolt_rounded,
-                  color: const Color(0xFFD97706),
+                  color: AppColors.primary,
                   onConfirm: () {
                     setState(() => _hasActive24hBoost = true);
                     _showBoostOffersModal(context, offers, restaurant);
@@ -1822,7 +1822,7 @@ class _RestaurantDashboardScreenState
             // ADMIN OFFER 4: Weekly Hero Banner 10,000 tk
             _buildAdminPackageCard(
               badge: 'MAXIMUM VISIBILITY • 7 DAYS',
-              badgeColor: const Color(0xFF7C3AED),
+              badgeColor: AppColors.primary,
               title: 'Weekly Hero Banner (7 Days Spotlight)',
               priceTag: '${AppConstants.currencySymbol}10,000',
               duration: 'Full Week (7 Days)',
@@ -1830,8 +1830,8 @@ class _RestaurantDashboardScreenState
                   'Maintain #1 featured carousel spot on Customer Home for an entire week. Includes detailed analytics on clicks & conversions.',
               reachMetric: '85,000+ Total Impressions',
               icon: Icons.star_rounded,
-              iconColor: const Color(0xFF7C3AED),
-              iconBgColor: const Color(0xFFEDE9FE),
+              iconColor: AppColors.primary,
+              iconBgColor: const Color(0xFFFFF1F2),
               actionLabel:
                   'Buy 7-Day Banner (${AppConstants.currencySymbol}10,000)',
               onAction: () {
@@ -1843,7 +1843,7 @@ class _RestaurantDashboardScreenState
                   description:
                       'Maintain top featured placement on the customer home slideshow for 7 full days across Banasree and Dhaka.',
                   icon: Icons.star_rounded,
-                  color: const Color(0xFF7C3AED),
+                  color: AppColors.primary,
                   onConfirm: () async {
                     setState(() => _hasActive24hBanner = true);
                     await ref
@@ -1861,7 +1861,7 @@ class _RestaurantDashboardScreenState
             // ADMIN OFFER 5: Push Notification Blast 3,500 tk
             _buildAdminPackageCard(
               badge: 'INSTANT SELLOUT • NEIGHBORHOOD',
-              badgeColor: const Color(0xFF059669),
+              badgeColor: AppColors.primary,
               title: 'Banasree Push Notification Broadcast',
               priceTag: '${AppConstants.currencySymbol}3,500',
               duration: '1 Broadcast Blast',
@@ -1869,8 +1869,8 @@ class _RestaurantDashboardScreenState
                   'Send an instant high-priority push notification to all 3,420+ registered food lovers in Banasree when you create a post.',
               reachMetric: 'Avg 25-Min Sellout',
               icon: Icons.notifications_active_rounded,
-              iconColor: const Color(0xFF059669),
-              iconBgColor: const Color(0xFFD1FAE5),
+              iconColor: AppColors.primary,
+              iconBgColor: const Color(0xFFFFF1F2),
               actionLabel:
                   'Schedule Broadcast (${AppConstants.currencySymbol}3,500)',
               onAction: () {
@@ -1882,13 +1882,13 @@ class _RestaurantDashboardScreenState
                   description:
                       'Send a targeted push alert to all nearby customers in Banasree announcing tonight\'s fresh food drop.',
                   icon: Icons.notifications_active_rounded,
-                  color: const Color(0xFF059669),
+                  color: AppColors.primary,
                   onConfirm: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
                             '📣 Push notification broadcast scheduled for 08:30 PM closing window!'),
-                        backgroundColor: Color(0xFF059669),
+                        backgroundColor: AppColors.primary,
                       ),
                     );
                   },
@@ -1972,15 +1972,19 @@ class _RestaurantDashboardScreenState
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 2.5),
                           decoration: BoxDecoration(
-                            color: badgeColor.withValues(alpha: 0.12),
+                            color: const Color(0xFFFFF1F2),
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: const Color(0xFFFECDD3),
+                              width: 0.8,
+                            ),
                           ),
                           child: Text(
                             badge,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
-                              color: badgeColor,
+                              color: AppColors.primary,
                               letterSpacing: 0.4,
                             ),
                           ),
@@ -2063,10 +2067,10 @@ class _RestaurantDashboardScreenState
                   children: [
                     Text(
                       priceTag,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
-                        color: badgeColor,
+                        color: AppColors.primary,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -2091,10 +2095,10 @@ class _RestaurantDashboardScreenState
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.trending_up_rounded,
                         size: 13,
-                        color: badgeColor,
+                        color: AppColors.primary,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -2121,7 +2125,7 @@ class _RestaurantDashboardScreenState
               style: FilledButton.styleFrom(
                 backgroundColor: isPurchased
                     ? const Color(0xFF0F766E)
-                    : badgeColor,
+                    : AppColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2268,7 +2272,7 @@ class _RestaurantDashboardScreenState
                                 const Icon(
                                   Icons.verified_rounded,
                                   size: 18,
-                                  color: Color(0xFFD97706),
+                                  color: AppColors.primary,
                                 ),
                                 const Spacer(),
                                 _buildNotificationBell(context),
@@ -2315,68 +2319,56 @@ class _RestaurantDashboardScreenState
               ),
             ),
 
-            // Profile Completeness Banner (Required for unit & widget tests)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isComplete
-                      ? const Color(0xFFF0FDF4)
-                      : const Color(0xFFFFFBEB),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isComplete
-                        ? const Color(0xFFBBF7D0)
-                        : const Color(0xFFFDE68A),
-                    width: 1.2,
+            // Profile Incomplete Banner (Only shown when action is needed)
+            if (!isComplete) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF1F2),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFFECDD3),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Profile Incomplete - Cannot Post Offers',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF9F1239),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () =>
+                            context.push(AppRoutes.restaurantProfile),
+                        child: const Text(
+                          'Fix Now',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isComplete
-                          ? Icons.check_circle_rounded
-                          : Icons.warning_amber_rounded,
-                      color: isComplete
-                          ? const Color(0xFF16A34A)
-                          : const Color(0xFFD97706),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        isComplete
-                            ? 'Profile Complete (Dhaka Verified)'
-                            : 'Profile Incomplete - Cannot Post Offers',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: isComplete
-                              ? const Color(0xFF15803D)
-                              : const Color(0xFFB45309),
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () =>
-                          context.push(AppRoutes.restaurantProfile),
-                      child: Text(
-                        isComplete ? 'Edit' : 'Fix Now',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                          color: isComplete
-                              ? const Color(0xFF16A34A)
-                              : const Color(0xFFD97706),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
+            ],
 
             // SaveBite Gold Subscription Card
             Padding(
@@ -2489,8 +2481,8 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.add_circle_outline_rounded,
-                          iconColor: const Color(0xFFE11D48),
-                          iconBgColor: const Color(0xFFFFEDEC),
+                          iconColor: AppColors.primary,
+                          iconBgColor: const Color(0xFFFFF1F2),
                           label: 'New Post',
                           onTap: () =>
                               _onNewPostTapped(context, restaurant),
@@ -2500,8 +2492,8 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.fastfood_outlined,
-                          iconColor: const Color(0xFF2563EB),
-                          iconBgColor: const Color(0xFFDBEAFE),
+                          iconColor: AppColors.primary,
+                          iconBgColor: const Color(0xFFFFF1F2),
                           label: 'My Posts',
                           onTap: () => setState(() => _navIndex = 0),
                         ),
@@ -2510,9 +2502,10 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.local_offer_outlined,
-                          iconColor: const Color(0xFF7C3AED),
-                          iconBgColor: const Color(0xFFEDE9FE),
+                          iconColor: AppColors.primary,
+                          iconBgColor: const Color(0xFFFFF1F2),
                           badgeText: 'HOT',
+                          badgeColor: AppColors.primary,
                           label: 'Ad Packages',
                           onTap: () => setState(() => _navIndex = 1),
                         ),
@@ -2521,8 +2514,8 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.insights_rounded,
-                          iconColor: const Color(0xFF059669),
-                          iconBgColor: const Color(0xFFD1FAE5),
+                          iconColor: const Color(0xFF0F0F10),
+                          iconBgColor: const Color(0xFFF1F5F9),
                           label: 'Café Info',
                           onTap: () => setState(() => _navIndex = 3),
                         ),
@@ -2537,9 +2530,10 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.local_fire_department_rounded,
-                          iconColor: const Color(0xFFFF5722),
-                          iconBgColor: const Color(0xFFFFEDE6),
+                          iconColor: AppColors.primary,
+                          iconBgColor: const Color(0xFFFFF1F2),
                           badgeText: 'PRO',
+                          badgeColor: AppColors.primary,
                           label: 'Boost Dishes',
                           onTap: () => _showBoostOffersModal(
                               context, offers, restaurant),
@@ -2556,10 +2550,10 @@ class _RestaurantDashboardScreenState
                                   ? Icons.view_carousel_rounded
                                   : Icons.lock_outline_rounded,
                               iconColor: isHeroBannerEnabled
-                                  ? const Color(0xFF4F46E5)
+                                  ? AppColors.primary
                                   : const Color(0xFF94A3B8),
                               iconBgColor: isHeroBannerEnabled
-                                  ? const Color(0xFFEEF2FF)
+                                  ? const Color(0xFFFFF1F2)
                                   : const Color(0xFFF1F5F9),
                               badgeText: isHeroBannerEnabled
                                   ? (restaurant.bannerCredits > 0
@@ -2569,7 +2563,7 @@ class _RestaurantDashboardScreenState
                               badgeColor: isHeroBannerEnabled
                                   ? (restaurant.hasActiveBanner
                                       ? const Color(0xFF16A34A)
-                                      : const Color(0xFF4F46E5))
+                                      : AppColors.primary)
                                   : const Color(0xFF64748B),
                               label: 'Hero Banner',
                               isDisabled: !isHeroBannerEnabled,
@@ -2588,8 +2582,8 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.access_time_rounded,
-                          iconColor: const Color(0xFFD97706),
-                          iconBgColor: const Color(0xFFFEF3C7),
+                          iconColor: const Color(0xFF0F0F10),
+                          iconBgColor: const Color(0xFFF1F5F9),
                           label: 'Hours',
                           onTap: () =>
                               _showHoursModal(context, restaurant),
@@ -2599,8 +2593,8 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.storefront_outlined,
-                          iconColor: const Color(0xFF0284C7),
-                          iconBgColor: const Color(0xFFE0F2FE),
+                          iconColor: const Color(0xFF0F0F10),
+                          iconBgColor: const Color(0xFFF1F5F9),
                           label: 'Account',
                           onTap: () => setState(() => _navIndex = 4),
                         ),
@@ -2646,7 +2640,7 @@ class _RestaurantDashboardScreenState
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF2563EB),
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
@@ -2985,7 +2979,7 @@ class _RestaurantDashboardScreenState
                           child: _buildMetricCol(
                               '৳$avgDealPrice',
                               'Avg Deal Price',
-                              const Color(0xFF2563EB)),
+                              AppColors.primary),
                         ),
                       ],
                     ),
@@ -3025,8 +3019,8 @@ class _RestaurantDashboardScreenState
                             ? 'BOOSTED'
                             : 'STANDBY',
                         icon: Icons.local_fire_department_rounded,
-                        color: const Color(0xFFFF5722),
-                        bgTint: const Color(0xFFFFEDE6),
+                        color: AppColors.primary,
+                        bgTint: const Color(0xFFFFF1F2),
                         onTap: () => _showBoostOffersModal(
                             context, offers, restaurant),
                       ),
@@ -3042,8 +3036,8 @@ class _RestaurantDashboardScreenState
                             ? 'IN FEED'
                             : 'NONE',
                         icon: Icons.fastfood_rounded,
-                        color: const Color(0xFF059669),
-                        bgTint: const Color(0xFFECFDF5),
+                        color: const Color(0xFF0F0F10),
+                        bgTint: const Color(0xFFF1F5F9),
                         onTap: () => setState(() => _navIndex = 0),
                       ),
                     ),
@@ -3059,7 +3053,7 @@ class _RestaurantDashboardScreenState
                         label: 'Favorited Café',
                         badgeText: '+18 NEW',
                         icon: Icons.favorite_rounded,
-                        color: const Color(0xFFE11D48),
+                        color: AppColors.primary,
                         bgTint: const Color(0xFFFFF1F2),
                       ),
                     ),
@@ -3076,8 +3070,8 @@ class _RestaurantDashboardScreenState
                             ? 'GOLD VIP'
                             : 'MEAL PASS',
                         icon: Icons.card_membership_rounded,
-                        color: const Color(0xFF7C3AED),
-                        bgTint: const Color(0xFFF5F3FF),
+                        color: AppColors.primary,
+                        bgTint: const Color(0xFFFFF1F2),
                         onTap: () => _showGoldSubscriptionModal(
                             context, restaurant),
                       ),
@@ -3140,8 +3134,12 @@ class _RestaurantDashboardScreenState
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
+                            color: const Color(0xFFFFF1F2),
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFFECDD3),
+                              width: 0.8,
+                            ),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
@@ -3151,12 +3149,12 @@ class _RestaurantDashboardScreenState
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF2563EB),
+                                  color: AppColors.primary,
                                 ),
                               ),
                               SizedBox(width: 2),
                               Icon(Icons.arrow_forward_rounded,
-                                  size: 13, color: Color(0xFF2563EB)),
+                                  size: 13, color: AppColors.primary),
                             ],
                           ),
                         ),
@@ -3300,7 +3298,7 @@ class _RestaurantDashboardScreenState
                   Row(
                     children: [
                       const Icon(Icons.near_me_rounded,
-                          size: 18, color: Color(0xFF2563EB)),
+                          size: 18, color: AppColors.primary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -3343,7 +3341,7 @@ class _RestaurantDashboardScreenState
                         _buildMetricDivider(),
                         const SizedBox(width: 10),
                         _buildMetricCol(
-                            '42 min', 'Avg Sellout', const Color(0xFF2563EB)),
+                            '42 min', 'Avg Sellout', AppColors.primary),
                       ],
                     ),
                   ),
@@ -3569,7 +3567,7 @@ class _RestaurantDashboardScreenState
                             const Icon(
                               Icons.verified_rounded,
                               size: 16,
-                              color: Color(0xFFD97706),
+                              color: AppColors.primary,
                             ),
                           ],
                         ),
@@ -3823,8 +3821,8 @@ class _RestaurantDashboardScreenState
                   Expanded(
                     child: _buildActionTile(
                       icon: Icons.person_outline_rounded,
-                      iconColor: const Color(0xFF059669),
-                      iconBgColor: const Color(0xFFECFDF5),
+                      iconColor: AppColors.primary,
+                      iconBgColor: const Color(0xFFFFEDEC),
                       label: 'Owner Profile',
                       onTap: () =>
                           _showOwnerProfileModal(context, restaurant, user),
@@ -3834,11 +3832,12 @@ class _RestaurantDashboardScreenState
                   Expanded(
                     child: _buildActionTile(
                       icon: Icons.edit_note_rounded,
-                      iconColor: const Color(0xFF0284C7),
-                      iconBgColor: const Color(0xFFF0F9FF),
+                      iconColor: AppColors.primary,
+                      iconBgColor: const Color(0xFFFFF1F2),
                       label: 'Update Info',
                       badgeText:
                           _pendingChangeRequest != null ? 'PENDING' : null,
+                      badgeColor: AppColors.primary,
                       onTap: () => _showRequestInfoUpdateModal(
                           context, restaurant, user),
                     ),
@@ -3847,9 +3846,10 @@ class _RestaurantDashboardScreenState
                   Expanded(
                     child: _buildActionTile(
                       icon: Icons.campaign_outlined,
-                      iconColor: const Color(0xFFD97706),
-                      iconBgColor: const Color(0xFFFFFBEB),
+                      iconColor: AppColors.primary,
+                      iconBgColor: const Color(0xFFFFF1F2),
                       badgeText: 'OFFERS',
+                      badgeColor: AppColors.primary,
                       label: 'Ad Packages',
                       onTap: () => setState(() => _navIndex = 1),
                     ),
@@ -3858,8 +3858,8 @@ class _RestaurantDashboardScreenState
                   Expanded(
                     child: _buildActionTile(
                       icon: Icons.headset_mic_outlined,
-                      iconColor: const Color(0xFF7C3AED),
-                      iconBgColor: const Color(0xFFF5F3FF),
+                      iconColor: const Color(0xFF0F0F10),
+                      iconBgColor: const Color(0xFFF1F5F9),
                       label: 'Support',
                       onTap: () => _showMerchantHelpModal(context),
                     ),
@@ -3925,8 +3925,8 @@ class _RestaurantDashboardScreenState
                       children: [
                         _buildMenuItem(
                           icon: Icons.badge_outlined,
-                          iconColor: const Color(0xFF059669),
-                          iconBgColor: const Color(0xFFECFDF5),
+                          iconColor: AppColors.primary,
+                          iconBgColor: const Color(0xFFFFF1F2),
                           title: 'Owner Profile',
                           subtitle: '$ownerName • Legal Representative',
                           borderRadius: const BorderRadius.vertical(
@@ -3978,8 +3978,8 @@ class _RestaurantDashboardScreenState
                         ),
                         _buildMenuItem(
                           icon: Icons.edit_note_rounded,
-                          iconColor: const Color(0xFF2563EB),
-                          iconBgColor: const Color(0xFFEFF6FF),
+                          iconColor: AppColors.primary,
+                          iconBgColor: const Color(0xFFFFF1F2),
                           title: 'Request Info Update (Admin Review)',
                           subtitle: _pendingChangeRequest != null
                               ? '1 update request pending admin approval'
@@ -4109,7 +4109,7 @@ class _RestaurantDashboardScreenState
                           width: 3.5,
                           height: 13,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF64748B),
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -4895,7 +4895,7 @@ class _RestaurantDashboardScreenState
         'rating': '4.9',
         'reviews': 64,
         'badge': '#2 COFFEE PAIRING',
-        'badgeColor': const Color(0xFF2563EB),
+        'badgeColor': AppColors.primary,
       },
       {
         'rank': 3,
@@ -5655,7 +5655,7 @@ class _RestaurantDashboardScreenState
                     padding: const EdgeInsets.all(4),
                     constraints: const BoxConstraints(),
                     icon: const Icon(Icons.edit_outlined,
-                        size: 18, color: Color(0xFF2563EB)),
+                        size: 18, color: AppColors.primary),
                     tooltip: 'Edit Post',
                     onPressed: () => _showEditOfferBottomSheet(context, offer),
                   ),
@@ -6190,12 +6190,12 @@ class _RestaurantDashboardScreenState
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
+                            color: const Color(0xFFFFF1F2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.edit_note_rounded,
-                            color: Color(0xFF2563EB),
+                            color: AppColors.primary,
                             size: 24,
                           ),
                         ),
@@ -6546,13 +6546,13 @@ class _RestaurantDashboardScreenState
                     const SizedBox(height: 18),
                     _buildBenefitItem(
                       icon: Icons.local_fire_department_rounded,
-                      color: const Color(0xFFFF5722),
+                      color: AppColors.primary,
                       title: 'Boost Posts (🔥)',
                       description: 'Top placement in search and hot deals feeds.',
                     ),
                     _buildBenefitItem(
                       icon: Icons.view_carousel_rounded,
-                      color: const Color(0xFF2563EB),
+                      color: AppColors.primary,
                       title: 'Homepage Hero Banner',
                       description: 'Feature your café on the customer home slideshow.',
                     ),
@@ -7009,8 +7009,8 @@ class _RestaurantDashboardScreenState
                             icon = Icons.campaign_rounded;
                             break;
                           case 'banner_ended':
-                            iconBg = const Color(0xFFDBEAFE);
-                            iconColor = const Color(0xFF2563EB);
+                            iconBg = const Color(0xFFFFF1F2);
+                            iconColor = AppColors.primary;
                             icon = Icons.flag_rounded;
                             break;
                           case 'gold_merchant':
@@ -7290,9 +7290,9 @@ class _RestaurantDashboardScreenState
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: const Color(0xFFFFF1F2),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
+                  border: Border.all(color: const Color(0xFFFECDD3), width: 1.5),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -7302,7 +7302,7 @@ class _RestaurantDashboardScreenState
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB),
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(Icons.view_carousel_rounded,
@@ -7318,14 +7318,14 @@ class _RestaurantDashboardScreenState
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1E40AF),
+                                  color: Color(0xFF991B1B),
                                 ),
                               ),
                               Text(
                                 '৳2,000 / 24 Hours • 12,500+ customer views on Dhaka homepage',
                                 style: TextStyle(
                                   fontSize: 11.5,
-                                  color: Color(0xFF2563EB),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ],
@@ -7339,7 +7339,7 @@ class _RestaurantDashboardScreenState
                       height: 42,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
+                          backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -8087,8 +8087,8 @@ class _RestaurantDashboardScreenState
             ),
             _buildMenuItem(
               icon: Icons.email_outlined,
-              iconColor: const Color(0xFF2563EB),
-              iconBgColor: const Color(0xFFDBEAFE),
+              iconColor: AppColors.primary,
+              iconBgColor: const Color(0xFFFFF1F2),
               title: 'Email: merchants@savebite.com',
               subtitle: 'Responses within 2 hours',
               onTap: () {},
@@ -8137,9 +8137,24 @@ class _RestaurantDashboardScreenState
               ),
             ),
             const SizedBox(height: 14),
-            Text(
-              restaurant.name,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    restaurant.name,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.verified_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
