@@ -1015,12 +1015,14 @@ class _RestaurantDashboardScreenState
                       Icon(Icons.check_circle_rounded,
                           size: 15, color: Color(0xFF16A34A)),
                       SizedBox(width: 6),
-                      Text(
-                        'Instant activation • Verified restaurant growth feature',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF15803D),
+                      Expanded(
+                        child: Text(
+                          'Instant activation • Verified restaurant growth feature',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF15803D),
+                          ),
                         ),
                       ),
                     ],
@@ -1917,14 +1919,13 @@ class _RestaurantDashboardScreenState
     bool isPurchased = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isPurchased
               ? const Color(0xFF10B981)
-              : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+              : const Color(0xFFF1F5F9),
           width: isPurchased ? 1.6 : 1.2,
         ),
         boxShadow: [
@@ -1937,176 +1938,275 @@ class _RestaurantDashboardScreenState
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  borderRadius: BorderRadius.circular(13),
-                  border: Border.all(
-                    color: iconColor.withValues(alpha: 0.15),
-                    width: 1,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(icon, color: iconColor, size: 22),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 6,
-                      runSpacing: 4,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onAction,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left: 98x98 Graphic Image/Badge Container
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: 98,
+                    height: 98,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFF991B1B),
+                          Color(0xFFDC2626),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Stack(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF1F2),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: const Color(0xFFFECDD3),
-                              width: 0.8,
-                            ),
+                        Center(
+                          child: Icon(
+                            icon,
+                            color: Colors.white,
+                            size: 38,
                           ),
-                          child: Text(
-                            badge,
-                            style: const TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                              letterSpacing: 0.4,
+                        ),
+                        // Badge Tag in top left
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 0.7,
+                              ),
+                            ),
+                            child: Text(
+                              badge.split('•').first.trim(),
+                              style: const TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 0.2,
+                              ),
                             ),
                           ),
                         ),
                         if (isPurchased)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFECFDF5),
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                color: const Color(0xFFA7F3D0),
-                                width: 0.8,
+                          Positioned(
+                            bottom: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                borderRadius: BorderRadius.circular(5),
                               ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.check_circle_rounded,
-                                    size: 10, color: Color(0xFF059669)),
-                                SizedBox(width: 3),
-                                Text(
-                                  'ACTIVE',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF047857),
-                                    letterSpacing: 0.3,
-                                  ),
+                              child: const Text(
+                                'ACTIVE',
+                                style: TextStyle(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 12.5,
-              color: Color(0xFF475569),
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Price & Metric Bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
-            ),
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                Wrap(
-                  spacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      priceTag,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.primary,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    Text(
-                      '• $duration',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(7),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                ),
+                const SizedBox(width: 12),
+
+                // Right: Details Column matching Foodpanda screenshot
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.trending_up_rounded,
-                        size: 13,
-                        color: AppColors.primary,
+                      // Row 1: Title and Status/Heart Icon
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            isPurchased
+                                ? Icons.check_circle_rounded
+                                : Icons.favorite_rounded,
+                            size: 19,
+                            color: isPurchased
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFE11D48),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        reachMetric,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF334155),
+                      const SizedBox(height: 3),
+
+                      // Row 2: ⭐ 4.9 • Duration • Reach Metric
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 15,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          const SizedBox(width: 3),
+                          const Text(
+                            '4.9',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text('•', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              duration,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text('•', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              reachMetric,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+
+                      // Row 3: ⚡ Service & Growth feature
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.bolt_rounded,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          const Expanded(
+                            child: Text(
+                              'Verified Merchant Boost • SaveBite Partner',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Row 4: Deal Voucher / Price Box
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 0.9,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(3.5),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.shopping_bag_rounded,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        priceTag,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Expanded(
+                                        child: Text(
+                                          '• Special Package',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF475569),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    isPurchased
+                                        ? 'Active • Tap to manage or edit'
+                                        : 'Tap to review details & purchase',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -2115,53 +2215,7 @@ class _RestaurantDashboardScreenState
               ],
             ),
           ),
-          const SizedBox(height: 14),
-
-          // Action Button
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: isPurchased
-                    ? const Color(0xFF0F766E)
-                    : AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              onPressed: onAction,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isPurchased
-                        ? Icons.tune_rounded
-                        : Icons.bolt_rounded,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      actionLabel,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.1,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -2480,9 +2534,12 @@ class _RestaurantDashboardScreenState
                     children: [
                       Expanded(
                         child: _buildActionTile(
-                          icon: Icons.add_circle_outline_rounded,
-                          iconColor: AppColors.primary,
-                          iconBgColor: const Color(0xFFFFF1F2),
+                          icon: Icons.add_circle_rounded,
+                          iconGradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF5E62), Color(0xFFB91C1C)],
+                          ),
                           label: 'New Post',
                           onTap: () =>
                               _onNewPostTapped(context, restaurant),
@@ -2491,9 +2548,12 @@ class _RestaurantDashboardScreenState
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildActionTile(
-                          icon: Icons.fastfood_outlined,
-                          iconColor: AppColors.primary,
-                          iconBgColor: const Color(0xFFFFF1F2),
+                          icon: Icons.fastfood_rounded,
+                          iconGradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF5252), Color(0xFFB71C1C)],
+                          ),
                           label: 'My Posts',
                           onTap: () => setState(() => _navIndex = 0),
                         ),
@@ -2501,11 +2561,14 @@ class _RestaurantDashboardScreenState
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildActionTile(
-                          icon: Icons.local_offer_outlined,
-                          iconColor: AppColors.primary,
-                          iconBgColor: const Color(0xFFFFF1F2),
+                          icon: Icons.local_offer_rounded,
+                          iconGradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF4B6E), Color(0xFF991B1B)],
+                          ),
                           badgeText: 'HOT',
-                          badgeColor: AppColors.primary,
+                          badgeColor: const Color(0xFFDC2626),
                           label: 'Ad Packages',
                           onTap: () => setState(() => _navIndex = 1),
                         ),
@@ -2514,8 +2577,11 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.insights_rounded,
-                          iconColor: const Color(0xFF0F0F10),
-                          iconBgColor: const Color(0xFFF1F5F9),
+                          iconGradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF5757), Color(0xFFA3152F)],
+                          ),
                           label: 'Café Info',
                           onTap: () => setState(() => _navIndex = 3),
                         ),
@@ -2530,10 +2596,13 @@ class _RestaurantDashboardScreenState
                       Expanded(
                         child: _buildActionTile(
                           icon: Icons.local_fire_department_rounded,
-                          iconColor: AppColors.primary,
-                          iconBgColor: const Color(0xFFFFF1F2),
+                          iconGradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF453A), Color(0xFFB91C1C)],
+                          ),
                           badgeText: 'PRO',
-                          badgeColor: AppColors.primary,
+                          badgeColor: const Color(0xFFDC2626),
                           label: 'Boost Dishes',
                           onTap: () => _showBoostOffersModal(
                               context, offers, restaurant),
@@ -2548,22 +2617,21 @@ class _RestaurantDashboardScreenState
                             child: _buildActionTile(
                               icon: isHeroBannerEnabled
                                   ? Icons.view_carousel_rounded
-                                  : Icons.lock_outline_rounded,
-                              iconColor: isHeroBannerEnabled
-                                  ? AppColors.primary
-                                  : const Color(0xFF94A3B8),
-                              iconBgColor: isHeroBannerEnabled
-                                  ? const Color(0xFFFFF1F2)
-                                  : const Color(0xFFF1F5F9),
+                                  : Icons.lock_rounded,
+                              iconGradient: isHeroBannerEnabled
+                                  ? const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [Color(0xFFFF5353), Color(0xFF9B111E)],
+                                    )
+                                  : null,
                               badgeText: isHeroBannerEnabled
                                   ? (restaurant.bannerCredits > 0
                                       ? '${restaurant.bannerCredits} READY'
                                       : (restaurant.hasActiveBanner ? 'LIVE' : null))
                                   : 'LOCKED',
                               badgeColor: isHeroBannerEnabled
-                                  ? (restaurant.hasActiveBanner
-                                      ? const Color(0xFF16A34A)
-                                      : AppColors.primary)
+                                  ? const Color(0xFF16A34A)
                                   : const Color(0xFF64748B),
                               label: 'Hero Banner',
                               isDisabled: !isHeroBannerEnabled,
@@ -2581,9 +2649,12 @@ class _RestaurantDashboardScreenState
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildActionTile(
-                          icon: Icons.access_time_rounded,
-                          iconColor: const Color(0xFF0F0F10),
-                          iconBgColor: const Color(0xFFF1F5F9),
+                          icon: Icons.access_time_filled_rounded,
+                          iconGradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF5F43), Color(0xFFB91C1C)],
+                          ),
                           label: 'Hours',
                           onTap: () =>
                               _showHoursModal(context, restaurant),
@@ -2592,9 +2663,12 @@ class _RestaurantDashboardScreenState
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildActionTile(
-                          icon: Icons.storefront_outlined,
-                          iconColor: const Color(0xFF0F0F10),
-                          iconBgColor: const Color(0xFFF1F5F9),
+                          icon: Icons.storefront_rounded,
+                          iconGradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFF477E), Color(0xFF881337)],
+                          ),
                           label: 'Account',
                           onTap: () => setState(() => _navIndex = 4),
                         ),
@@ -3820,9 +3894,12 @@ class _RestaurantDashboardScreenState
                 children: [
                   Expanded(
                     child: _buildActionTile(
-                      icon: Icons.person_outline_rounded,
-                      iconColor: AppColors.primary,
-                      iconBgColor: const Color(0xFFFFEDEC),
+                      icon: Icons.person_rounded,
+                      iconGradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFF5E62), Color(0xFFB91C1C)],
+                      ),
                       label: 'Owner Profile',
                       onTap: () =>
                           _showOwnerProfileModal(context, restaurant, user),
@@ -3832,12 +3909,15 @@ class _RestaurantDashboardScreenState
                   Expanded(
                     child: _buildActionTile(
                       icon: Icons.edit_note_rounded,
-                      iconColor: AppColors.primary,
-                      iconBgColor: const Color(0xFFFFF1F2),
+                      iconGradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFF5252), Color(0xFFB71C1C)],
+                      ),
                       label: 'Update Info',
                       badgeText:
                           _pendingChangeRequest != null ? 'PENDING' : null,
-                      badgeColor: AppColors.primary,
+                      badgeColor: const Color(0xFFDC2626),
                       onTap: () => _showRequestInfoUpdateModal(
                           context, restaurant, user),
                     ),
@@ -3845,11 +3925,14 @@ class _RestaurantDashboardScreenState
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildActionTile(
-                      icon: Icons.campaign_outlined,
-                      iconColor: AppColors.primary,
-                      iconBgColor: const Color(0xFFFFF1F2),
+                      icon: Icons.campaign_rounded,
+                      iconGradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFF4B6E), Color(0xFF991B1B)],
+                      ),
                       badgeText: 'OFFERS',
-                      badgeColor: AppColors.primary,
+                      badgeColor: const Color(0xFFDC2626),
                       label: 'Ad Packages',
                       onTap: () => setState(() => _navIndex = 1),
                     ),
@@ -3857,9 +3940,12 @@ class _RestaurantDashboardScreenState
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildActionTile(
-                      icon: Icons.headset_mic_outlined,
-                      iconColor: const Color(0xFF0F0F10),
-                      iconBgColor: const Color(0xFFF1F5F9),
+                      icon: Icons.headset_mic_rounded,
+                      iconGradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFF5757), Color(0xFFA3152F)],
+                      ),
                       label: 'Support',
                       onTap: () => _showMerchantHelpModal(context),
                     ),
@@ -4528,29 +4614,49 @@ class _RestaurantDashboardScreenState
     required IconData icon,
     required String label,
     required VoidCallback onTap,
-    Color iconColor = const Color(0xFFE11D48),
-    Color iconBgColor = const Color(0xFFFFEDEC),
+    Color? iconColor,
+    Gradient? iconGradient,
     String? badgeText,
     Color? badgeColor,
     Color? badgeTextColor,
     Color? tileBgColor,
+    Color? borderColor,
     Color? textColor,
     bool isDisabled = false,
   }) {
-    final effectiveTileBg =
-        isDisabled ? const Color(0xFFF8FAFC) : (tileBgColor ?? Colors.white);
+    // Warm nude background by default, muted slate when disabled
+    final effectiveTileBg = isDisabled
+        ? const Color(0xFFF8FAFC)
+        : (tileBgColor ?? const Color(0xFFFFFBF7));
     final effectiveBorderColor = isDisabled
         ? const Color(0xFFCBD5E1)
-        : const Color(0xFFE2E8F0).withValues(alpha: 0.8);
+        : (borderColor ?? const Color(0xFFEDE3D9));
+
+    // Gradient background: light red to dark red
+    final effectiveGradient = isDisabled
+        ? const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFCBD5E1), Color(0xFF94A3B8)],
+          )
+        : (iconGradient ??
+            const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFF5252), // Light vibrant red
+                Color(0xFFB71C1C), // Deep rich dark red
+              ],
+            ));
+
+    // Crisp white icon on gradient red background
     final effectiveIconColor =
-        isDisabled ? const Color(0xFF94A3B8) : iconColor;
-    final effectiveIconBgColor =
-        isDisabled ? const Color(0xFFF1F5F9) : iconBgColor;
+        isDisabled ? const Color(0xFF94A3B8) : (iconColor ?? Colors.white);
     final effectiveTextColor = isDisabled
         ? const Color(0xFF64748B)
-        : (textColor ?? const Color(0xFF1E293B));
+        : (textColor ?? const Color(0xFF292524));
     final effectiveBadgeColor = badgeColor ??
-        (isDisabled ? const Color(0xFF64748B) : const Color(0xFFFF5722));
+        (isDisabled ? const Color(0xFF64748B) : const Color(0xFFDC2626));
     final effectiveBadgeTextColor = badgeTextColor ?? Colors.white;
 
     return Material(
@@ -4559,7 +4665,7 @@ class _RestaurantDashboardScreenState
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          height: 84,
+          height: 86,
           decoration: BoxDecoration(
             color: effectiveTileBg,
             borderRadius: BorderRadius.circular(16),
@@ -4569,7 +4675,7 @@ class _RestaurantDashboardScreenState
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
+                color: const Color(0xFF78350F).withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -4582,33 +4688,51 @@ class _RestaurantDashboardScreenState
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: effectiveIconBgColor,
-                      borderRadius: BorderRadius.circular(12),
+                      gradient: effectiveGradient,
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: isDisabled
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: const Color(0xFFDC2626)
+                                    .withValues(alpha: 0.28),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2.5),
+                              ),
+                            ],
                     ),
                     child: Center(
-                      child: Icon(icon, size: 20, color: effectiveIconColor),
+                      child: Icon(icon, size: 21, color: effectiveIconColor),
                     ),
                   ),
                   if (badgeText != null)
                     Positioned(
                       top: -4,
-                      right: -8,
+                      right: -7,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 2),
+                            horizontal: 5.5, vertical: 2),
                         decoration: BoxDecoration(
                           color: effectiveBadgeColor,
                           borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: effectiveBadgeColor.withValues(alpha: 0.35),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1.5),
+                            ),
+                          ],
                         ),
                         child: Text(
                           badgeText,
                           style: TextStyle(
                             color: effectiveBadgeTextColor,
                             fontSize: 8,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ),
@@ -4616,16 +4740,20 @@ class _RestaurantDashboardScreenState
                 ],
               ),
               const SizedBox(height: 7),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: effectiveTextColor,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11.2,
+                    fontWeight: FontWeight.w700,
+                    color: effectiveTextColor,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
               ),
             ],
           ),

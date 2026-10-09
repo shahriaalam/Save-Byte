@@ -372,6 +372,34 @@ void main() {
       expect(find.textContaining('Weekly Hero Banner'), findsOneWidget);
     });
 
+    testWidgets('Tapping promotional offer opens popup purchase menu to buy package', (tester) async {
+      tester.view.physicalSize = const Size(400, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestWidget(
+        const RestaurantDashboardScreen(),
+        restaurant: completeRestaurant,
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap Offers nav tab
+      await tester.tap(find.byKey(const ValueKey('restaurant_nav_Offers')));
+      await tester.pumpAndSettle();
+
+      // Tap Post Boost package card
+      final boostCard = find.text('Post Boost for 24 Hours');
+      expect(boostCard, findsOneWidget);
+      await tester.tap(boostCard);
+      await tester.pumpAndSettle();
+
+      // Verify purchase popup menu opened
+      expect(find.text('Package Cost'), findsOneWidget);
+      expect(find.text('Instant activation • Verified restaurant growth feature'), findsOneWidget);
+      expect(find.textContaining('Confirm & Activate'), findsOneWidget);
+    });
+
     testWidgets('Account tab is organized with Owner Profile, Gold card, and dark red Delete Account button', (tester) async {
       tester.view.physicalSize = const Size(400, 900);
       tester.view.devicePixelRatio = 1.0;

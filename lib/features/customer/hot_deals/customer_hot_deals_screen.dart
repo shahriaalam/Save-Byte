@@ -698,6 +698,7 @@ class _CustomerHotDealsScreenState extends ConsumerState<CustomerHotDealsScreen>
                                         padding: const EdgeInsets.only(bottom: 12),
                                         child: OfferCard(
                                           offer: offer,
+                                          isHotDealsStyle: true,
                                           onTap: () => context.push('/customer/offers/${offer.id}'),
                                         ),
                                       ),
@@ -723,6 +724,7 @@ class _CustomerHotDealsScreenState extends ConsumerState<CustomerHotDealsScreen>
                           padding: const EdgeInsets.only(bottom: 14),
                           child: OfferCard(
                             offer: offer,
+                            isHotDealsStyle: true,
                             onTap: () => context.push('/customer/offers/${offer.id}'),
                           ),
                         );

@@ -10,10 +10,12 @@ class OfferCard extends StatelessWidget {
     required this.offer,
     super.key,
     this.onTap,
+    this.isHotDealsStyle = false,
   });
 
   final FoodOffer offer;
   final VoidCallback? onTap;
+  final bool isHotDealsStyle;
 
   String _formatTime(DateTime time) {
     final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
@@ -24,6 +26,9 @@ class OfferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isHotDealsStyle) {
+      return _buildHotDealsStyle(context);
+    }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -459,6 +464,283 @@ class OfferCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Modern horizontal Hot Deals UI UX layout matching the user-requested Foodpanda aesthetics
+  Widget _buildHotDealsStyle(BuildContext context) {
+    final savings = (offer.originalPrice - offer.discountedPrice).clamp(0.0, double.infinity);
+    final rating = (3.8 + (offer.title.hashCode.abs() % 12) / 10).clamp(3.5, 4.9).toStringAsFixed(1);
+    final reviewCount = 50 + (offer.title.hashCode.abs() % 450);
+    final estDistance = '${((offer.title.hashCode.abs() % 1200) + 300)} m';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFF1F5F9),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left: Rounded Square Image (98x98)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: SizedBox(
+                    width: 98,
+                    height: 98,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (offer.imageUrl != null && offer.imageUrl!.isNotEmpty)
+                          Image.network(
+                            offer.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Container(
+                              color: const Color(0xFFF8FAFC),
+                              child: const Icon(
+                                Icons.fastfood_rounded,
+                                color: Color(0xFF94A3B8),
+                                size: 36,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            color: const Color(0xFFF8FAFC),
+                            child: const Icon(
+                              Icons.fastfood_rounded,
+                              color: Color(0xFF94A3B8),
+                              size: 36,
+                            ),
+                          ),
+                        // Discount ribbon overlay in image
+                        if (offer.discountPercentage > 0)
+                          Positioned(
+                            top: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.25),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                '${offer.discountPercentage}% OFF',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Right: Details Column
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Row 1: Title and Heart Icon
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              offer.restaurantName != null && offer.restaurantName!.isNotEmpty
+                                  ? offer.restaurantName!
+                                  : offer.title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(
+                            Icons.favorite_border_rounded,
+                            size: 19,
+                            color: Color(0xFFE11D48),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+
+                      // Row 2: ⭐ Rating (Count) • 15-30 mins • Distance
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 15,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            rating,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '($reviewCount)',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          const Text('•', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                          const SizedBox(width: 5),
+                          const Text(
+                            '15-30 mins',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          const Text('•', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              offer.area ?? estDistance,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+
+                      // Row 3: 🛵 From Tk 0 (Pickup) • Cuisine / Category
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.two_wheeler_rounded,
+                            size: 13.5,
+                            color: Color(0xFFDC2626),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'From Tk 0 (Pickup) • ${offer.category}',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Row 4: Deal Voucher Box (Matches Foodpanda Screenshot)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 0.9,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(3.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEA580C).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.shopping_bag_rounded,
+                                size: 14,
+                                color: Color(0xFFEA580C),
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${offer.discountPercentage}% Off  •  Save ৳${savings.toInt()}',
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Surplus ৳${offer.discountedPrice.toInt()} (was ৳${offer.originalPrice.toInt()}) • Min. spend 99 tk',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -199,6 +199,12 @@ class _CustomerShellScreenState extends ConsumerState<CustomerShellScreen> {
                           selectedIcon: Icons.local_fire_department_rounded,
                         ),
                         _buildNavItem(
+                          index: 4,
+                          label: 'Orders',
+                          icon: Icons.receipt_long_outlined,
+                          selectedIcon: Icons.receipt_long_rounded,
+                        ),
+                        _buildNavItem(
                           index: 0,
                           label: 'Home',
                           icon: Icons.home_outlined,

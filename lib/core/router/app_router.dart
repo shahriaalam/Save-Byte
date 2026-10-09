@@ -12,6 +12,7 @@ import '../../features/auth/presentation/restaurant_register_screen.dart';
 import '../../features/customer/home/customer_home_screen.dart';
 import '../../features/customer/hot_deals/customer_hot_deals_screen.dart';
 import '../../features/customer/offers/presentation/customer_offer_details_screen.dart';
+import '../../features/customer/orders/presentation/customer_orders_screen.dart';
 import '../../features/customer/profile/customer_profile_screen.dart';
 import '../../features/customer/restaurants/presentation/customer_restaurant_details_screen.dart';
 import '../../features/customer/notifications/notification_screen.dart';
@@ -163,6 +164,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.customerHotDeals,
                 name: 'customerHotDeals',
                 builder: (context, state) => const CustomerHotDealsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            observers: [CustomerModalRouteObserver(ref)],
+            routes: [
+              GoRoute(
+                path: AppRoutes.customerOrders,
+                name: 'customerOrders',
+                builder: (context, state) => const CustomerOrdersScreen(),
               ),
             ],
           ),

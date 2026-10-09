@@ -16,6 +16,7 @@ abstract final class AppRoutes {
   static const String customerOfferDetails = '/customer/offers/:id';
   static const String customerRestaurantDetails = '/customer/restaurants/:id';
   static const String customerProfile = '/customer/profile';
+  static const String customerOrders = '/customer/orders';
   static const String customerNotifications = '/customer/notifications';
 
   // Restaurant routes (Milestone 4)

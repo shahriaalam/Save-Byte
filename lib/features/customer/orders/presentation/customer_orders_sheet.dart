@@ -19,7 +19,12 @@ Future<void> showCustomerOrdersSheet({
 }
 
 class CustomerOrdersSheet extends ConsumerStatefulWidget {
-  const CustomerOrdersSheet({super.key});
+  const CustomerOrdersSheet({
+    this.isModal = true,
+    super.key,
+  });
+
+  final bool isModal;
 
   @override
   ConsumerState<CustomerOrdersSheet> createState() => _CustomerOrdersSheetState();
@@ -35,30 +40,37 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
     final ordersAsync = ref.watch(customerOrdersProvider(customerId));
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: widget.isModal
+            ? const BorderRadius.vertical(top: Radius.circular(24))
+            : null,
       ),
       child: SafeArea(
         child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.90,
-          ),
+          constraints: widget.isModal
+              ? BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.90,
+                )
+              : null,
           child: Column(
             children: [
-              // Drag handle
-              const SizedBox(height: 12),
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
+              if (widget.isModal) ...[
+                // Drag handle
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ] else
+                const SizedBox(height: 16),
 
               // Sheet Header
               Padding(
@@ -80,10 +92,11 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 22),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+                    if (widget.isModal)
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                   ],
                 ),
               ),
@@ -177,7 +190,12 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
                     }
 
                     return ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        10,
+                        20,
+                        widget.isModal ? 10 : 90,
+                      ),
                       itemCount: filtered.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (ctx, idx) => _buildOrderCard(filtered[idx]),
