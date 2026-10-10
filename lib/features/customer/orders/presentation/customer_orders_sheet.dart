@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../shared/data/order_controller.dart';
+import '../../../shared/data/review_controller.dart';
 import '../../../shared/models/order.dart';
+import '../../reviews/presentation/customer_reviews_sheet.dart';
+import '../../reviews/presentation/review_submission_sheet.dart';
 
 /// Opens the customer's "My Orders & Pickups" bottom sheet modal.
 Future<void> showCustomerOrdersSheet({
   required BuildContext context,
 }) {
+  final targetContext = (context.mounted ? context : rootNavigatorKey.currentContext) ??
+      rootNavigatorKey.currentContext ??
+      context;
+
   return showModalBottomSheet<void>(
-    context: context,
+    context: targetContext,
     isScrollControlled: true,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
@@ -464,6 +472,87 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
                 ),
               ],
             ),
+
+            // Verified Review Prompt for Completed Pickups
+            if (order.isCompleted) ...[
+              const SizedBox(height: 10),
+              Consumer(
+                builder: (context, ref, _) {
+                  final isReviewed =
+                      ref.watch(isOrderReviewedProvider(order.id)).value ?? false;
+                  if (isReviewed) {
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF16A34A)),
+                          const SizedBox(width: 6),
+                          const Expanded(
+                            child: Text(
+                              'Verified Review Submitted',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF16A34A),
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => showCustomerReviewsSheet(context: context),
+                            child: const Text(
+                              'My Reviews',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF16A34A),
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 38,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFEF3C7),
+                        foregroundColor: const Color(0xFF92400E),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: const BorderSide(color: Color(0xFFFDE68A)),
+                        ),
+                      ),
+                      onPressed: () {
+                        ReviewSubmissionSheet.show(
+                          context: context,
+                          order: order,
+                        );
+                      },
+                      icon: const Icon(Icons.star_rounded, size: 18, color: Color(0xFFF59E0B)),
+                      label: const Text(
+                        'Rate & Review this Pickup',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),

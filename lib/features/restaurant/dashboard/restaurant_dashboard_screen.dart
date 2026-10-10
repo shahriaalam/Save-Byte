@@ -25,6 +25,8 @@ import '../notifications/restaurant_notification_controller.dart';
 import '../presentation/restaurant_controller.dart';
 import '../../shared/data/order_controller.dart';
 import '../orders/presentation/restaurant_orders_sheet.dart';
+import '../../shared/data/review_controller.dart';
+import '../../customer/reviews/presentation/widgets/restaurant_reviews_section.dart';
 
 /// Restaurant Management Portal Screen.
 /// Floating Bottom Navigation Bar order:
@@ -1257,6 +1259,8 @@ class _RestaurantDashboardScreenState
                     await Future.wait<dynamic>([
                       ref.refresh(currentRestaurantProvider.future),
                       ref.refresh(currentRestaurantOffersProvider.future),
+                      ref.refresh(restaurantReviewsProvider(restaurant.id).future),
+                      ref.refresh(restaurantRatingSummaryProvider(restaurant.id).future),
                     ]);
                   },
                   child: IndexedStack(
@@ -2362,6 +2366,56 @@ class _RestaurantDashboardScreenState
                                   ),
                                 ),
                                 StatusBadge.fromStatus(restaurant.status),
+                                Consumer(
+                                  builder: (context, ref, _) {
+                                    final summaryAsync = ref.watch(
+                                      restaurantRatingSummaryProvider(restaurant.id),
+                                    );
+                                    final rating = summaryAsync.value?.averageRating ?? 0.0;
+                                    final total = summaryAsync.value?.totalReviews ?? 0;
+                                    return GestureDetector(
+                                      onTap: () => _showRestaurantReviewsSheet(
+                                        context,
+                                        restaurant,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 2.5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF3C7),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: const Color(0xFFFDE68A),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.star_rounded,
+                                              size: 13,
+                                              color: Color(0xFFD97706),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              total > 0
+                                                  ? '${rating.toStringAsFixed(1)} ★ ($total)'
+                                                  : 'New ★',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFF92400E),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ],
                             ),
                           ],
@@ -2684,6 +2738,13 @@ class _RestaurantDashboardScreenState
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18),
               child: _buildTakeawayOrdersLiveCard(context, restaurant),
+            ),
+            const SizedBox(height: 12),
+
+            // Live Customer Ratings & Reviews Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: _buildRestaurantReviewsLiveCard(context, restaurant),
             ),
             const SizedBox(height: 18),
 
@@ -3518,6 +3579,10 @@ class _RestaurantDashboardScreenState
               ),
             ),
           ),
+          const SizedBox(height: 20),
+
+          // Customer Reviews & Sentiment Intelligence
+          _buildRestaurantReviewsIntelligenceSection(context, restaurant),
         ],
       ),
     );
@@ -8289,6 +8354,43 @@ class _RestaurantDashboardScreenState
               restaurant.address ?? 'House 14, Road 4, Block D, Banasree, Dhaka',
               style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
+            const SizedBox(height: 8),
+            Consumer(
+              builder: (context, ref, _) {
+                final summaryAsync = ref.watch(restaurantRatingSummaryProvider(restaurant.id));
+                final rating = summaryAsync.value?.averageRating ?? 0.0;
+                final count = summaryAsync.value?.totalReviews ?? 0;
+                return InkWell(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _showRestaurantReviewsSheet(context, restaurant);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded, size: 16, color: Color(0xFFD97706)),
+                        const SizedBox(width: 4),
+                        Text(
+                          count > 0 ? '$rating ★ ($count reviews) • See all reviews →' : 'New to reviews',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
             const Spacer(),
             SizedBox(
               width: double.infinity,
@@ -8567,4 +8669,278 @@ class _RestaurantDashboardScreenState
     );
   }
 
+  void _showRestaurantReviewsSheet(
+      BuildContext context, Restaurant restaurant) {
+    _showSheet<void>(
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.star_rounded,
+                              color: Color(0xFFD97706), size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'Customer Reviews',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 22),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: RestaurantReviewsSection(
+                      restaurantId: restaurant.id,
+                      restaurantName: restaurant.name,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestaurantReviewsLiveCard(
+      BuildContext context, Restaurant restaurant) {
+    final summaryAsync =
+        ref.watch(restaurantRatingSummaryProvider(restaurant.id));
+    final reviewsAsync =
+        ref.watch(restaurantReviewsProvider(restaurant.id));
+
+    return summaryAsync.maybeWhen(
+      data: (summary) {
+        final rating = summary.averageRating;
+        final total = summary.totalReviews;
+        final verifiedCount = summary.verifiedRescueCount;
+        final latestReview =
+            reviewsAsync.value?.isNotEmpty == true ? reviewsAsync.value!.first : null;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFFFDE68A),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => _showRestaurantReviewsSheet(context, restaurant),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.star_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 6,
+                                children: [
+                                  const Text(
+                                    'Customer Reviews & Ratings',
+                                    style: TextStyle(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      total > 0 ? '${rating.toStringAsFixed(1)} ★' : 'New',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF92400E),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                total > 0
+                                    ? '$total verified takeaway reviews ($verifiedCount verified)'
+                                    : 'Awaiting first verified takeaway review',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ],
+                    ),
+                    if (latestReview != null) ...[
+                      const Divider(height: 20),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.format_quote_rounded,
+                              size: 16, color: Color(0xFFD97706)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${latestReview.comment} — ${latestReview.customerName}',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF475569),
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildRestaurantReviewsIntelligenceSection(
+      BuildContext context, Restaurant restaurant) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.rate_review_outlined,
+                        size: 20, color: Color(0xFFD97706)),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Customer Reviews & Sentiment',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () =>
+                    _showRestaurantReviewsSheet(context, restaurant),
+                child: const Text(
+                  'View All →',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          RestaurantReviewsSection(
+            restaurantId: restaurant.id,
+            restaurantName: restaurant.name,
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -7,7 +7,7 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![Riverpod](https://img.shields.io/badge/Riverpod-3.x-blue?style=for-the-badge)](https://riverpod.dev)
-[![Tests Passing](https://img.shields.io/badge/Tests-134%20Passed-brightgreen?style=for-the-badge&logo=checkmarx&logoColor=white)](test/)
+[![Tests Passing](https://img.shields.io/badge/Tests-144%20Passed-brightgreen?style=for-the-badge&logo=checkmarx&logoColor=white)](test/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 ---
@@ -64,7 +64,10 @@ SaveBite provides a lightweight, real-time discovery and pickup marketplace wher
 - **Search & Filter:** Instant debounced full-text search across meal titles, categories, division/area locations, and restaurant names.
 - **Surplus Food Details:** Comprehensive meal view featuring quantity remaining, portion size, allergen disclosures, countdown timer to pickup deadline, original vs. discounted pricing breakdown with computed savings percentage.
 - **Restaurant Profile & Active Menu:** View complete restaurant operating hours, address, phone contact, and all current surplus listings from the same kitchen.
-- **Customer Orders & Live Pickup Sheet:** Track orders through a real-time status pipeline (`pending` ➔ `confirmed` ➔ `ready_for_pickup` ➔ `picked_up`), complete with pickup timers and digital receipts.
+- **Customer Orders & Live Pickup Sheet:** Track orders through a real-time status pipeline (`pending` ➔ `confirmed` ➔ `ready_for_pickup` ➔ `picked_up`), complete with pickup timers, digital receipts, and one-tap access to rate completed rescues.
+- **Customer Reviews, Ratings & Verified Badges:** Following food pickup, customers can post a 1-to-5 star rating, written sentence review, and attached food photos (camera/gallery or preset foods). Reviews prominently feature a **Verified Rescue** badge tied directly to their completed takeaway order.
+- **My Reviews & Ratings Portal:** Customers can view and manage all historical reviews and ratings submitted for each restaurant directly from their profile menu.
+- **Community Transparency on Restaurant Profiles:** Other customers can see the restaurant's aggregate rating score, 5★-to-1★ distribution bars, total verified rescues count, and filter reviews ("All Reviews" vs "With Photos").
 - **Favorites System:** One-tap bookmarking to save and revisit preferred restaurants and surplus items.
 - **Profile & Monogram Avatars:** Manage personal account details, upload custom profile photos with monogram fallback initials, and safe account deletion with confirmation safeguards.
 
@@ -72,11 +75,12 @@ SaveBite provides a lightweight, real-time discovery and pickup marketplace wher
 - **Partner Registration & KYC:** Dedicated partner onboarding capturing business name, cuisine specialty, physical address, division/area, contact phone, operating hours, and storefront photos.
 - **Approval Workflow:** Clear status lifecycle (`pending` ➔ `approved`, `rejected`, or `suspended`) with administrative safeguards preventing unapproved stores from publishing.
 - **Partner Portal with Floating Nav Bar:** A modern 5-tab floating pill navigation bar:
-  - 🏠 **Home:** Live operational overview, active listings counter, quick actions, and pending pickup alerts.
-  - 📊 **Café Intelligence:** Real-time business KPI analytics (Gross Revenue, Total Rescued Meals, Average Customer Rating, Active Orders) and an interactive **Top Sellers** breakdown.
+  - 🏠 **Home:** Live operational overview, active listings counter, quick actions, pending pickup alerts, and live **Customer Reviews & Ratings** summary card.
+  - 📊 **Café Intelligence:** Real-time business KPI analytics (Gross Revenue, Total Rescued Meals, Average Customer Rating, Active Orders), interactive **Top Sellers** breakdown, and a dedicated **Customer Reviews & Sentiment Intelligence** section.
   - 📝 **Posts:** Active surplus listings manager — edit meal titles, adjust available quantities in real time, or mark posts as "Done" with instant dashboard sync.
   - 🎁 **Offers:** Purchase admin promotional packages (Hero Banner for ৳2,000, 24h Offer Boost for ৳600) via an integrated **Payment Portal** sheet supporting bKash, Nagad, and Cards.
   - 👤 **Account & Owner Profile:** Verified owner credentials card, profile completeness score with an active posting blocker for incomplete profiles, "Request Info Update" workflow, and 2-step OTP account deletion.
+- **Partner Review Inspection:** Restaurant partners can inspect customer feedback, star ratings, and uploaded meal pictures directly from their dashboard and intelligence views to track food quality and customer satisfaction.
 - **Hero Banner Designer:** Exclusive design suite for Gold Merchants to customize promotional hero banners with approval workflow.
 - **Live Pickup Management:** High-visibility green status cards for confirmed orders with one-tap "Mark Ready for Pickup" and "Mark as Picked Up / Done" workflows.
 - **Partner Notifications Center:** Dedicated inbox for real-time notifications on customer orders, promotional package approvals, and admin policy updates.
@@ -258,11 +262,25 @@ Manages active hero promotional banners displayed across the customer feed.
 - `is_active` (BOOLEAN, default: `true`)
 - `priority` (INTEGER)
 
+### 6. `reviews` Table
+Stores customer reviews, 1-to-5 star ratings, and food photo attachments with verified takeaway rescue badges.
+- `id` (UUID, Primary Key)
+- `order_id` (UUID, references `orders.id`, UNIQUE constraint)
+- `customer_id` (UUID, references `profiles.id`)
+- `restaurant_id` (UUID, references `restaurants.id`)
+- `offer_id` (UUID, references `offers.id`, optional)
+- `rating` (NUMERIC(2,1), range `1.0` to `5.0`)
+- `comment` (TEXT, customer feedback description)
+- `image_url` (TEXT, optional attached food picture)
+- `is_verified` (BOOLEAN, default: `true` for completed pickup orders)
+- `created_at` / `updated_at` (TIMESTAMP WITH TIME ZONE)
+
 ### Supabase Storage Buckets
 - `avatars`: User profile photos.
 - `restaurant-images`: Restaurant storefront and interior imagery.
 - `offer-images`: Food photos for surplus meal listings.
 - `banner-images`: Hero promotional banner assets.
+- `review-images`: Customer-uploaded food review photographs.
 
 ---
 

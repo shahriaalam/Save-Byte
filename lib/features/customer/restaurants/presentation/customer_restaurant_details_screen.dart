@@ -10,6 +10,8 @@ import '../../../../core/widgets/loading_state.dart';
 import '../../../shared/widgets/offer_card.dart';
 import '../../offers/presentation/customer_offers_controller.dart';
 import '../../profile/data/customer_favorites_controller.dart';
+import '../../../shared/data/review_controller.dart';
+import '../../reviews/presentation/widgets/restaurant_reviews_section.dart';
 
 /// Restaurant details screen displaying restaurant info and active offers (Section 23).
 class CustomerRestaurantDetailsScreen extends ConsumerWidget {
@@ -55,6 +57,8 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
               await Future.wait<dynamic>([
                 ref.refresh(restaurantDetailsProvider(restaurantId).future),
                 ref.refresh(restaurantActiveOffersProvider(restaurantId).future),
+                ref.refresh(restaurantReviewsProvider(restaurantId).future),
+                ref.refresh(restaurantRatingSummaryProvider(restaurantId).future),
               ]);
             },
             child: CustomScrollView(
@@ -364,6 +368,52 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
+                          const SizedBox(width: 8),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final summaryAsync = ref.watch(
+                                restaurantRatingSummaryProvider(restaurant.id),
+                              );
+                              final summary = summaryAsync.value;
+                              final rating = summary?.averageRating ?? 0.0;
+                              final count = summary?.totalReviews ?? 0;
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: const Color(0xFFFDE68A),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      size: 14,
+                                      color: Color(0xFFD97706),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      count > 0
+                                          ? '${rating.toStringAsFixed(1)} ★ ($count)'
+                                          : 'New ★',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF92400E),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -570,6 +620,17 @@ class CustomerRestaurantDetailsScreen extends ConsumerWidget {
                         restaurantActiveOffersProvider(restaurantId),
                       ),
                     ),
+                  ),
+                ),
+              ),
+
+              // Customer Reviews & Ratings Section with Verified Badges
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 20),
+                  child: RestaurantReviewsSection(
+                    restaurantId: restaurant.id,
+                    restaurantName: restaurant.name,
                   ),
                 ),
               ),

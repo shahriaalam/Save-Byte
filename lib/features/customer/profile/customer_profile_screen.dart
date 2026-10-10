@@ -21,6 +21,7 @@ import '../../shared/presentation/payment_portal_sheet.dart';
 import 'data/customer_favorites_controller.dart';
 import 'data/customer_membership_controller.dart';
 import '../orders/presentation/customer_orders_sheet.dart';
+import '../reviews/presentation/customer_reviews_sheet.dart';
 import 'widgets/change_avatar_sheet.dart';
 
 /// Customer Account management screen (Section 26 & Account update).
@@ -2218,6 +2219,21 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
                         title: 'My Orders & Pickups',
                         subtitle: 'Track scheduled takeaway collections & receipts',
                         onTap: () => showCustomerOrdersSheet(context: context),
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 70,
+                        endIndent: 16,
+                        color: Color(0xFFF1F5F9),
+                      ),
+                      _buildMenuItem(
+                        icon: Icons.rate_review_rounded,
+                        iconColor: const Color(0xFFD97706),
+                        iconBgColor: const Color(0xFFFEF3C7),
+                        title: 'My Reviews & Ratings',
+                        subtitle: 'Feedback with verified takeaway rescue badges',
+                        onTap: () => showCustomerReviewsSheet(context: context),
                       ),
                       const Divider(
                         height: 1,

@@ -6,6 +6,7 @@ import '../../../shared/data/order_controller.dart';
 import '../../../shared/models/food_offer.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/presentation/payment_portal_sheet.dart';
+import '../../../../core/router/app_router.dart';
 import 'customer_orders_sheet.dart';
 
 /// Opens the customer order checkout & pickup scheduling bottom sheet.
@@ -185,10 +186,17 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
       );
 
       if (!mounted) return;
-      Navigator.pop(context); // Close checkout bottom sheet
+      // Close checkout bottom sheet cleanly first
+      Navigator.of(context).pop();
 
       if (createdOrder != null) {
-        _showOrderSuccessDialog(createdOrder);
+        // Schedule dialog presentation on root navigator context
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final targetContext = rootNavigatorKey.currentContext;
+          if (targetContext != null) {
+            _showOrderSuccessDialog(targetContext, createdOrder);
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -206,10 +214,15 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
     }
   }
 
-  void _showOrderSuccessDialog(Order order) {
+  static void _showOrderSuccessDialog(BuildContext targetContext, Order order) {
+    final navContext = (targetContext.mounted ? targetContext : rootNavigatorKey.currentContext) ??
+        rootNavigatorKey.currentContext ??
+        targetContext;
+
     showDialog<void>(
-      context: context,
+      context: navContext,
       useRootNavigator: true,
+      barrierDismissible: false,
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         contentPadding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
@@ -392,14 +405,15 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
                 onPressed: () {
-                  Navigator.pop(dialogCtx);
-                  showCustomerOrdersSheet(context: context);
+                  Navigator.of(dialogCtx).pop();
+                  final ordersContext = rootNavigatorKey.currentContext ?? navContext;
+                  showCustomerOrdersSheet(context: ordersContext);
                 },
               ),
             ),
             const SizedBox(height: 6),
             TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
+              onPressed: () => Navigator.of(dialogCtx).pop(),
               child: const Text('Close', style: TextStyle(color: Color(0xFF64748B))),
             ),
           ],
