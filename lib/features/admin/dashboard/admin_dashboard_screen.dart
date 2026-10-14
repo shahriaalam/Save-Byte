@@ -15,6 +15,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../restaurant/data/restaurant_repository.dart';
 import '../../restaurant/notifications/restaurant_notification_controller.dart';
 import '../../shared/data/promo_banner_controller.dart';
+import '../../shared/data/promo_code_controller.dart';
 import '../../shared/data/admin_financial_controller.dart';
 import '../../shared/models/promo_banner.dart';
 import 'widgets/admin_analytics_dashboard_sheet.dart';
@@ -5076,6 +5077,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     _showSheet(
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -5095,35 +5099,223 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Campaign Vouchers & Perks',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Promo Codes & Vouchers',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'Admin Setup • App Authority Sponsored',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showCreateVoucherModal(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text(
+                    'Setup Code',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
-            ..._vouchersData.map(
-              (v) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.shield_outlined, color: Color(0xFF2563EB), size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '🛡️ Restaurant Protection Guarantee: All promo discounts are 100% funded by SaveBite platform authority. Partner restaurants receive their full payout without any loss.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF1E40AF),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  child: const Icon(Icons.confirmation_number_rounded,
-                      color: Color(0xFFD97706)),
-                ),
-                title: Text(v['code'] as String,
-                    style: const TextStyle(
-                        color: Color(0xFF0F172A), fontWeight: FontWeight.w800)),
-                subtitle: Text(v['discount'] as String,
-                    style: const TextStyle(color: Color(0xFF64748B))),
-                trailing: Text('${v['usedCount']} uses',
-                    style: const TextStyle(
-                        color: Color(0xFF94A3B8), fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final promoListAsync = ref.watch(allPromoCodesProvider);
+                  return promoListAsync.when(
+                    data: (codes) {
+                      if (codes.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'No promo codes created yet.\nTap "+ Setup Code" to publish your first voucher.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          ),
+                        );
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: codes.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, idx) {
+                          final promo = codes[idx];
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: promo.isActive ? Colors.white : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: promo.isActive
+                                    ? const Color(0xFFE2E8F0)
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: promo.isActive
+                                        ? const Color(0xFFFEF2F2)
+                                        : const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.confirmation_number_rounded,
+                                    color: promo.isActive
+                                        ? AppColors.primary
+                                        : const Color(0xFF94A3B8),
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            promo.code,
+                                            style: TextStyle(
+                                              color: promo.isActive
+                                                  ? const Color(0xFF0F172A)
+                                                  : const Color(0xFF64748B),
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 14,
+                                              letterSpacing: 0.8,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: promo.isActive
+                                                  ? const Color(0xFFDCFCE7)
+                                                  : const Color(0xFFE2E8F0),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              promo.discountTag,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                                color: promo.isActive
+                                                    ? const Color(0xFF15803D)
+                                                    : const Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        promo.description,
+                                        style: const TextStyle(
+                                          color: Color(0xFF64748B),
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Min. Order: ৳${promo.minOrderAmount.toStringAsFixed(0)} • Used: ${promo.usedCount} times',
+                                        style: const TextStyle(
+                                          color: Color(0xFF94A3B8),
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: promo.isActive,
+                                  activeThumbColor: AppColors.primary,
+                                  onChanged: (val) {
+                                    ref
+                                        .read(promoCodeControllerProvider.notifier)
+                                        .toggleStatus(promo.id, val);
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded,
+                                      size: 18, color: Color(0xFFEF4444)),
+                                  onPressed: () {
+                                    ref
+                                        .read(promoCodeControllerProvider.notifier)
+                                        .deletePromoCode(promo.id);
+                                    setState(() {
+                                      _vouchersData.removeWhere(
+                                          (v) => v['code'] == promo.code);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (err, _) => Center(child: Text('Error loading promo codes: $err')),
+                  );
+                },
               ),
             ),
           ],
@@ -5133,111 +5325,300 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   void _showCreateVoucherModal(BuildContext context) {
+    // Only Admin or Head Admin can set up promo codes
+    final profile = ref.read(currentUserProfileProvider);
+    final userRole = profile?.role ?? AppConstants.roleAdmin;
+    if (userRole != AppConstants.roleAdmin &&
+        userRole != AppConstants.roleHeadAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Access Restricted: Only Admin can setup promo codes.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     final codeCtrl = TextEditingController();
-    final discountCtrl = TextEditingController();
+    final titleCtrl = TextEditingController();
+    final discountValCtrl = TextEditingController(text: '50');
+    final minOrderCtrl = TextEditingController(text: '150');
+    final maxDiscountCtrl = TextEditingController();
+    String discountType = 'flat'; // 'flat' or 'percentage'
 
     _showSheet(
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setModalState) {
+          return Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            const SizedBox(height: 16),
-            const Text('Generate New Voucher Code',
-                style: TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: codeCtrl,
-              style: const TextStyle(color: Color(0xFF0F172A)),
-              decoration: InputDecoration(
-                hintText: 'e.g. MONSOON30',
-                hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                labelText: 'Coupon Code',
-                labelStyle: const TextStyle(color: Color(0xFF64748B)),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: discountCtrl,
-              style: const TextStyle(color: Color(0xFF0F172A)),
-              decoration: InputDecoration(
-                hintText: 'e.g. ৳30 OFF on orders above ৳150',
-                hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                labelText: 'Discount Description',
-                labelStyle: const TextStyle(color: Color(0xFF64748B)),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: FilledButton(
-                onPressed: () {
-                  final code = codeCtrl.text.trim();
-                  if (code.isNotEmpty) {
-                    setState(() {
-                      _vouchersData.add({
-                        'code': code.toUpperCase(),
-                        'title': code.toUpperCase(),
-                        'discount': discountCtrl.text.trim().isEmpty
-                            ? '৳30 OFF'
-                            : discountCtrl.text.trim(),
-                        'type': 'Flat',
-                        'status': 'Active',
-                        'usedCount': 0,
-                      });
-                    });
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Voucher "$code" generated and live!'),
-                        backgroundColor: const Color(0xFF16A34A),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                    );
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                ),
-                child: const Text('Publish Voucher',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Admin Setup Promo Code',
+                    style: TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Set up a promotional code. Discount will be absorbed by platform authority; restaurant receives 100% payout.',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 11.5,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Promo Code Input
+                  TextField(
+                    controller: codeCtrl,
+                    textCapitalization: TextCapitalization.characters,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'e.g. MONSOON30 or SAVE50',
+                      labelText: 'Promo Code (Uppercase)',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Title & Description
+                  TextField(
+                    controller: titleCtrl,
+                    style: const TextStyle(color: Color(0xFF0F172A)),
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Monsoon Special Discount',
+                      labelText: 'Campaign Title',
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Discount Type Segment
+                  const Text(
+                    'Discount Type:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF334155),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Center(child: Text('Flat ৳ (e.g. ৳50 OFF)')),
+                          selected: discountType == 'flat',
+                          selectedColor: AppColors.primary,
+                          labelStyle: TextStyle(
+                            color: discountType == 'flat' ? Colors.white : const Color(0xFF0F172A),
+                            fontWeight: FontWeight.w700,
+                          ),
+                          onSelected: (val) {
+                            if (val) setModalState(() => discountType = 'flat');
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Center(child: Text('Percentage % (e.g. 20%)')),
+                          selected: discountType == 'percentage',
+                          selectedColor: AppColors.primary,
+                          labelStyle: TextStyle(
+                            color: discountType == 'percentage' ? Colors.white : const Color(0xFF0F172A),
+                            fontWeight: FontWeight.w700,
+                          ),
+                          onSelected: (val) {
+                            if (val) setModalState(() => discountType = 'percentage');
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Value & Min Order row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: discountValCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: discountType == 'flat' ? 'Discount (৳)' : 'Discount (%)',
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: minOrderCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Min. Order (৳)',
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (discountType == 'percentage') ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: maxDiscountCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Max Discount Cap (৳) (Optional)',
+                        hintText: 'e.g. 100',
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+
+                  // Platform authority guarantee note
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.verified_user_rounded, color: Color(0xFF059669), size: 18),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Platform Subsidy: The discount is 100% absorbed by the app authority. Partner restaurants will receive their full food price without any loss.',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xFF065F46),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: () async {
+                        final code = codeCtrl.text.trim().toUpperCase();
+                        if (code.isEmpty) return;
+
+                        final title = titleCtrl.text.trim().isNotEmpty
+                            ? titleCtrl.text.trim()
+                            : '$code Special Offer';
+                        final val = double.tryParse(discountValCtrl.text.trim()) ?? 30.0;
+                        final minOrder = double.tryParse(minOrderCtrl.text.trim()) ?? 0.0;
+                        final maxCap = double.tryParse(maxDiscountCtrl.text.trim());
+
+                        final desc = discountType == 'percentage'
+                            ? '${val.toStringAsFixed(0)}% OFF on orders above ৳${minOrder.toStringAsFixed(0)}'
+                            : '৳${val.toStringAsFixed(0)} OFF on orders above ৳${minOrder.toStringAsFixed(0)}';
+
+                        await ref.read(promoCodeControllerProvider.notifier).createPromoCode(
+                              code: code,
+                              title: title,
+                              description: desc,
+                              discountType: discountType,
+                              discountValue: val,
+                              minOrderAmount: minOrder,
+                              maxDiscount: maxCap,
+                            );
+
+                        setState(() {
+                          _vouchersData.insert(0, {
+                            'code': code,
+                            'title': title,
+                            'discount': desc,
+                            'type': discountType == 'flat' ? 'Flat' : 'Percentage',
+                            'status': 'Active',
+                            'usedCount': 0,
+                          });
+                        });
+
+                        if (context.mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Promo Code "$code" published! Live for all customers.'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
+                          );
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Publish Promo Code',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

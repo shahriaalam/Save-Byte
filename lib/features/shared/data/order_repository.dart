@@ -55,9 +55,14 @@ class OrderRepository {
     required String paymentMethod,
     String? transactionId,
     String? notes,
+    String? promoCode,
+    double discountAmount = 0.0,
   }) async {
-    final totalPrice = unitPrice * quantity;
-    final totalSavings = (originalUnitPrice - unitPrice) * quantity;
+    final subtotal = unitPrice * quantity;
+    final totalPrice = (subtotal - discountAmount) < 0.0 ? 0.0 : (subtotal - discountAmount);
+    final totalSavings = ((originalUnitPrice - unitPrice) * quantity) + discountAmount;
+    final restaurantEarnings = subtotal; // 100% full payout to restaurant (no loss)
+    final platformSubsidy = discountAmount; // 100% absorbed by app authority
     final randomSuffix = (Random().nextInt(900000) + 100000).toString();
     final orderNumber = 'SB-$randomSuffix';
     final pickupCode = (Random().nextInt(9000) + 1000).toString();
@@ -94,6 +99,10 @@ class OrderRepository {
       createdAt: DateTime.now(),
       emailSentCustomer: true,
       emailSentRestaurant: true,
+      promoCode: promoCode,
+      discountAmount: discountAmount,
+      restaurantEarnings: restaurantEarnings,
+      platformSubsidy: platformSubsidy,
     );
 
     // 1. Decrease food offer portion inventory locally
@@ -134,6 +143,10 @@ class OrderRepository {
           'transaction_id': transactionId,
           'status': 'confirmed',
           'notes': notes,
+          'promo_code': promoCode,
+          'discount_amount': discountAmount,
+          'restaurant_earnings': restaurantEarnings,
+          'platform_subsidy': platformSubsidy,
         });
 
         // Also update Supabase offers table quantity

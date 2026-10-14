@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../shared/data/order_controller.dart';
+import '../../../shared/data/promo_code_controller.dart';
 import '../../../shared/models/food_offer.dart';
 import '../../../shared/models/order.dart';
+import '../../../shared/models/promo_code.dart';
 import '../../../shared/presentation/payment_portal_sheet.dart';
 import '../../../../core/router/app_router.dart';
 import 'customer_orders_sheet.dart';
@@ -41,6 +43,10 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
   final TextEditingController _notesCtrl = TextEditingController();
+  final TextEditingController _promoCtrl = TextEditingController();
+  PromoCode? _appliedPromo;
+  bool _isValidatingPromo = false;
+  String? _promoError;
   bool _isSubmitting = false;
 
   @override
@@ -72,7 +78,70 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _notesCtrl.dispose();
+    _promoCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _applyPromoCode([String? codeOverride]) async {
+    final code = (codeOverride ?? _promoCtrl.text).trim().toUpperCase();
+    if (code.isEmpty) {
+      setState(() {
+        _promoError = 'Please enter a promo code';
+      });
+      return;
+    }
+
+    setState(() {
+      _isValidatingPromo = true;
+      _promoError = null;
+    });
+
+    final subtotal = widget.offer.discountedPrice * _quantity;
+    final result = await ref
+        .read(promoCodeControllerProvider.notifier)
+        .validatePromo(code: code, orderAmount: subtotal);
+
+    if (!mounted) return;
+
+    if (result.isValid && result.promoCode != null) {
+      setState(() {
+        _appliedPromo = result.promoCode;
+        _promoCtrl.text = result.promoCode!.code;
+        _promoError = null;
+        _isValidatingPromo = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Promo "${result.promoCode!.code}" applied! You save ৳${result.discountAmount.toStringAsFixed(0)} (Platform Sponsored)',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF16A34A),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } else {
+      setState(() {
+        _promoError = result.message;
+        _isValidatingPromo = false;
+      });
+    }
+  }
+
+  void _removePromoCode() {
+    setState(() {
+      _appliedPromo = null;
+      _promoCtrl.clear();
+      _promoError = null;
+    });
   }
 
   String _formatTimeDisplay(DateTime dt) {
@@ -133,7 +202,12 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
       return;
     }
 
-    final totalPrice = widget.offer.discountedPrice * _quantity;
+    final subtotal = widget.offer.discountedPrice * _quantity;
+    double promoDiscount = 0.0;
+    if (_appliedPromo != null && subtotal >= _appliedPromo!.minOrderAmount) {
+      promoDiscount = _appliedPromo!.calculateDiscount(subtotal);
+    }
+    final payableAmount = (subtotal - promoDiscount) < 0.0 ? 0.0 : (subtotal - promoDiscount);
     final customerName = _nameCtrl.text.trim();
     final customerPhone = _phoneCtrl.text.trim();
 
@@ -142,11 +216,13 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
       context: context,
       title: 'Pay & Book Takeaway Order',
       subtitle: '${widget.offer.restaurantName ?? 'Restaurant'} • ${_quantity}x ${widget.offer.title}',
-      amount: totalPrice,
+      amount: payableAmount,
       customerOrBusinessName: customerName,
       perkHighlights: [
         'Instant surplus meal booking confirmation',
         'Pickup scheduled: $_selectedPickupTime',
+        if (_appliedPromo != null && promoDiscount > 0)
+          'Platform voucher "${_appliedPromo!.code}" applied (-৳${promoDiscount.toStringAsFixed(0)})',
         'Direct takeaway pickup — zero delivery fees',
       ],
       itemType: 'food_order',
@@ -183,6 +259,8 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
         paymentMethod: paymentResult.gateway?.toUpperCase() ?? 'BKASH',
         transactionId: paymentResult.transactionId,
         notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+        promoCode: _appliedPromo?.code,
+        discountAmount: promoDiscount,
       );
 
       if (!mounted) return;
@@ -355,6 +433,31 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                       ),
                     ],
                   ),
+                  if (order.promoCode != null && order.discountAmount > 0) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.confirmation_number_rounded, size: 13, color: Color(0xFF15803D)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Promo ${order.promoCode} (-৳${order.discountAmount.toStringAsFixed(0)}) • Paid ৳${order.totalPrice.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF15803D),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -426,9 +529,20 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
   Widget build(BuildContext context) {
     final offer = widget.offer;
     final itemTotal = offer.discountedPrice * _quantity;
-    final totalSavings = offer.savings * _quantity;
     final originalTotal = offer.originalPrice * _quantity;
     final maxAvailable = offer.quantity.clamp(1, 99);
+
+    // Dynamic promo discount calculation
+    double promoDiscount = 0.0;
+    if (_appliedPromo != null) {
+      if (itemTotal >= _appliedPromo!.minOrderAmount) {
+        promoDiscount = _appliedPromo!.calculateDiscount(itemTotal);
+      } else {
+        promoDiscount = 0.0;
+      }
+    }
+    final totalPayable = (itemTotal - promoDiscount) < 0.0 ? 0.0 : (itemTotal - promoDiscount);
+    final totalSavings = (offer.savings * _quantity) + promoDiscount;
 
     final now = DateTime.now();
     final in15m = _formatTimeDisplay(now.add(const Duration(minutes: 15)));
@@ -822,6 +936,209 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
               ),
               const SizedBox(height: 18),
 
+              // PROMO CODE SECTION (Platform Sponsored - Restaurant receives 100% full payout)
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _appliedPromo != null
+                        ? const Color(0xFF86EFAC)
+                        : const Color(0xFFE2E8F0),
+                    width: _appliedPromo != null ? 1.5 : 1,
+                  ),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: _appliedPromo != null
+                                ? const Color(0xFFDCFCE7)
+                                : const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.confirmation_number_rounded,
+                            size: 16,
+                            color: _appliedPromo != null
+                                ? const Color(0xFF16A34A)
+                                : AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Have a Promo Code?',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    if (_appliedPromo != null) ...[
+                      // Applied promo badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _appliedPromo!.code,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF15803D),
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '-৳${promoDiscount.toStringAsFixed(0)} OFF',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF16A34A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '🛡️ 100% Platform Sponsored • ${offer.restaurantName ?? 'Restaurant'} receives full payout',
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF166534),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              onPressed: _removePromoCode,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      // Promo code input row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 42,
+                              child: TextField(
+                                controller: _promoCtrl,
+                                textCapitalization: TextCapitalization.characters,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Enter code (e.g. SAVEBITE50)',
+                                  hintStyle: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.normal,
+                                    letterSpacing: 0,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.local_offer_outlined, size: 16),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                                  ),
+                                ),
+                                onSubmitted: (_) => _applyPromoCode(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 42,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: Size.zero,
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: _isValidatingPromo ? null : () => _applyPromoCode(),
+                              child: _isValidatingPromo
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Text(
+                                      'Apply',
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_promoError != null) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.error),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                _promoError!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+
               // Price Calculation Summary
               Container(
                 padding: const EdgeInsets.all(14),
@@ -845,6 +1162,26 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                       'FREE',
                       isGreen: true,
                     ),
+                    if (_appliedPromo != null && promoDiscount > 0) ...[
+                      const SizedBox(height: 6),
+                      _buildSummaryRow(
+                        'Promo Discount (${_appliedPromo!.code})',
+                        '-৳${promoDiscount.toStringAsFixed(0)}',
+                        isGreen: true,
+                      ),
+                      const SizedBox(height: 2),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '🛡️ App authority sponsored • ${offer.restaurantName ?? 'Restaurant'} receives 100% payout',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF15803D),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Divider(height: 18),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -873,7 +1210,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '৳${itemTotal.toStringAsFixed(0)}',
+                              '৳${totalPayable.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
@@ -931,7 +1268,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                   label: Text(
                     _isSubmitting
                         ? 'Processing...'
-                        : 'Proceed to Pay ৳${itemTotal.toStringAsFixed(0)}',
+                        : 'Proceed to Pay ৳${totalPayable.toStringAsFixed(0)}',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,

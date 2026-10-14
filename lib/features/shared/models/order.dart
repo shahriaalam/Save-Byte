@@ -36,7 +36,12 @@ class Order {
     this.updatedAt,
     this.emailSentCustomer = true,
     this.emailSentRestaurant = true,
-  });
+    this.promoCode,
+    this.discountAmount = 0.0,
+    double? restaurantEarnings,
+    double? platformSubsidy,
+  })  : restaurantEarnings = restaurantEarnings ?? (unitPrice * quantity),
+        platformSubsidy = platformSubsidy ?? discountAmount;
 
   final String id;
   final String orderNumber;
@@ -69,6 +74,10 @@ class Order {
   final DateTime? updatedAt;
   final bool emailSentCustomer;
   final bool emailSentRestaurant;
+  final String? promoCode;
+  final double discountAmount;
+  final double restaurantEarnings; // Payout guaranteed to restaurant without loss
+  final double platformSubsidy; // Discount absorbed 100% by app authority
 
   bool get isActivePickup => status == 'confirmed' || status == 'ready_for_pickup';
   bool get isConfirmed => status == 'confirmed';
@@ -130,6 +139,10 @@ class Order {
     DateTime? updatedAt,
     bool? emailSentCustomer,
     bool? emailSentRestaurant,
+    String? promoCode,
+    double? discountAmount,
+    double? restaurantEarnings,
+    double? platformSubsidy,
   }) {
     return Order(
       id: id,
@@ -163,10 +176,22 @@ class Order {
       updatedAt: updatedAt ?? this.updatedAt,
       emailSentCustomer: emailSentCustomer ?? this.emailSentCustomer,
       emailSentRestaurant: emailSentRestaurant ?? this.emailSentRestaurant,
+      promoCode: promoCode ?? this.promoCode,
+      discountAmount: discountAmount ?? this.discountAmount,
+      restaurantEarnings: restaurantEarnings ?? this.restaurantEarnings,
+      platformSubsidy: platformSubsidy ?? this.platformSubsidy,
     );
   }
 
   factory Order.fromJson(Map<String, dynamic> json) {
+    final qty = (json['quantity'] as num?)?.toInt() ?? 1;
+    final unitP = (json['unit_price'] as num?)?.toDouble() ??
+        (((json['total_price'] as num?)?.toDouble() ?? 0) / (qty > 0 ? qty : 1));
+    final subtotal = unitP * qty;
+    final discount = (json['discount_amount'] as num?)?.toDouble() ?? 0.0;
+    final earnings = (json['restaurant_earnings'] as num?)?.toDouble() ?? subtotal;
+    final subsidy = (json['platform_subsidy'] as num?)?.toDouble() ?? discount;
+
     return Order(
       id: json['id'] as String,
       orderNumber: (json['order_number'] as String?) ?? 'SB-${json['id'].toString().substring(0, 6).toUpperCase()}',
@@ -183,9 +208,8 @@ class Order {
       title: (json['title'] as String?) ?? 'Food Order',
       imageUrl: json['image_url'] as String?,
       category: (json['category'] as String?) ?? 'Food',
-      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
-      unitPrice: (json['unit_price'] as num?)?.toDouble() ??
-          (((json['total_price'] as num?)?.toDouble() ?? 0) / ((json['quantity'] as num?)?.toInt() ?? 1)),
+      quantity: qty,
+      unitPrice: unitP,
       originalUnitPrice: (json['original_price'] as num?)?.toDouble() ?? 0.0,
       totalPrice: (json['total_price'] as num?)?.toDouble() ?? 0.0,
       totalSavings: (json['total_savings'] as num?)?.toDouble() ?? 0.0,
@@ -204,6 +228,10 @@ class Order {
           : null,
       emailSentCustomer: json['email_sent_customer'] as bool? ?? true,
       emailSentRestaurant: json['email_sent_restaurant'] as bool? ?? true,
+      promoCode: json['promo_code'] as String?,
+      discountAmount: discount,
+      restaurantEarnings: earnings,
+      platformSubsidy: subsidy,
     );
   }
 
@@ -240,6 +268,10 @@ class Order {
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
       'email_sent_customer': emailSentCustomer,
       'email_sent_restaurant': emailSentRestaurant,
+      if (promoCode != null) 'promo_code': promoCode,
+      'discount_amount': discountAmount,
+      'restaurant_earnings': restaurantEarnings,
+      'platform_subsidy': platformSubsidy,
     };
   }
 }

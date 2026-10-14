@@ -4,6 +4,8 @@ import '../../restaurant/presentation/restaurant_controller.dart';
 import '../models/order.dart';
 import 'order_repository.dart';
 
+import 'promo_code_repository.dart';
+
 /// Provider for customer orders list.
 final customerOrdersProvider =
     FutureProvider.family<List<Order>, String>((ref, customerId) async {
@@ -19,13 +21,19 @@ final restaurantOrdersProvider =
 });
 
 /// Provider for restaurant live sales stats (synchronous computation derived from orders).
+///
+/// NOTE: The restaurant receives 100% full food earnings. Platform-sponsored promo
+/// discounts are absorbed by the app authority; the restaurant's revenue is never docked.
 final restaurantSalesStatsProvider =
     Provider.family<RestaurantSalesStats, String>((ref, restaurantId) {
   final orders = ref.watch(restaurantOrdersProvider(restaurantId)).value ?? [];
   final totalOrders = orders.length;
   final activeCount = orders.where((o) => o.isActivePickup).length;
   final portionsSold = orders.fold<int>(0, (sum, o) => sum + o.quantity);
-  final revenue = orders.fold<double>(0.0, (sum, o) => sum + o.totalPrice);
+  final revenue = orders.fold<double>(
+    0.0,
+    (sum, o) => sum + (o.restaurantEarnings > 0 ? o.restaurantEarnings : o.totalPrice),
+  );
   final savings = orders.fold<double>(0.0, (sum, o) => sum + o.totalSavings);
 
   return RestaurantSalesStats(
@@ -63,6 +71,8 @@ class OrderController extends AsyncNotifier<void> {
     required String paymentMethod,
     String? transactionId,
     String? notes,
+    String? promoCode,
+    double discountAmount = 0.0,
   }) async {
     state = const AsyncLoading();
     try {
@@ -88,7 +98,14 @@ class OrderController extends AsyncNotifier<void> {
         paymentMethod: paymentMethod,
         transactionId: transactionId,
         notes: notes,
+        promoCode: promoCode,
+        discountAmount: discountAmount,
       );
+
+      // Record promo code usage if applicable
+      if (promoCode != null && promoCode.trim().isNotEmpty) {
+        ref.read(promoCodeRepositoryProvider).recordPromoUsage(promoCode);
+      }
 
       // Invalidate customer and restaurant orders & profit stats
       ref.invalidate(customerOrdersProvider(customerId));

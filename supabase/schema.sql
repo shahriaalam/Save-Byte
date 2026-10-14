@@ -202,6 +202,10 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS pickup_time TIMESTAMP WITH TI
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS transaction_id TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS email_sent_customer BOOLEAN DEFAULT TRUE;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS email_sent_restaurant BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS promo_code TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_earnings NUMERIC DEFAULT 0;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS platform_subsidy NUMERIC DEFAULT 0;
 
 -- Function to automatically decrease offer quantity when an order is placed
 CREATE OR REPLACE FUNCTION public.decrease_offer_quantity()
@@ -264,10 +268,14 @@ CREATE TABLE IF NOT EXISTS public.vouchers (
     max_discount NUMERIC,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_super_saver_exclusive BOOLEAN NOT NULL DEFAULT FALSE,
-    valid_from TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
-    valid_until TIMESTAMP WITH TIME ZONE NOT NULL,
+    valid_until TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (timezone('utc'::text, now()) + interval '365 days'),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS is_platform_sponsored BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS used_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL;
+ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
 
 -- 3.5 USER VOUCHERS TABLE (User Claims / Redemptions)
 CREATE TABLE IF NOT EXISTS public.user_vouchers (
@@ -519,7 +527,23 @@ CREATE POLICY "Users manage own favorites" ON public.favorites
 -- 5.8 VOUCHERS POLICIES
 DROP POLICY IF EXISTS "Anyone can view active vouchers" ON public.vouchers;
 CREATE POLICY "Anyone can view active vouchers" ON public.vouchers
-    FOR SELECT USING (is_active = TRUE AND valid_until > now());
+    FOR SELECT USING (is_active = TRUE AND (valid_until IS NULL OR valid_until > now()));
+
+-- Only admin and head_admin can create, update, or delete promo codes/vouchers
+DROP POLICY IF EXISTS "Admins can manage vouchers" ON public.vouchers;
+CREATE POLICY "Admins can manage vouchers" ON public.vouchers
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role IN ('admin', 'head_admin')
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role IN ('admin', 'head_admin')
+        )
+    );
 
 DROP POLICY IF EXISTS "Users manage own claimed vouchers" ON public.user_vouchers;
 CREATE POLICY "Users manage own claimed vouchers" ON public.user_vouchers
