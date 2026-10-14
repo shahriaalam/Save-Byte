@@ -4,6 +4,7 @@ import 'package:save_bite/core/constants/app_colors.dart';
 import 'package:save_bite/core/theme/app_theme.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('AppTheme', () {
     test(
         'provides Material 3 theme with crimson red primary, black secondary, and white background',

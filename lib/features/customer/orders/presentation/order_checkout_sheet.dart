@@ -57,19 +57,17 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
     final defaultPickup = now.add(const Duration(minutes: 30));
     _selectedPickupTime = _formatTimeDisplay(defaultPickup);
 
-    // Pre-fill user profile info
+    // Pre-fill user profile info if logged in
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final profile = ref.read(currentUserProfileProvider);
       if (profile != null) {
-        if (_nameCtrl.text.isEmpty && profile.fullName != null) {
-          _nameCtrl.text = profile.fullName!;
+        if (_nameCtrl.text.isEmpty && profile.fullName != null && profile.fullName!.trim().isNotEmpty) {
+          _nameCtrl.text = profile.fullName!.trim();
         }
-        if (_phoneCtrl.text.isEmpty && profile.phone != null) {
-          _phoneCtrl.text = profile.phone!;
+        if (_phoneCtrl.text.isEmpty && profile.phone != null && profile.phone!.trim().isNotEmpty) {
+          _phoneCtrl.text = profile.phone!.trim();
         }
       }
-      if (_nameCtrl.text.isEmpty) _nameCtrl.text = 'Guest Customer';
-      if (_phoneCtrl.text.isEmpty) _phoneCtrl.text = '01712345678';
     });
   }
 
@@ -900,6 +898,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         labelText: 'Your Name',
+                        hintText: 'Enter full name',
                         labelStyle: const TextStyle(fontSize: 12),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -914,6 +913,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         labelText: 'Phone Number',
+                        hintText: '01XXXXXXXXX',
                         labelStyle: const TextStyle(fontSize: 12),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
