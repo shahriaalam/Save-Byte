@@ -1,11 +1,11 @@
 -- ==============================================================================
--- SaveBite Supabase Database Schema & Storage Configuration (V2.0)
+-- SaveBite Supabase Database Schema & Storage Configuration (V2.5 - Comprehensive)
 -- ==============================================================================
 -- Run this complete script in your Supabase Dashboard:
 -- SQL Editor -> New Query -> Paste & Click "Run"
 --
--- This script is idempotent: it safely creates missing tables, adds any new
--- columns to existing tables, configures storage buckets, sets up Row Level
+-- This script is completely IDEMPOTENT: it safely creates missing tables,
+-- adds all required columns, configures storage buckets, sets up Row Level
 -- Security (RLS) policies, and creates performance indexes.
 -- ==============================================================================
 
@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
     full_name TEXT,
+    first_name TEXT,
+    last_name TEXT,
+    gender TEXT,
+    address TEXT,
+    city TEXT,
+    date_of_birth TEXT,
     phone TEXT,
     role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'restaurant', 'admin', 'head_admin', 'moderator')),
     avatar_url TEXT,
@@ -32,8 +38,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- Ensure newly added columns & constraints exist if table was already created
+-- Ensure newly added columns exist if table was already created
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS first_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS date_of_birth TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS reward_points INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS disabled_at TIMESTAMP WITH TIME ZONE;
 
 -- Update role constraint to support multi-tier administration (head_admin, admin, moderator)
 DO $$
@@ -68,6 +81,7 @@ CREATE TABLE IF NOT EXISTS public.restaurants (
     subscription_plan TEXT,
     subscription_expires_at TIMESTAMP WITH TIME ZONE,
     boost_credits INTEGER NOT NULL DEFAULT 0,
+    banner_credits INTEGER NOT NULL DEFAULT 0,
     has_active_banner BOOLEAN NOT NULL DEFAULT FALSE,
     active_banner_id TEXT,
     trade_license TEXT,
@@ -81,13 +95,15 @@ CREATE TABLE IF NOT EXISTS public.restaurants (
 
 -- Ensure newly added columns exist if table was already created
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS suspended_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS is_premium BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS subscription_plan TEXT;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS boost_credits INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS banner_credits INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS has_active_banner BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS active_banner_id TEXT;
-ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS banner_credits INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS trade_license TEXT;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS nid TEXT;
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE;
@@ -107,23 +123,32 @@ CREATE TABLE IF NOT EXISTS public.offers (
     category TEXT NOT NULL CHECK (category IN ('Rice', 'Burger', 'Pizza', 'Chicken', 'Bakery', 'Healthy', 'Drinks', 'Snacks', 'Dessert', 'Fast Food', 'Other')),
     original_price NUMERIC NOT NULL CHECK (original_price > 0),
     discounted_price NUMERIC NOT NULL CHECK (discounted_price > 0 AND discounted_price <= original_price),
-    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    quantity INTEGER NOT NULL CHECK (quantity >= 0),
     available_from TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
     available_until TIMESTAMP WITH TIME ZONE NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     admin_blocked BOOLEAN NOT NULL DEFAULT FALSE,
     blocked_at TIMESTAMP WITH TIME ZONE,
     blocked_reason TEXT,
-    -- Promotional boost fields
+    -- Promotional boost & status fields
     is_boosted BOOLEAN NOT NULL DEFAULT FALSE,
     boosted_until TIMESTAMP WITH TIME ZONE,
+    is_done BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- Ensure newly added columns exist if table was already created
+-- Ensure newly added columns & relaxed constraints exist if table was already created
 ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS is_boosted BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS boosted_until TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.offers ADD COLUMN IF NOT EXISTS is_done BOOLEAN NOT NULL DEFAULT FALSE;
+DO $$
+BEGIN
+    ALTER TABLE public.offers DROP CONSTRAINT IF EXISTS offers_quantity_check;
+    ALTER TABLE public.offers ADD CONSTRAINT offers_quantity_check CHECK (quantity >= 0);
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
 
 -- 2.4 PROMO BANNERS TABLE (Dynamic Admin & Restaurant Hero Banners)
 CREATE TABLE IF NOT EXISTS public.promo_banners (
@@ -155,10 +180,10 @@ ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS reviewed_by UUID REFER
 ALTER TABLE public.promo_banners ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE;
 
 -- ==============================================================================
--- 3. NEW FEATURE TABLES
+-- 3. ORDERS & COMMERCE TABLES
 -- ==============================================================================
 
--- 3.1 ORDERS TABLE (Food Rescue Orders & Active Pickups)
+-- 3.1 ORDERS TABLE (Food Rescue Orders & Takeaway Pickups)
 CREATE TABLE IF NOT EXISTS public.orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_number TEXT NOT NULL UNIQUE,
@@ -166,39 +191,50 @@ CREATE TABLE IF NOT EXISTS public.orders (
     restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
     offer_id UUID REFERENCES public.offers(id) ON DELETE SET NULL,
     title TEXT NOT NULL,
+    image_url TEXT,
+    category TEXT,
     quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
     original_price NUMERIC CHECK (original_price >= 0),
     total_price NUMERIC NOT NULL CHECK (total_price >= 0),
-    status TEXT NOT NULL DEFAULT 'ready_for_pickup' CHECK (status IN ('pending', 'confirmed', 'ready_for_pickup', 'completed', 'cancelled')),
+    unit_price NUMERIC DEFAULT 0,
+    total_savings NUMERIC DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('pending', 'confirmed', 'ready_for_pickup', 'completed', 'cancelled')),
     pickup_code TEXT NOT NULL,
+    pickup_time TEXT,
     pickup_window_start TIMESTAMP WITH TIME ZONE,
     pickup_window_end TIMESTAMP WITH TIME ZONE,
     payment_method TEXT NOT NULL DEFAULT 'cash_on_pickup' CHECK (payment_method IN ('cash_on_pickup', 'bKash', 'Nagad', 'card', 'wallet')),
     payment_status TEXT NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'refunded')),
+    transaction_id TEXT,
     notes TEXT,
     customer_name TEXT,
     customer_phone TEXT,
     customer_email TEXT,
     restaurant_name TEXT,
     restaurant_address TEXT,
-    unit_price NUMERIC DEFAULT 0,
-    total_savings NUMERIC DEFAULT 0,
-    pickup_time TIMESTAMP WITH TIME ZONE,
-    transaction_id TEXT,
+    restaurant_phone TEXT,
+    restaurant_email TEXT,
+    promo_code TEXT,
+    discount_amount NUMERIC DEFAULT 0,
+    restaurant_earnings NUMERIC DEFAULT 0,
+    platform_subsidy NUMERIC DEFAULT 0,
     email_sent_customer BOOLEAN DEFAULT TRUE,
     email_sent_restaurant BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS category TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_phone TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_email TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_name TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_address TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_phone TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_email TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS unit_price NUMERIC DEFAULT 0;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS total_savings NUMERIC DEFAULT 0;
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS pickup_time TIMESTAMP WITH TIME ZONE;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS transaction_id TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS email_sent_customer BOOLEAN DEFAULT TRUE;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS email_sent_restaurant BOOLEAN DEFAULT TRUE;
@@ -206,6 +242,14 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS promo_code TEXT;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 0;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS restaurant_earnings NUMERIC DEFAULT 0;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS platform_subsidy NUMERIC DEFAULT 0;
+
+-- Convert pickup_time to TEXT safely if it was originally created as TIMESTAMP
+DO $$
+BEGIN
+    ALTER TABLE public.orders ALTER COLUMN pickup_time TYPE TEXT USING pickup_time::TEXT;
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
 
 -- Function to automatically decrease offer quantity when an order is placed
 CREATE OR REPLACE FUNCTION public.decrease_offer_quantity()
@@ -217,6 +261,10 @@ BEGIN
             is_active = CASE 
                 WHEN (quantity - NEW.quantity) <= 0 THEN FALSE 
                 ELSE is_active 
+            END,
+            is_done = CASE
+                WHEN (quantity - NEW.quantity) <= 0 THEN TRUE
+                ELSE is_done
             END,
             updated_at = timezone('utc'::text, now())
         WHERE id = NEW.offer_id;
@@ -256,9 +304,10 @@ CREATE TABLE IF NOT EXISTS public.favorites (
     CONSTRAINT uq_user_restaurant_favorite UNIQUE (user_id, restaurant_id)
 );
 
--- 3.4 VOUCHERS TABLE (Discount Codes & Super Saver Perks)
+-- 3.4 VOUCHERS TABLE (Platform Promo Codes & Coupons)
+-- Business Rule: Setup exclusively by Admins. Discount 100% absorbed by platform authority.
 CREATE TABLE IF NOT EXISTS public.vouchers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
     code TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -268,25 +317,46 @@ CREATE TABLE IF NOT EXISTS public.vouchers (
     max_discount NUMERIC,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_super_saver_exclusive BOOLEAN NOT NULL DEFAULT FALSE,
+    is_platform_sponsored BOOLEAN NOT NULL DEFAULT TRUE,
+    used_count INTEGER NOT NULL DEFAULT 0,
+    created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    expires_at TIMESTAMP WITH TIME ZONE,
     valid_until TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (timezone('utc'::text, now()) + interval '365 days'),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+-- Ensure vouchers supports string IDs & newly added promo code columns
+DO $$
+BEGIN
+    ALTER TABLE public.vouchers ALTER COLUMN id TYPE TEXT USING id::TEXT;
+    ALTER TABLE public.vouchers ALTER COLUMN id SET DEFAULT gen_random_uuid()::TEXT;
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
 
 ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS is_platform_sponsored BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS used_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL;
 ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.vouchers ADD COLUMN IF NOT EXISTS max_discount NUMERIC;
 
 -- 3.5 USER VOUCHERS TABLE (User Claims / Redemptions)
 CREATE TABLE IF NOT EXISTS public.user_vouchers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    voucher_id UUID NOT NULL REFERENCES public.vouchers(id) ON DELETE CASCADE,
+    voucher_id TEXT NOT NULL REFERENCES public.vouchers(id) ON DELETE CASCADE,
     is_used BOOLEAN NOT NULL DEFAULT FALSE,
     used_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT uq_user_voucher UNIQUE (user_id, voucher_id)
 );
+
+DO $$
+BEGIN
+    ALTER TABLE public.user_vouchers ALTER COLUMN voucher_id TYPE TEXT USING voucher_id::TEXT;
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
 
 -- 3.6 RESTAURANT VERIFICATION REQUESTS TABLE (Protected Trade License & NID Approvals)
 CREATE TABLE IF NOT EXISTS public.restaurant_verifications (
@@ -328,19 +398,57 @@ CREATE TABLE IF NOT EXISTS public.ad_packages (
 CREATE TABLE IF NOT EXISTS public.reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    restaurant_name TEXT,
+    customer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    customer_name TEXT,
+    customer_avatar_url TEXT,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
+    offer_id UUID REFERENCES public.offers(id) ON DELETE SET NULL,
+    offer_title TEXT,
     rating NUMERIC(2, 1) NOT NULL CHECK (rating >= 1.0 AND rating <= 5.0),
     comment TEXT,
     image_url TEXT,
+    is_verified BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+-- Ensure all review model columns exist and user_id is nullable
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS restaurant_name TEXT;
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE;
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS customer_avatar_url TEXT;
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS offer_id UUID REFERENCES public.offers(id) ON DELETE SET NULL;
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS offer_title TEXT;
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE public.reviews ALTER COLUMN user_id DROP NOT NULL;
+
+-- Trigger to keep user_id and customer_id synchronized
+CREATE OR REPLACE FUNCTION public.handle_review_customer_sync()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.customer_id IS NULL AND NEW.user_id IS NOT NULL THEN
+        NEW.customer_id = NEW.user_id;
+    END IF;
+    IF NEW.user_id IS NULL AND NEW.customer_id IS NOT NULL THEN
+        NEW.user_id = NEW.customer_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_sync_review_customer_user_id ON public.reviews;
+CREATE TRIGGER trg_sync_review_customer_user_id
+    BEFORE INSERT OR UPDATE ON public.reviews
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_review_customer_sync();
+
 -- 3.9 IN-APP NOTIFICATIONS TABLE
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    user_id UUID,
+    restaurant_id UUID REFERENCES public.restaurants(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
     type TEXT NOT NULL DEFAULT 'general' CHECK (type IN ('offer', 'order', 'promo', 'account', 'system', 'general')),
@@ -348,6 +456,15 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+-- Drop strict FK constraint on user_id so it can target either a customer profile or restaurant
+DO $$
+BEGIN
+    ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_user_id_fkey;
+    ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS restaurant_id UUID REFERENCES public.restaurants(id) ON DELETE CASCADE;
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
 
 -- 3.10 GROUP ORDERS TABLE (Social Surplus Food Rescue with Friends)
 CREATE TABLE IF NOT EXISTS public.group_orders (
@@ -397,6 +514,7 @@ CREATE INDEX IF NOT EXISTS idx_user_vouchers_user ON public.user_vouchers(user_i
 CREATE INDEX IF NOT EXISTS idx_verifications_status ON public.restaurant_verifications(status);
 CREATE INDEX IF NOT EXISTS idx_ad_packages_restaurant ON public.ad_packages(restaurant_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_restaurant ON public.reviews(restaurant_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_customer ON public.reviews(customer_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_group_orders_code ON public.group_orders(group_code);
 
@@ -429,12 +547,25 @@ CREATE POLICY "Users can insert own profile" ON public.profiles
 
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
-    FOR UPDATE USING (auth.uid() = id);
+    FOR UPDATE USING (
+        auth.uid() = id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
+    );
 
 -- 5.2 RESTAURANTS POLICIES
 DROP POLICY IF EXISTS "Anyone can view approved restaurants" ON public.restaurants;
 CREATE POLICY "Anyone can view approved restaurants" ON public.restaurants
-    FOR SELECT USING (status = 'approved' OR auth.uid() = owner_id);
+    FOR SELECT USING (
+        status = 'approved' 
+        OR auth.uid() = owner_id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
+        )
+    );
 
 DROP POLICY IF EXISTS "Owners can insert restaurant" ON public.restaurants;
 CREATE POLICY "Owners can insert restaurant" ON public.restaurants
@@ -442,7 +573,13 @@ CREATE POLICY "Owners can insert restaurant" ON public.restaurants
 
 DROP POLICY IF EXISTS "Owners can update own restaurant" ON public.restaurants;
 CREATE POLICY "Owners can update own restaurant" ON public.restaurants
-    FOR UPDATE USING (auth.uid() = owner_id);
+    FOR UPDATE USING (
+        auth.uid() = owner_id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
+        )
+    );
 
 -- 5.3 OFFERS POLICIES
 DROP POLICY IF EXISTS "Public can view valid offers" ON public.offers;
@@ -453,6 +590,10 @@ CREATE POLICY "Public can view valid offers" ON public.offers
             SELECT 1 FROM public.restaurants r
             WHERE r.id = offers.restaurant_id AND r.owner_id = auth.uid()
         )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
+        )
     );
 
 DROP POLICY IF EXISTS "Owners can insert offers" ON public.offers;
@@ -461,6 +602,10 @@ CREATE POLICY "Owners can insert offers" ON public.offers
         EXISTS (
             SELECT 1 FROM public.restaurants r
             WHERE r.id = offers.restaurant_id AND r.owner_id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
         )
     );
 
@@ -471,6 +616,10 @@ CREATE POLICY "Owners can update own offers" ON public.offers
             SELECT 1 FROM public.restaurants r
             WHERE r.id = offers.restaurant_id AND r.owner_id = auth.uid()
         )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
     );
 
 DROP POLICY IF EXISTS "Owners can delete own offers" ON public.offers;
@@ -480,12 +629,25 @@ CREATE POLICY "Owners can delete own offers" ON public.offers
             SELECT 1 FROM public.restaurants r
             WHERE r.id = offers.restaurant_id AND r.owner_id = auth.uid()
         )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
     );
 
 -- 5.4 PROMO BANNERS POLICIES
 DROP POLICY IF EXISTS "Anyone can view promo banners" ON public.promo_banners;
 CREATE POLICY "Anyone can view promo banners" ON public.promo_banners
     FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins can manage promo banners" ON public.promo_banners;
+CREATE POLICY "Admins can manage promo banners" ON public.promo_banners
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
+    );
 
 -- 5.5 ORDERS POLICIES
 DROP POLICY IF EXISTS "Users can view own orders" ON public.orders;
@@ -495,6 +657,10 @@ CREATE POLICY "Users can view own orders" ON public.orders
         OR EXISTS (
             SELECT 1 FROM public.restaurants r
             WHERE r.id = orders.restaurant_id AND r.owner_id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
         )
     );
 
@@ -509,6 +675,10 @@ CREATE POLICY "Restaurant owners or customer can update order" ON public.orders
         OR EXISTS (
             SELECT 1 FROM public.restaurants r
             WHERE r.id = orders.restaurant_id AND r.owner_id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
         )
     );
 
@@ -527,21 +697,26 @@ CREATE POLICY "Users manage own favorites" ON public.favorites
 -- 5.8 VOUCHERS POLICIES
 DROP POLICY IF EXISTS "Anyone can view active vouchers" ON public.vouchers;
 CREATE POLICY "Anyone can view active vouchers" ON public.vouchers
-    FOR SELECT USING (is_active = TRUE AND (valid_until IS NULL OR valid_until > now()));
+    FOR SELECT USING (
+        (is_active = TRUE AND (valid_until IS NULL OR valid_until > now()))
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
+    );
 
--- Only admin and head_admin can create, update, or delete promo codes/vouchers
 DROP POLICY IF EXISTS "Admins can manage vouchers" ON public.vouchers;
 CREATE POLICY "Admins can manage vouchers" ON public.vouchers
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'head_admin')
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
         )
     )
     WITH CHECK (
         EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND role IN ('admin', 'head_admin')
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
         )
     );
 
@@ -553,11 +728,26 @@ CREATE POLICY "Users manage own claimed vouchers" ON public.user_vouchers
 -- 5.9 RESTAURANT VERIFICATION REQUESTS POLICIES
 DROP POLICY IF EXISTS "Owners can view own verification requests" ON public.restaurant_verifications;
 CREATE POLICY "Owners can view own verification requests" ON public.restaurant_verifications
-    FOR SELECT USING (auth.uid() = owner_id);
+    FOR SELECT USING (
+        auth.uid() = owner_id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
+        )
+    );
 
 DROP POLICY IF EXISTS "Owners can insert verification request" ON public.restaurant_verifications;
 CREATE POLICY "Owners can insert verification request" ON public.restaurant_verifications
     FOR INSERT WITH CHECK (auth.uid() = owner_id);
+
+DROP POLICY IF EXISTS "Admins can update verification requests" ON public.restaurant_verifications;
+CREATE POLICY "Admins can update verification requests" ON public.restaurant_verifications
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
+        )
+    );
 
 -- 5.10 AD PACKAGES POLICIES
 DROP POLICY IF EXISTS "Owners can view own ad packages" ON public.ad_packages;
@@ -566,6 +756,10 @@ CREATE POLICY "Owners can view own ad packages" ON public.ad_packages
         EXISTS (
             SELECT 1 FROM public.restaurants r
             WHERE r.id = ad_packages.restaurant_id AND r.owner_id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
         )
     );
 
@@ -585,13 +779,59 @@ CREATE POLICY "Anyone can read reviews" ON public.reviews
 
 DROP POLICY IF EXISTS "Customers can create reviews" ON public.reviews;
 CREATE POLICY "Customers can create reviews" ON public.reviews
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+    FOR INSERT WITH CHECK (
+        auth.uid() = customer_id 
+        OR auth.uid() = user_id
+    );
+
+DROP POLICY IF EXISTS "Customers can update own reviews" ON public.reviews;
+CREATE POLICY "Customers can update own reviews" ON public.reviews
+    FOR UPDATE USING (
+        auth.uid() = customer_id 
+        OR auth.uid() = user_id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
+    );
+
+DROP POLICY IF EXISTS "Customers can delete own reviews" ON public.reviews;
+CREATE POLICY "Customers can delete own reviews" ON public.reviews
+    FOR DELETE USING (
+        auth.uid() = customer_id 
+        OR auth.uid() = user_id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
+    );
 
 -- 5.12 NOTIFICATIONS POLICIES
-DROP POLICY IF EXISTS "Users manage own notifications" ON public.notifications;
-CREATE POLICY "Users manage own notifications" ON public.notifications
-    FOR ALL USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users view own notifications" ON public.notifications;
+CREATE POLICY "Users view own notifications" ON public.notifications
+    FOR SELECT USING (
+        auth.uid() = user_id
+        OR EXISTS (
+            SELECT 1 FROM public.restaurants r
+            WHERE r.id = notifications.restaurant_id AND r.owner_id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin')
+        )
+    );
+
+DROP POLICY IF EXISTS "Auth users can insert notifications" ON public.notifications;
+CREATE POLICY "Auth users can insert notifications" ON public.notifications
+    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
+CREATE POLICY "Users can update own notifications" ON public.notifications
+    FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own notifications" ON public.notifications;
+CREATE POLICY "Users can delete own notifications" ON public.notifications
+    FOR DELETE USING (auth.uid() = user_id);
 
 -- 5.13 GROUP ORDERS POLICIES
 DROP POLICY IF EXISTS "Anyone can view open group orders" ON public.group_orders;
@@ -615,7 +855,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply updated_at trigger to relevant tables
 DROP TRIGGER IF EXISTS set_profiles_updated_at ON public.profiles;
 CREATE TRIGGER set_profiles_updated_at
     BEFORE UPDATE ON public.profiles
@@ -669,7 +908,7 @@ CREATE TRIGGER on_auth_user_created
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ==============================================================================
--- 7. STORAGE BUCKETS CONFIGURATION
+-- 7. STORAGE BUCKETS CONFIGURATION (All 6 Application Buckets)
 -- ==============================================================================
 -- 1) avatars (Public)
 -- 2) restaurant-images (Public)
@@ -689,7 +928,7 @@ VALUES
 ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
 
 -- ==============================================================================
--- 8. STORAGE RLS POLICIES
+-- 8. STORAGE RLS POLICIES (Read, Insert, Update / Upsert, Delete)
 -- ==============================================================================
 
 -- 8.1 Public Read for public media buckets
@@ -714,7 +953,6 @@ CREATE POLICY "Public Access Review Images" ON storage.objects
     FOR SELECT USING (bucket_id = 'review-images');
 
 -- 8.2 Private Read for sensitive verification documents (Trade License & NID)
--- Only authenticated owners or admins can read verification documents
 DROP POLICY IF EXISTS "Private Read Verification Documents" ON storage.objects;
 CREATE POLICY "Private Read Verification Documents" ON storage.objects
     FOR SELECT USING (
@@ -722,7 +960,7 @@ CREATE POLICY "Private Read Verification Documents" ON storage.objects
         AND auth.role() = 'authenticated'
     );
 
--- 8.3 Authenticated Uploads
+-- 8.3 Authenticated Uploads (INSERT)
 DROP POLICY IF EXISTS "Auth Users Upload Avatars" ON storage.objects;
 CREATE POLICY "Auth Users Upload Avatars" ON storage.objects
     FOR INSERT WITH CHECK (
@@ -759,8 +997,54 @@ CREATE POLICY "Auth Users Upload Review Images" ON storage.objects
         bucket_id = 'review-images' AND auth.role() = 'authenticated'
     );
 
+-- 8.4 Authenticated Updates (UPDATE / Upsert) - Critical for avatar & file replacements!
+DROP POLICY IF EXISTS "Auth Users Update Avatars" ON storage.objects;
+CREATE POLICY "Auth Users Update Avatars" ON storage.objects
+    FOR UPDATE USING (
+        bucket_id = 'avatars' AND auth.role() = 'authenticated'
+    ) WITH CHECK (
+        bucket_id = 'avatars' AND auth.role() = 'authenticated'
+    );
+
+DROP POLICY IF EXISTS "Auth Users Update Restaurant Images" ON storage.objects;
+CREATE POLICY "Auth Users Update Restaurant Images" ON storage.objects
+    FOR UPDATE USING (
+        bucket_id = 'restaurant-images' AND auth.role() = 'authenticated'
+    ) WITH CHECK (
+        bucket_id = 'restaurant-images' AND auth.role() = 'authenticated'
+    );
+
+DROP POLICY IF EXISTS "Auth Users Update Offer Images" ON storage.objects;
+CREATE POLICY "Auth Users Update Offer Images" ON storage.objects
+    FOR UPDATE USING (
+        bucket_id = 'offer-images' AND auth.role() = 'authenticated'
+    ) WITH CHECK (
+        bucket_id = 'offer-images' AND auth.role() = 'authenticated'
+    );
+
+DROP POLICY IF EXISTS "Auth Users Update Promo Banners" ON storage.objects;
+CREATE POLICY "Auth Users Update Promo Banners" ON storage.objects
+    FOR UPDATE USING (
+        bucket_id = 'promo-banners' AND auth.role() = 'authenticated'
+    ) WITH CHECK (
+        bucket_id = 'promo-banners' AND auth.role() = 'authenticated'
+    );
+
+DROP POLICY IF EXISTS "Auth Users Update Review Images" ON storage.objects;
+CREATE POLICY "Auth Users Update Review Images" ON storage.objects
+    FOR UPDATE USING (
+        bucket_id = 'review-images' AND auth.role() = 'authenticated'
+    ) WITH CHECK (
+        bucket_id = 'review-images' AND auth.role() = 'authenticated'
+    );
+
+-- 8.5 Authenticated Deletes (DELETE)
+DROP POLICY IF EXISTS "Auth Users Delete Media" ON storage.objects;
+CREATE POLICY "Auth Users Delete Media" ON storage.objects
+    FOR DELETE USING (auth.role() = 'authenticated');
+
 -- ==============================================================================
--- 9. DEFAULT SEED DATA
+-- 9. DEFAULT SEED DATA (Idempotent ON CONFLICT DO NOTHING)
 -- ==============================================================================
 
 -- 9.1 Default Promo Banners
@@ -795,37 +1079,40 @@ VALUES
     )
 ON CONFLICT (id) DO NOTHING;
 
--- 9.2 Default Curated Vouchers
-INSERT INTO public.vouchers (code, title, description, discount_type, discount_value, min_order_amount, is_super_saver_exclusive, valid_until)
-VALUES
+-- 9.2 Default Platform Promo Codes
+INSERT INTO public.vouchers (code, title, description, discount_type, discount_value, min_order_amount, is_platform_sponsored, is_super_saver_exclusive, valid_until)
+VALUES 
     (
         'SAVEBITE50',
-        '৳50 OFF Discount',
-        '৳50 OFF on orders above ৳200',
+        'SaveBite Welcome Gift',
+        '৳50 OFF on food orders above ৳150',
         'flat',
         50.0,
-        200.0,
+        150.0,
+        true,
         false,
-        timezone('utc'::text, now()) + interval '30 days'
+        timezone('utc'::text, now()) + interval '365 days'
     ),
     (
-        'RESCUE20',
-        '20% Mystery Bag Discount',
-        '20% OFF on all surplus mystery food bags',
+        'SAVE20',
+        '20% Surplus Food Saver',
+        '20% OFF on takeaway meals (Min ৳100, Max ৳80)',
         'percentage',
         20.0,
-        150.0,
+        100.0,
+        true,
         false,
-        timezone('utc'::text, now()) + interval '30 days'
+        timezone('utc'::text, now()) + interval '365 days'
     ),
     (
-        'SUPERSAVER',
-        'Super Saver Free Delivery',
-        'Free delivery anywhere in Dhaka for Super Saver members',
-        'free_delivery',
-        60.0,
-        0.0,
+        'RESCUE30',
+        'Evening Rescue Feast',
+        '৳30 OFF on closing-hour clearance surplus (Min ৳120)',
+        'flat',
+        30.0,
+        120.0,
         true,
-        timezone('utc'::text, now()) + interval '90 days'
+        false,
+        timezone('utc'::text, now()) + interval '365 days'
     )
 ON CONFLICT (code) DO NOTHING;
