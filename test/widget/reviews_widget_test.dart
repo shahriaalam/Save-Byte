@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:save_bite/features/customer/reviews/presentation/customer_reviews_sheet.dart';
 import 'package:save_bite/features/customer/reviews/presentation/review_submission_sheet.dart';
 import 'package:save_bite/features/customer/reviews/presentation/widgets/restaurant_reviews_section.dart';
 import 'package:save_bite/features/customer/reviews/presentation/widgets/review_card.dart';
+import 'package:save_bite/features/shared/data/review_controller.dart';
 import 'package:save_bite/features/shared/models/order.dart';
 import 'package:save_bite/features/shared/models/review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -140,5 +142,90 @@ void main() {
       // Submit button
       expect(find.text('Post Verified Review'), findsOneWidget);
     });
+
+    testWidgets('CustomerReviewsSheet displays empty state when customer has no reviews', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            customerReviewsProvider('demo-customer-id').overrideWith((ref) async => []),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: CustomerReviewsSheet(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Reviews & Ratings'), findsOneWidget);
+      expect(find.text('No Reviews Yet'), findsOneWidget);
+      expect(find.textContaining('Complete a food takeaway pickup'), findsOneWidget);
+    });
+
+    testWidgets('CustomerReviewsSheet displays ONLY reviews given by the current customer across different restaurants', (tester) async {
+      final myReviews = [
+        Review(
+          id: 'my-rev-1',
+          orderId: 'my-ord-1',
+          customerId: 'demo-customer-id',
+          customerName: 'Rahim Ahmed',
+          restaurantId: 'res-blue-bell',
+          restaurantName: 'Blue Bell Café',
+          offerTitle: 'Venetian Espresso Tiramisu',
+          rating: 5.0,
+          comment: 'Donee',
+          isVerified: true,
+          createdAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        ),
+        Review(
+          id: 'my-rev-2',
+          orderId: 'my-ord-2',
+          customerId: 'demo-customer-id',
+          customerName: 'Rahim Ahmed',
+          restaurantId: 'res-1',
+          restaurantName: "Rahman's Kitchen",
+          offerTitle: 'Kacchi Biryani Box',
+          rating: 4.8,
+          comment: 'Loved the kacchi biryani, tender meat!',
+          isVerified: true,
+          createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            customerReviewsProvider('demo-customer-id').overrideWith((ref) async => myReviews),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: CustomerReviewsSheet(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Reviews & Ratings'), findsOneWidget);
+
+      // Verify only my reviews are displayed
+      expect(find.text('Donee'), findsOneWidget);
+      expect(find.text('Blue Bell Café'), findsOneWidget);
+      expect(find.text('Venetian Espresso Tiramisu'), findsOneWidget);
+
+      expect(find.text('Loved the kacchi biryani, tender meat!'), findsOneWidget);
+      expect(find.text("Rahman's Kitchen"), findsOneWidget);
+      expect(find.text('Kacchi Biryani Box'), findsOneWidget);
+
+      // Verify other customers' reviews are NOT displayed
+      expect(find.text('Ayesha Rahman'), findsNothing);
+      expect(find.text('Super fresh and warm! Rescued this box right before closing and the croissants were as soft as morning bake. 10/10 value for money!'), findsNothing);
+      expect(find.text('Fahim Morshed'), findsNothing);
+      expect(find.text('Tanvir Hasan'), findsNothing);
+    });
   });
 }
+

@@ -201,9 +201,11 @@ class ReviewRepository {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
-  /// Fetches all reviews submitted by a specific customer
+  /// Fetches all reviews submitted by a specific customer across all restaurants
   Future<List<Review>> getReviewsForCustomer(String customerId) async {
     await _ensureCacheLoaded();
+    final List<Review> customerReviews = [];
+
     try {
       final response = await _supabase
           .from('reviews')
@@ -212,26 +214,23 @@ class ReviewRepository {
           .order('created_at', ascending: false);
 
       if (response.isNotEmpty) {
-        final liveReviews = (response as List<dynamic>)
-            .map((json) => Review.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        for (final mem in _memoryReviews) {
-          if (mem.customerId == customerId &&
-              !liveReviews.any((r) => r.id == mem.id)) {
-            liveReviews.insert(0, mem);
-          }
-        }
-        return liveReviews;
+        final liveReviews = response.map(Review.fromJson).toList();
+        customerReviews.addAll(liveReviews);
       }
     } catch (e) {
       debugPrint('[ReviewRepository] Customer reviews live fetch error: $e');
     }
 
-    return _memoryReviews
-        .where((r) => r.customerId == customerId || customerId == 'demo-customer-id')
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    // Merge in any locally cached or newly submitted reviews strictly matching this customer ID
+    for (final mem in _memoryReviews) {
+      if (mem.customerId == customerId &&
+          !customerReviews.any((r) => r.id == mem.id || (mem.orderId.isNotEmpty && r.orderId == mem.orderId))) {
+        customerReviews.add(mem);
+      }
+    }
+
+    customerReviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return customerReviews;
   }
 
   /// Checks whether an order has already been reviewed

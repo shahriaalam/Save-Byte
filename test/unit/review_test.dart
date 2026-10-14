@@ -144,5 +144,71 @@ void main() {
       expect(fetched!.comment, 'Great value for money.');
       expect(fetched.rating, 4.0);
     });
+
+    test('getReviewsForCustomer strictly isolates reviews to the requesting customer', () async {
+      // Rahim Ahmed submits reviews for two different restaurants
+      final rahimReview1 = Review(
+        id: 'rev-rahim-1',
+        orderId: 'ord-rahim-1',
+        customerId: 'customer-rahim-id',
+        customerName: 'Rahim Ahmed',
+        restaurantId: 'res-blue-bell',
+        restaurantName: 'Blue Bell Café',
+        rating: 5.0,
+        comment: 'Delicious Venetian Tiramisu!',
+        isVerified: true,
+        createdAt: DateTime.now(),
+      );
+
+      final rahimReview2 = Review(
+        id: 'rev-rahim-2',
+        orderId: 'ord-rahim-2',
+        customerId: 'customer-rahim-id',
+        customerName: 'Rahim Ahmed',
+        restaurantId: 'res-1',
+        restaurantName: "Rahman's Kitchen",
+        rating: 4.8,
+        comment: 'Fresh kacchi biryani.',
+        isVerified: true,
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      );
+
+      // Someone else submits a review
+      final otherReview = Review(
+        id: 'rev-other-1',
+        orderId: 'ord-other-1',
+        customerId: 'customer-other-id',
+        customerName: 'Other Person',
+        restaurantId: 'res-blue-bell',
+        restaurantName: 'Blue Bell Café',
+        rating: 3.5,
+        comment: 'It was okay.',
+        isVerified: true,
+        createdAt: DateTime.now(),
+      );
+
+      await repo.submitReview(rahimReview1);
+      await repo.submitReview(rahimReview2);
+      await repo.submitReview(otherReview);
+
+      // Fetch reviews for Rahim Ahmed
+      final rahimReviews = await repo.getReviewsForCustomer('customer-rahim-id');
+
+      // Verify Rahim only sees his own reviews across both restaurants
+      expect(rahimReviews.length, 2);
+      expect(rahimReviews.every((r) => r.customerId == 'customer-rahim-id'), isTrue);
+      expect(rahimReviews.any((r) => r.restaurantName == 'Blue Bell Café'), isTrue);
+      expect(rahimReviews.any((r) => r.restaurantName == "Rahman's Kitchen"), isTrue);
+
+      // Verify other customers' reviews are NOT in Rahim's list
+      expect(rahimReviews.any((r) => r.customerName == 'Other Person'), isFalse);
+      expect(rahimReviews.any((r) => r.customerName == 'Ayesha Rahman'), isFalse);
+      expect(rahimReviews.any((r) => r.customerName == 'Tanvir Hasan'), isFalse);
+      expect(rahimReviews.any((r) => r.customerName == 'Fahim Morshed'), isFalse);
+
+      // If a new customer with 0 reviews queries, they should get an empty list
+      final newCustomerReviews = await repo.getReviewsForCustomer('brand-new-customer-id');
+      expect(newCustomerReviews, isEmpty);
+    });
   });
 }
