@@ -16,6 +16,7 @@ import '../../restaurant/data/restaurant_repository.dart';
 import '../../restaurant/notifications/restaurant_notification_controller.dart';
 import '../../shared/data/promo_banner_controller.dart';
 import '../../shared/data/promo_code_controller.dart';
+import '../../shared/data/reward_controller.dart';
 import '../../shared/data/admin_financial_controller.dart';
 import '../../shared/models/promo_banner.dart';
 import 'widgets/admin_analytics_dashboard_sheet.dart';
@@ -886,7 +887,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 label: 'Dashboard',
                 badge: 'Live KPI',
                 icon: Icons.insights_rounded,
-                gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
                 onTap: () => showAdminAnalyticsDashboardSheet(context),
               ),
               _buildQuickAccessSymbol(
@@ -894,7 +894,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 badge:
                     '${_restaurantsData.where((r) => r['status'] == 'pending').length} Wait',
                 icon: Icons.storefront_rounded,
-                gradient: const [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                 onTap: () {
                   setState(() {
                     _currentTab = 1;
@@ -906,63 +905,60 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 label: 'Posts',
                 badge: '${_offersData.length} Live',
                 icon: Icons.dynamic_feed_rounded,
-                gradient: const [Color(0xFFE11D48), Color(0xFFBE123C)],
                 onTap: () => setState(() => _currentTab = 2),
               ),
               _buildQuickAccessSymbol(
                 label: 'Banners',
                 badge: '3 Slots',
                 icon: Icons.view_carousel_rounded,
-                gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                 onTap: () => setState(() => _currentTab = 3),
               ),
               _buildQuickAccessSymbol(
                 label: 'Verify ID',
                 badge: '${_verificationRequests.length} Req',
                 icon: Icons.verified_user_rounded,
-                gradient: const [Color(0xFF16A34A), Color(0xFF047857)],
                 onTap: () => _showVerificationsModal(context),
               ),
               _buildQuickAccessSymbol(
                 label: 'Vouchers',
                 badge: '${_vouchersData.length} Active',
                 icon: Icons.confirmation_number_rounded,
-                gradient: const [Color(0xFFD97706), Color(0xFFB45309)],
                 onTap: () => _showVouchersModal(context),
+              ),
+              _buildQuickAccessSymbol(
+                label: 'Rewards',
+                badge: 'Perks',
+                icon: Icons.card_giftcard_rounded,
+                onTap: () => _showRewardsModal(context),
               ),
               _buildQuickAccessSymbol(
                 label: 'Ad Sales',
                 badge: '৳18.2k',
                 icon: Icons.rocket_launch_rounded,
-                gradient: const [Color(0xFFDB2777), Color(0xFFBE185D)],
                 onTap: () => _showAdRevenueModal(context),
               ),
               _buildQuickAccessSymbol(
                 label: 'Accounts',
                 badge: '1.2k User',
                 icon: Icons.people_alt_rounded,
-                gradient: const [Color(0xFF0284C7), Color(0xFF0369A1)],
                 onTap: () => _showUserDirectoryModal(context),
               ),
               _buildQuickAccessSymbol(
                 label: 'Broadcast',
                 badge: 'Push',
                 icon: Icons.campaign_rounded,
-                gradient: const [Color(0xFF6366F1), Color(0xFF4338CA)],
                 onTap: () => _showBroadcastNotificationModal(context),
               ),
               _buildQuickAccessSymbol(
                 label: 'Reviews',
                 badge: '4.8★ Avg',
                 icon: Icons.rate_review_rounded,
-                gradient: const [Color(0xFFEAB308), Color(0xFFCA8A04)],
                 onTap: () => _showReviewsModerationModal(context),
               ),
               _buildQuickAccessSymbol(
                 label: 'Audit Log',
                 badge: 'Secured',
                 icon: Icons.security_rounded,
-                gradient: const [Color(0xFF64748B), Color(0xFF475569)],
                 onTap: () => _showAuditLogsModal(context),
               ),
             ],
@@ -1112,7 +1108,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     required String label,
     required String badge,
     required IconData icon,
-    required List<Color> gradient,
     required VoidCallback onTap,
   }) {
     return Material(
@@ -1120,60 +1115,75 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
+        splashColor: AppColors.darkRed.withValues(alpha: 0.1),
+        highlightColor: AppColors.darkRed.withValues(alpha: 0.05),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
+                // Dark Red to Light Red Gradient (Brand Logo Colors), White Logo, Off-White Badge with Dark Red Text
                 Container(
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gradient,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8B0000), Color(0xFFE23744)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: gradient.first.withValues(alpha: 0.28),
+                        color: AppColors.darkRed.withValues(alpha: 0.35),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
                     ],
                   ),
-                  child: Icon(icon, color: Colors.white, size: 26),
+                  child: Center(
+                    child: Icon(icon, color: Colors.white, size: 26),
+                  ),
                 ),
-                Positioned(
-                  top: -5,
-                  right: -6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 5.5, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: gradient.first, width: 1.2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
+                if (badge.isNotEmpty)
+                  Positioned(
+                    top: -5,
+                    right: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5.5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF9F9), // Off-white BG
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.darkRed,
+                          width: 1.2,
                         ),
-                      ],
-                    ),
-                    child: Text(
-                      badge,
-                      style: TextStyle(
-                        color: gradient.first,
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w900,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1.5),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        badge,
+                        style: const TextStyle(
+                          color: AppColors.darkRed, // Dark Red color text
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.2,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 7),
@@ -1186,6 +1196,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 color: Color(0xFF1E293B),
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
               ),
             ),
           ],
@@ -5610,6 +5621,496 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       ),
                       child: const Text(
                         'Publish Promo Code',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showRewardsModal(BuildContext context) {
+    _showSheet(
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Customer Rewards Manager',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'Admin Setup • Auto-Expiring Platform Perks',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showCreateRewardModal(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text(
+                    'Post Reward',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F3FF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFDDD6FE)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C3AED), size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚡ Rewards posted here appear in the Customer App under "Rewards". Once a reward deadline expires, it is automatically removed. 1 advantage per order.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF5B21B6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final rewardsAsync = ref.watch(allAdminRewardsProvider);
+                  return rewardsAsync.when(
+                    data: (rewards) {
+                      if (rewards.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'No community rewards created yet.\nTap "+ Post Reward" to publish your first customer deal.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          ),
+                        );
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: rewards.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, idx) {
+                          final reward = rewards[idx];
+                          final isExpired = reward.isExpired;
+
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: reward.isActive && !isExpired ? Colors.white : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isExpired
+                                    ? const Color(0xFFCBD5E1)
+                                    : (reward.isActive ? const Color(0xFFC4B5FD) : const Color(0xFFE2E8F0)),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF5F3FF),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              reward.discountTag,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w900,
+                                                color: Color(0xFF7C3AED),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF1F5F9),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              reward.requirementTag,
+                                              style: const TextStyle(
+                                                fontSize: 10.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF475569),
+                                              ),
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: isExpired ? const Color(0xFFFEE2E2) : const Color(0xFFFEF3C7),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              isExpired ? 'Expired' : reward.remainingTimeText,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                                color: isExpired ? const Color(0xFFB91C1C) : const Color(0xFF92400E),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        reward.title,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: isExpired ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        reward.description,
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: isExpired ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Switch(
+                                  value: reward.isActive && !isExpired,
+                                  activeThumbColor: const Color(0xFF7C3AED),
+                                  onChanged: isExpired
+                                      ? null
+                                      : (val) {
+                                          ref
+                                              .read(rewardControllerProvider.notifier)
+                                              .toggleStatus(reward.id, val);
+                                        },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded,
+                                      size: 18, color: Color(0xFFEF4444)),
+                                  onPressed: () {
+                                    ref
+                                        .read(rewardControllerProvider.notifier)
+                                        .deleteReward(reward.id);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (err, _) => Center(child: Text('Error loading rewards: $err')),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCreateRewardModal(BuildContext context) {
+    // Only Admin or Head Admin can post rewards
+    final profile = ref.read(currentUserProfileProvider);
+    final userRole = profile?.role ?? AppConstants.roleAdmin;
+    if (userRole != AppConstants.roleAdmin &&
+        userRole != AppConstants.roleHeadAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Access Restricted: Only Admin can post community rewards.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    final titleCtrl = TextEditingController(text: 'Weekly Mega Order Perk');
+    final descCtrl = TextEditingController(text: 'Order 1000 taka product and get 30 tk off');
+    final discountValCtrl = TextEditingController(text: '30');
+    final minOrderCtrl = TextEditingController(text: '1000');
+    String discountType = 'flat'; // 'flat' or 'percentage'
+    int durationDays = 7; // Default 1 week
+
+    _showSheet(
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setModalState) {
+          return Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Post Customer Reward',
+                    style: TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Create an active community perk with a deadline. Once expired, it disappears automatically. 1 advantage per order.',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 11.5,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Reward Title
+                  TextField(
+                    controller: titleCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Reward Title',
+                      hintText: 'e.g. SaveBite Mega Order Perk',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Reward Description
+                  TextField(
+                    controller: descCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Customer Description',
+                      hintText: 'e.g. Order 1000 taka product and get 30 tk off',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Minimum Order Amount & Discount Value
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: minOrderCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Min. Order (BDT ৳)',
+                            hintText: '1000',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: discountValCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Discount (BDT ৳)',
+                            hintText: '30',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Discount Type Selector
+                  Row(
+                    children: [
+                      const Text(
+                        'Discount Type: ',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Flat ৳ Amount'),
+                        selected: discountType == 'flat',
+                        onSelected: (selected) {
+                          if (selected) setModalState(() => discountType = 'flat');
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Percentage %'),
+                        selected: discountType == 'percentage',
+                        onSelected: (selected) {
+                          if (selected) setModalState(() => discountType = 'percentage');
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Deadline Duration Selector
+                  const Text(
+                    'Reward Validity Deadline:',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('1 Day (Flash)'),
+                        selected: durationDays == 1,
+                        onSelected: (val) {
+                          if (val) setModalState(() => durationDays = 1);
+                        },
+                      ),
+                      ChoiceChip(
+                        label: const Text('3 Days (Weekend)'),
+                        selected: durationDays == 3,
+                        onSelected: (val) {
+                          if (val) setModalState(() => durationDays = 3);
+                        },
+                      ),
+                      ChoiceChip(
+                        label: const Text('7 Days (1 Week)'),
+                        selected: durationDays == 7,
+                        onSelected: (val) {
+                          if (val) setModalState(() => durationDays = 7);
+                        },
+                      ),
+                      ChoiceChip(
+                        label: const Text('14 Days (2 Weeks)'),
+                        selected: durationDays == 14,
+                        onSelected: (val) {
+                          if (val) setModalState(() => durationDays = 14);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: () async {
+                        final title = titleCtrl.text.trim();
+                        final desc = descCtrl.text.trim();
+                        if (title.isEmpty) return;
+
+                        final minSpend = double.tryParse(minOrderCtrl.text.trim()) ?? 0.0;
+                        final discount = double.tryParse(discountValCtrl.text.trim()) ?? 30.0;
+                        final expiresAt = DateTime.now().add(Duration(days: durationDays));
+
+                        await ref.read(rewardControllerProvider.notifier).createReward(
+                              title: title,
+                              description: desc.isNotEmpty ? desc : 'Order ৳${minSpend.toStringAsFixed(0)} get ৳${discount.toStringAsFixed(0)} off',
+                              minOrderAmount: minSpend,
+                              discountValue: discount,
+                              discountType: discountType,
+                              expiresAt: expiresAt,
+                            );
+
+                        if (context.mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Reward "$title" posted! Live for customers until ${expiresAt.day}/${expiresAt.month}.'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
+                          );
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF7C3AED),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Publish Customer Reward',
                         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                       ),
                     ),

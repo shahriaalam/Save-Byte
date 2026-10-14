@@ -28,6 +28,8 @@ abstract final class SupabaseConstants {
   static const String tableAdPackages = 'ad_packages';
   static const String tableReviews = 'reviews';
   static const String tableNotifications = 'notifications';
+  static const String tableRewards = 'rewards';
+  static const String tableUserRewards = 'user_rewards';
   static const String tableGroupOrders = 'group_orders';
 
   // Storage buckets (Section 51)

@@ -358,6 +358,35 @@ EXCEPTION
     WHEN OTHERS THEN NULL;
 END $$;
 
+-- 3.5b CUSTOMER REWARDS TABLE (Admin-posted auto-expiring platform rewards)
+-- Business Rules:
+-- 1. Admin posts rewards with a deadline (expires_at). Expired rewards automatically disappear.
+-- 2. Single Advantage Rule: A customer can apply ONLY ONE advantage (promo or reward) per order.
+-- 3. 100% Platform Sponsored: Restaurant always receives full meal payout.
+CREATE TABLE IF NOT EXISTS public.rewards (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    min_order_amount NUMERIC NOT NULL DEFAULT 0 CHECK (min_order_amount >= 0),
+    discount_value NUMERIC NOT NULL CHECK (discount_value > 0),
+    discount_type TEXT NOT NULL DEFAULT 'flat' CHECK (discount_type IN ('flat', 'percentage')),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+-- 3.5c USER CLAIMED REWARDS TABLE (Customer claims & redemptions)
+CREATE TABLE IF NOT EXISTS public.user_rewards (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    reward_id TEXT NOT NULL REFERENCES public.rewards(id) ON DELETE CASCADE,
+    is_used BOOLEAN NOT NULL DEFAULT FALSE,
+    used_at TIMESTAMP WITH TIME ZONE,
+    claimed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT uq_user_reward UNIQUE (user_id, reward_id)
+);
+
 -- 3.6 RESTAURANT VERIFICATION REQUESTS TABLE (Protected Trade License & NID Approvals)
 CREATE TABLE IF NOT EXISTS public.restaurant_verifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -510,6 +539,8 @@ CREATE INDEX IF NOT EXISTS idx_favorites_restaurant ON public.favorites(restaura
 CREATE INDEX IF NOT EXISTS idx_vouchers_code ON public.vouchers(code);
 CREATE INDEX IF NOT EXISTS idx_vouchers_active ON public.vouchers(is_active, valid_until);
 CREATE INDEX IF NOT EXISTS idx_user_vouchers_user ON public.user_vouchers(user_id);
+CREATE INDEX IF NOT EXISTS idx_rewards_active ON public.rewards(is_active, expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_rewards_user ON public.user_rewards(user_id);
 
 CREATE INDEX IF NOT EXISTS idx_verifications_status ON public.restaurant_verifications(status);
 CREATE INDEX IF NOT EXISTS idx_ad_packages_restaurant ON public.ad_packages(restaurant_id);
@@ -530,6 +561,8 @@ ALTER TABLE public.customer_addresses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vouchers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_vouchers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rewards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_rewards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.restaurant_verifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ad_packages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
@@ -722,6 +755,31 @@ CREATE POLICY "Admins can manage vouchers" ON public.vouchers
 
 DROP POLICY IF EXISTS "Users manage own claimed vouchers" ON public.user_vouchers;
 CREATE POLICY "Users manage own claimed vouchers" ON public.user_vouchers
+    FOR ALL USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- 5.8b CUSTOMER REWARDS POLICIES
+DROP POLICY IF EXISTS "Anyone can view active non-expired rewards" ON public.rewards;
+CREATE POLICY "Anyone can view active non-expired rewards" ON public.rewards
+    FOR SELECT USING (
+        (is_active = TRUE AND expires_at > timezone('utc'::text, now()))
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
+        )
+    );
+
+DROP POLICY IF EXISTS "Admins can manage rewards" ON public.rewards;
+CREATE POLICY "Admins can manage rewards" ON public.rewards
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'head_admin', 'moderator')
+        )
+    );
+
+DROP POLICY IF EXISTS "Users manage own claimed rewards" ON public.user_rewards;
+CREATE POLICY "Users manage own claimed rewards" ON public.user_rewards
     FOR ALL USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
 

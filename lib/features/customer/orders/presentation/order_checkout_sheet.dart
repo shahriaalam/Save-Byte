@@ -4,9 +4,11 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../shared/data/order_controller.dart';
 import '../../../shared/data/promo_code_controller.dart';
+import '../../../shared/data/reward_controller.dart';
 import '../../../shared/models/food_offer.dart';
 import '../../../shared/models/order.dart';
 import '../../../shared/models/promo_code.dart';
+import '../../../shared/models/reward.dart';
 import '../../../shared/presentation/payment_portal_sheet.dart';
 import '../../../../core/router/app_router.dart';
 import 'customer_orders_sheet.dart';
@@ -45,6 +47,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
   final TextEditingController _notesCtrl = TextEditingController();
   final TextEditingController _promoCtrl = TextEditingController();
   PromoCode? _appliedPromo;
+  Reward? _appliedReward;
   bool _isValidatingPromo = false;
   String? _promoError;
   bool _isSubmitting = false;
@@ -104,6 +107,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
     if (result.isValid && result.promoCode != null) {
       setState(() {
         _appliedPromo = result.promoCode;
+        _appliedReward = null; // Single advantage rule: clear reward when promo is applied
         _promoCtrl.text = result.promoCode!.code;
         _promoError = null;
         _isValidatingPromo = false;
@@ -139,6 +143,54 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
       _appliedPromo = null;
       _promoCtrl.clear();
       _promoError = null;
+    });
+  }
+
+  void _applyReward(Reward reward) {
+    final subtotal = widget.offer.discountedPrice * _quantity;
+    setState(() {
+      _appliedReward = reward;
+      _appliedPromo = null; // Single advantage rule: clear promo when reward is applied
+      _promoCtrl.clear();
+      _promoError = null;
+    });
+
+    if (subtotal < reward.minOrderAmount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Reward "${reward.title}" selected! Requires min. order of ৳${reward.minOrderAmount.toStringAsFixed(0)}. Add more portions to activate discount.',
+          ),
+          backgroundColor: const Color(0xFFD97706),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      final discount = reward.calculateDiscount(subtotal);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Reward "${reward.title}" applied! You save ৳${discount.toStringAsFixed(0)} (Platform Sponsored)',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF16A34A),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _removeReward() {
+    setState(() {
+      _appliedReward = null;
     });
   }
 
@@ -201,11 +253,18 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
     }
 
     final subtotal = widget.offer.discountedPrice * _quantity;
-    double promoDiscount = 0.0;
+    double appliedDiscount = 0.0;
+    String? discountAdvantageTitle;
+
     if (_appliedPromo != null && subtotal >= _appliedPromo!.minOrderAmount) {
-      promoDiscount = _appliedPromo!.calculateDiscount(subtotal);
+      appliedDiscount = _appliedPromo!.calculateDiscount(subtotal);
+      discountAdvantageTitle = 'Platform voucher "${_appliedPromo!.code}"';
+    } else if (_appliedReward != null && subtotal >= _appliedReward!.minOrderAmount) {
+      appliedDiscount = _appliedReward!.calculateDiscount(subtotal);
+      discountAdvantageTitle = 'Claimed reward "${_appliedReward!.title}"';
     }
-    final payableAmount = (subtotal - promoDiscount) < 0.0 ? 0.0 : (subtotal - promoDiscount);
+
+    final payableAmount = (subtotal - appliedDiscount) < 0.0 ? 0.0 : (subtotal - appliedDiscount);
     final customerName = _nameCtrl.text.trim();
     final customerPhone = _phoneCtrl.text.trim();
 
@@ -219,8 +278,8 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
       perkHighlights: [
         'Instant surplus meal booking confirmation',
         'Pickup scheduled: $_selectedPickupTime',
-        if (_appliedPromo != null && promoDiscount > 0)
-          'Platform voucher "${_appliedPromo!.code}" applied (-৳${promoDiscount.toStringAsFixed(0)})',
+        if (discountAdvantageTitle != null && appliedDiscount > 0)
+          '$discountAdvantageTitle applied (-৳${appliedDiscount.toStringAsFixed(0)})',
         'Direct takeaway pickup — zero delivery fees',
       ],
       itemType: 'food_order',
@@ -257,9 +316,14 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
         paymentMethod: paymentResult.gateway?.toUpperCase() ?? 'BKASH',
         transactionId: paymentResult.transactionId,
         notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
-        promoCode: _appliedPromo?.code,
-        discountAmount: promoDiscount,
+        promoCode: _appliedPromo?.code ?? _appliedReward?.title,
+        discountAmount: appliedDiscount,
       );
+
+      // 3. If a claimed reward was used, mark it as redeemed
+      if (_appliedReward != null) {
+        await ref.read(rewardControllerProvider.notifier).redeemReward(_appliedReward!.id);
+      }
 
       if (!mounted) return;
       // Close checkout bottom sheet cleanly first
@@ -530,17 +594,29 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
     final originalTotal = offer.originalPrice * _quantity;
     final maxAvailable = offer.quantity.clamp(1, 99);
 
-    // Dynamic promo discount calculation
-    double promoDiscount = 0.0;
+    final rewardsAsync = ref.watch(activeRewardsProvider);
+    final claimedRewards = rewardsAsync.value
+            ?.where((r) => r.isValid && r.isClaimed && !r.isUsed)
+            .toList() ??
+        [];
+
+    // Dynamic advantage discount calculation (Single Advantage Rule)
+    double appliedDiscount = 0.0;
+    bool isRewardMinOrderMet = true;
+
     if (_appliedPromo != null) {
       if (itemTotal >= _appliedPromo!.minOrderAmount) {
-        promoDiscount = _appliedPromo!.calculateDiscount(itemTotal);
+        appliedDiscount = _appliedPromo!.calculateDiscount(itemTotal);
+      }
+    } else if (_appliedReward != null) {
+      if (itemTotal >= _appliedReward!.minOrderAmount) {
+        appliedDiscount = _appliedReward!.calculateDiscount(itemTotal);
       } else {
-        promoDiscount = 0.0;
+        isRewardMinOrderMet = false;
       }
     }
-    final totalPayable = (itemTotal - promoDiscount) < 0.0 ? 0.0 : (itemTotal - promoDiscount);
-    final totalSavings = (offer.savings * _quantity) + promoDiscount;
+    final totalPayable = (itemTotal - appliedDiscount) < 0.0 ? 0.0 : (itemTotal - appliedDiscount);
+    final totalSavings = (offer.savings * _quantity) + appliedDiscount;
 
     final now = DateTime.now();
     final in15m = _formatTimeDisplay(now.add(const Duration(minutes: 15)));
@@ -936,16 +1012,16 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
               ),
               const SizedBox(height: 18),
 
-              // PROMO CODE SECTION (Platform Sponsored - Restaurant receives 100% full payout)
+              // OFFERS & ADVANTAGES SECTION (Single Advantage Rule: 1 Promo OR 1 Claimed Reward)
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: _appliedPromo != null
+                    color: (_appliedPromo != null || _appliedReward != null)
                         ? const Color(0xFF86EFAC)
                         : const Color(0xFFE2E8F0),
-                    width: _appliedPromo != null ? 1.5 : 1,
+                    width: (_appliedPromo != null || _appliedReward != null) ? 1.5 : 1,
                   ),
                 ),
                 padding: const EdgeInsets.all(12),
@@ -953,38 +1029,60 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: _appliedPromo != null
-                                ? const Color(0xFFDCFCE7)
-                                : const Color(0xFFFEE2E2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.confirmation_number_rounded,
-                            size: 16,
-                            color: _appliedPromo != null
-                                ? const Color(0xFF16A34A)
-                                : AppColors.primary,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: (_appliedPromo != null || _appliedReward != null)
+                                    ? const Color(0xFFDCFCE7)
+                                    : const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                (_appliedPromo != null || _appliedReward != null)
+                                    ? Icons.check_circle_rounded
+                                    : Icons.local_offer_outlined,
+                                size: 16,
+                                color: (_appliedPromo != null || _appliedReward != null)
+                                    ? const Color(0xFF16A34A)
+                                    : AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Have a Promo Code?',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Have a Promo Code?',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF1E293B),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            '1 Advantage / Order',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2563EB),
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
 
+                    // 1. If Promo Code is currently applied
                     if (_appliedPromo != null) ...[
-                      // Applied promo badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
@@ -1013,7 +1111,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        '-৳${promoDiscount.toStringAsFixed(0)} OFF',
+                                        '-৳${appliedDiscount.toStringAsFixed(0)} OFF',
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800,
@@ -1042,7 +1140,92 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                           ],
                         ),
                       ),
-                    ] else ...[
+                    ]
+                    // 2. If Claimed Reward is currently applied
+                    else if (_appliedReward != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isRewardMinOrderMet ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isRewardMinOrderMet ? const Color(0xFF86EFAC) : const Color(0xFFFCD34D),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isRewardMinOrderMet ? Icons.card_giftcard_rounded : Icons.info_outline_rounded,
+                              color: isRewardMinOrderMet ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _appliedReward!.title,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: isRewardMinOrderMet
+                                                ? const Color(0xFF15803D)
+                                                : const Color(0xFF92400E),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (isRewardMinOrderMet) ...[
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '-৳${appliedDiscount.toStringAsFixed(0)} OFF',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF16A34A),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  if (isRewardMinOrderMet)
+                                    Text(
+                                      '🛡️ 100% Platform Sponsored • ${offer.restaurantName ?? 'Restaurant'} receives full payout',
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF166534),
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      'Requires min. order of ৳${_appliedReward!.minOrderAmount.toStringAsFixed(0)} (Current: ৳${itemTotal.toStringAsFixed(0)}). Add more items to unlock!',
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFFB45309),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              onPressed: _removeReward,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]
+                    // 3. Neither Promo nor Reward is currently applied
+                    else ...[
                       // Promo code input row
                       Row(
                         children: [
@@ -1065,7 +1248,7 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                                     letterSpacing: 0,
                                     color: Color(0xFF94A3B8),
                                   ),
-                                  prefixIcon: const Icon(Icons.local_offer_outlined, size: 16),
+                                  prefixIcon: const Icon(Icons.confirmation_number_outlined, size: 16),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                                   filled: true,
                                   fillColor: Colors.white,
@@ -1133,6 +1316,91 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                           ],
                         ),
                       ],
+
+                      // Show user's claimed rewards if available
+                      if (claimedRewards.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const Row(
+                          children: [
+                            Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              child: Text(
+                                'OR APPLY A CLAIMED REWARD',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF64748B),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...claimedRewards.map((reward) {
+                          final qualifies = itemTotal >= reward.minOrderAmount;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.card_giftcard_rounded, size: 18, color: Color(0xFF7C3AED)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        reward.title,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        '${reward.discountTag} • ${reward.requirementTag}',
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: qualifies ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: qualifies ? const Color(0xFF7C3AED) : const Color(0xFF94A3B8),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    minimumSize: Size.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  onPressed: () => _applyReward(reward),
+                                  child: const Text(
+                                    'Use',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
                     ],
                   ],
                 ),
@@ -1162,11 +1430,13 @@ class _OrderCheckoutSheetState extends ConsumerState<OrderCheckoutSheet> {
                       'FREE',
                       isGreen: true,
                     ),
-                    if (_appliedPromo != null && promoDiscount > 0) ...[
+                    if (appliedDiscount > 0) ...[
                       const SizedBox(height: 6),
                       _buildSummaryRow(
-                        'Promo Discount (${_appliedPromo!.code})',
-                        '-৳${promoDiscount.toStringAsFixed(0)}',
+                        _appliedPromo != null
+                            ? 'Promo Discount (${_appliedPromo!.code})'
+                            : 'Reward Discount (${_appliedReward!.title})',
+                        '-৳${appliedDiscount.toStringAsFixed(0)}',
                         isGreen: true,
                       ),
                       const SizedBox(height: 2),

@@ -22,6 +22,7 @@ import 'data/customer_favorites_controller.dart';
 import 'data/customer_membership_controller.dart';
 import '../orders/presentation/customer_orders_sheet.dart';
 import '../reviews/presentation/customer_reviews_sheet.dart';
+import '../rewards/presentation/rewards_screen.dart';
 import 'widgets/change_avatar_sheet.dart';
 
 /// Customer Account management screen (Section 26 & Account update).
@@ -978,93 +979,7 @@ class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   }
 
   void _showRewardsModal(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'SaveBite Rewards',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE11D48), Color(0xFFBE123C)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '280 Reward Points',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Tier: Silver Member (7 orders placed)',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                    Icon(Icons.military_tech_rounded,
-                        color: Colors.white, size: 36),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Tier Benefits:',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                '✨ 5% bonus discount on orders above ৳500.\n🎟️ Earn 10 points for every completed order.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.4),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    showCustomerRewardsModal(context);
   }
 
   void _showHelpSupportModal(BuildContext context) {
