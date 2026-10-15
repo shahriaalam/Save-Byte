@@ -248,19 +248,8 @@ void main() {
     expect(find.text('CUSTOMER REWARDS'), findsOneWidget);
     expect(find.text('+ Post Reward'), findsOneWidget);
 
-    // Open Advanced Rewards Studio modal from Customer Rewards section
-    final advancedRewardsBtn =
-        find.text('Open Advanced Rewards Studio');
-    await tester.ensureVisible(advancedRewardsBtn);
-    await tester.tap(advancedRewardsBtn);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Customer Rewards Manager'), findsOneWidget);
-    expect(find.text('Post Reward'), findsOneWidget);
-
-    // Dismiss Rewards sheet
-    Navigator.of(tester.element(find.text('Customer Rewards Manager'))).pop();
-    await tester.pumpAndSettle();
+    // Verify Open Advanced Rewards Studio option is removed
+    expect(find.text('Open Advanced Rewards Studio'), findsNothing);
 
     // Switch back to Dashboard Overview tab (Tab 0) to access Quick Access Commands
     final overviewNav2 = find.text('Overview').last;

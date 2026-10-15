@@ -5371,41 +5371,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         else
           ...displayRewards.map((r) => _buildRewardDetailCard(context, r)),
 
-        const SizedBox(height: 8),
-        // Quick access to Full Rewards Modal
-        InkWell(
-          onTap: () => _showRewardsModal(context),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.tune_rounded, size: 16, color: Color(0xFF7C3AED)),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Open Advanced Rewards Studio',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF334155),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Icon(Icons.chevron_right_rounded,
-                    size: 18, color: Color(0xFF94A3B8)),
-              ],
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -7455,9 +7420,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  void _showRewardsModal(BuildContext context) {
-    _showVouchersAndRewardsModal(context, initialTab: 1);
-  }
+
 
   void _showCreateRewardModal(BuildContext context) {
     // Only Admin or Head Admin can post rewards
