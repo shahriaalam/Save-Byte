@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:save_bite/core/constants/app_constants.dart';
 import 'package:save_bite/core/theme/app_theme.dart';
 import 'package:save_bite/features/auth/data/auth_repository.dart';
@@ -94,6 +95,7 @@ final _transparentImage = <int>[
 void main() {
   setUpAll(() {
     HttpOverrides.global = _TestHttpOverrides();
+    SharedPreferences.setMockInitialValues({});
   });
 
   const restaurantUser = UserProfile(

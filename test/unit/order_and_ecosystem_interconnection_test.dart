@@ -179,5 +179,79 @@ void main() {
       expect(completedOrder.statusDisplayLabel, 'Picked Up');
       expect(completedOrder.statusColor, const Color(0xFF16A34A));
     });
+
+    test('Customer order history properly stores completed orders and survives reload', () async {
+      const customerId = 'cust-history-test-1';
+
+      // 1. Customer places an order
+      final order = await orderRepo.placeOrder(
+        customerId: customerId,
+        customerName: 'Samira Khan',
+        customerPhone: '01712345678',
+        restaurantId: 'res-blue-bell',
+        restaurantName: 'Blue Bell Café',
+        restaurantAddress: 'Banasree, Dhaka',
+        offerId: 'offer-bb-4',
+        title: 'Artisan Grilled Chicken Burger',
+        category: 'Fast Food',
+        quantity: 1,
+        unitPrice: 199,
+        originalUnitPrice: 350,
+        pickupTime: 'Today at 6:00 PM',
+        paymentMethod: 'bKash',
+      );
+
+      // Customer initially sees it in Active Pickups, not completed
+      final initialCustomerOrders = await orderRepo.getCustomerOrders(customerId);
+      final activeList = initialCustomerOrders.where((o) => o.isActivePickup).toList();
+      final historyList = initialCustomerOrders.where((o) => !o.isActivePickup).toList();
+
+      expect(activeList.any((o) => o.id == order.id), isTrue);
+      expect(historyList.any((o) => o.id == order.id), isFalse);
+
+      // 2. Restaurant confirms the order as done (completed)
+      final updated = await orderRepo.updateOrderStatus(order.id, 'completed');
+      expect(updated, isTrue);
+
+      // 3. Customer checks order history: order is now completed and in history tab
+      final updatedCustomerOrders = await orderRepo.getCustomerOrders(customerId);
+      final updatedActive = updatedCustomerOrders.where((o) => o.isActivePickup).toList();
+      final updatedHistory = updatedCustomerOrders.where((o) => !o.isActivePickup).toList();
+
+      expect(updatedActive.any((o) => o.id == order.id), isFalse);
+      expect(updatedHistory.any((o) => o.id == order.id), isTrue);
+
+      final foundInHistory = updatedHistory.firstWhere((o) => o.id == order.id);
+      expect(foundInHistory.isCompleted, isTrue);
+      expect(foundInHistory.status, 'completed');
+      expect(foundInHistory.statusDisplayLabel, 'Picked Up');
+      expect(foundInHistory.title, 'Artisan Grilled Chicken Burger');
+
+      // 4. Offer marked done by restaurant automatically completes active orders
+      final order2 = await orderRepo.placeOrder(
+        customerId: customerId,
+        customerName: 'Samira Khan',
+        customerPhone: '01712345678',
+        restaurantId: 'res-blue-bell',
+        restaurantName: 'Blue Bell Café',
+        restaurantAddress: 'Banasree, Dhaka',
+        offerId: 'offer-bb-special-done',
+        title: 'Special Pasta Delight',
+        category: 'Pasta',
+        quantity: 2,
+        unitPrice: 300,
+        originalUnitPrice: 500,
+        pickupTime: 'Today at 7:00 PM',
+        paymentMethod: 'Nagad',
+      );
+
+      await orderRepo.completeOrdersForOffer('offer-bb-special-done');
+
+      final finalCustomerOrders = await orderRepo.getCustomerOrders(customerId);
+      final finalHistory = finalCustomerOrders.where((o) => !o.isActivePickup).toList();
+      expect(finalHistory.any((o) => o.id == order2.id), isTrue);
+      final completedOrder2 = finalHistory.firstWhere((o) => o.id == order2.id);
+      expect(completedOrder2.isCompleted, isTrue);
+    });
   });
 }

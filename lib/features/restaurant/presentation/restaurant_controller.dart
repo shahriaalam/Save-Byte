@@ -6,6 +6,8 @@ import '../../shared/data/promo_banner_controller.dart';
 import '../../shared/models/food_offer.dart';
 import '../../shared/models/promo_banner.dart';
 import '../../shared/models/restaurant.dart';
+import '../../shared/data/order_controller.dart';
+import '../../shared/data/order_repository.dart';
 import '../data/restaurant_repository.dart';
 
 /// Fetches the current restaurant for the logged-in restaurant owner.
@@ -127,6 +129,13 @@ class RestaurantActionNotifier extends AsyncNotifier<void> {
     try {
       final repo = ref.read(restaurantRepositoryProvider);
       await repo.markOfferAsDone(offerId);
+      try {
+        await ref.read(orderRepositoryProvider).completeOrdersForOffer(offerId);
+      } catch (_) {}
+      ref.invalidate(customerOrdersProvider('demo-customer-id'));
+      ref.invalidate(restaurantOrdersProvider('res-blue-bell'));
+      ref.invalidate(restaurantOrdersProvider('res-1'));
+      ref.invalidate(restaurantOrdersProvider('demo-restaurant-id'));
       _invalidateAllOfferCaches();
       state = const AsyncData(null);
       return true;

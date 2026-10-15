@@ -135,6 +135,7 @@ class Order {
   }
 
   Order copyWith({
+    String? id,
     String? status,
     DateTime? updatedAt,
     bool? emailSentCustomer,
@@ -145,7 +146,7 @@ class Order {
     double? platformSubsidy,
   }) {
     return Order(
-      id: id,
+      id: id ?? this.id,
       orderNumber: orderNumber,
       customerId: customerId,
       customerName: customerName,

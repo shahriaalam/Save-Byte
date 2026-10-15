@@ -678,45 +678,69 @@ class _RestaurantOrdersSheetState extends ConsumerState<RestaurantOrdersSheet>
                 if (order.isConfirmed || isReady) ...[
                   const SizedBox(height: 14),
                   if (order.isConfirmed) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                        label: const Text(
-                          'Mark Ready for Pickup',
-                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                        ),
-                        onPressed: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final success = await ref
-                              .read(orderControllerProvider.notifier)
-                              .updateStatus(
-                                order.id,
-                                'ready_for_pickup',
-                                restaurantId: widget.restaurantId,
-                                customerId: order.customerId,
-                              );
-                          if (!mounted) return;
-                          if (success) {
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text('Order marked as Ready for Pickup! Customer notified.'),
-                                backgroundColor: Color(0xFF059669),
-                                behavior: SnackBarBehavior.floating,
+                    Column(
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            );
-                          }
-                        },
-                      ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                            label: const Text(
+                              'Mark Ready for Pickup',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                            onPressed: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final success = await ref
+                                  .read(orderControllerProvider.notifier)
+                                  .updateStatus(
+                                    order.id,
+                                    'ready_for_pickup',
+                                    restaurantId: widget.restaurantId,
+                                    customerId: order.customerId,
+                                  );
+                              if (!mounted) return;
+                              if (success) {
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Order marked as Ready for Pickup! Customer notified.'),
+                                    backgroundColor: Color(0xFF059669),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF059669),
+                              side: const BorderSide(color: Color(0xFF059669), width: 1.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                            ),
+                            icon: const Icon(Icons.task_alt_rounded, size: 18),
+                            label: const Text(
+                              'Confirm as Done & Handover',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                            onPressed: () => _completeOrderAndMoveToHistory(order),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                   if (isReady) ...[

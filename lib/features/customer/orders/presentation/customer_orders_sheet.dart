@@ -46,6 +46,9 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
     final userProfile = ref.watch(currentUserProfileProvider);
     final customerId = userProfile?.id ?? 'demo-customer-id';
     final ordersAsync = ref.watch(customerOrdersProvider(customerId));
+    final ordersList = ordersAsync.value ?? [];
+    final activeCount = ordersList.where((o) => o.isActivePickup).length;
+    final historyCount = ordersList.where((o) => !o.isActivePickup).length;
 
     return Container(
       decoration: BoxDecoration(
@@ -100,16 +103,28 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
                         ),
                       ],
                     ),
-                    if (widget.isModal)
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 22),
-                        onPressed: () => Navigator.pop(context),
-                      ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF64748B)),
+                          tooltip: 'Refresh orders',
+                          onPressed: () {
+                            ref.invalidate(customerOrdersProvider(customerId));
+                            ref.invalidate(customerOrdersProvider('demo-customer-id'));
+                          },
+                        ),
+                        if (widget.isModal)
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 22),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
 
-              // Filter Tabs (Active Pickups vs History)
+              // Filter Tabs (Active Pickups vs History) with badges
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Container(
@@ -123,6 +138,7 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
                       Expanded(
                         child: _buildFilterTab(
                           label: 'Active Pickups',
+                          count: activeCount,
                           isSelected: _selectedTab == 0,
                           onTap: () => setState(() => _selectedTab = 0),
                         ),
@@ -130,6 +146,7 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
                       Expanded(
                         child: _buildFilterTab(
                           label: 'Order History',
+                          count: historyCount,
                           isSelected: _selectedTab == 1,
                           onTap: () => setState(() => _selectedTab = 1),
                         ),
@@ -147,66 +164,81 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
                         ? orders.where((o) => o.isActivePickup).toList()
                         : orders.where((o) => !o.isActivePickup).toList();
 
-                    if (filtered.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 68,
-                                height: 68,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF8FAFC),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _selectedTab == 0
-                                      ? Icons.storefront_outlined
-                                      : Icons.history_rounded,
-                                  size: 34,
-                                  color: const Color(0xFF94A3B8),
+                    return RefreshIndicator(
+                      color: AppColors.primary,
+                      onRefresh: () async {
+                        ref.invalidate(customerOrdersProvider(customerId));
+                        ref.invalidate(customerOrdersProvider('demo-customer-id'));
+                        await ref.read(customerOrdersProvider(customerId).future);
+                      },
+                      child: filtered.isEmpty
+                          ? LayoutBuilder(
+                              builder: (context, constraints) => SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(32),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 68,
+                                            height: 68,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFF8FAFC),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              _selectedTab == 0
+                                                  ? Icons.storefront_outlined
+                                                  : Icons.history_rounded,
+                                              size: 34,
+                                              color: const Color(0xFF94A3B8),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 14),
+                                          Text(
+                                            _selectedTab == 0
+                                                ? 'No Active Takeaway Bookings'
+                                                : 'No Past Orders Yet',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            _selectedTab == 0
+                                                ? 'When you order food for takeaway pickup, your scheduled collection will appear here.'
+                                                : 'Completed food collections confirmed by restaurants will be archived here.',
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 14),
-                              Text(
-                                _selectedTab == 0
-                                    ? 'No Active Takeaway Bookings'
-                                    : 'No Past Orders Yet',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1E293B),
-                                ),
+                            )
+                          : ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: EdgeInsets.fromLTRB(
+                                20,
+                                10,
+                                20,
+                                widget.isModal ? 10 : 90,
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                _selectedTab == 0
-                                    ? 'When you order food for takeaway pickup, your scheduled collection will appear here.'
-                                    : 'Completed food collections will be archived here.',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      padding: EdgeInsets.fromLTRB(
-                        20,
-                        10,
-                        20,
-                        widget.isModal ? 10 : 90,
-                      ),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemBuilder: (ctx, idx) => _buildOrderCard(filtered[idx]),
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, _) => const SizedBox(height: 12),
+                              itemBuilder: (ctx, idx) => _buildOrderCard(filtered[idx]),
+                            ),
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -227,6 +259,7 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
 
   Widget _buildFilterTab({
     required String label,
+    int? count,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -248,13 +281,38 @@ class _CustomerOrdersSheetState extends ConsumerState<CustomerOrdersSheet> {
               : null,
         ),
         child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-              color: isSelected ? AppColors.primary : const Color(0xFF64748B),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected ? AppColors.primary : const Color(0xFF64748B),
+                ),
+              ),
+              if (count != null && count > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: isSelected ? AppColors.primary : const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),

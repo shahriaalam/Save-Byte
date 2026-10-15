@@ -109,6 +109,7 @@ class OrderController extends AsyncNotifier<void> {
 
       // Invalidate customer and restaurant orders & profit stats
       ref.invalidate(customerOrdersProvider(customerId));
+      ref.invalidate(customerOrdersProvider('demo-customer-id'));
       ref.invalidate(restaurantOrdersProvider(restaurantId));
       ref.invalidate(restaurantOrdersProvider('res-blue-bell'));
       ref.invalidate(restaurantOrdersProvider('res-1'));
@@ -169,6 +170,7 @@ class OrderController extends AsyncNotifier<void> {
       if (customerId != null) {
         ref.invalidate(customerOrdersProvider(customerId));
       }
+      ref.invalidate(customerOrdersProvider('demo-customer-id'));
 
       state = const AsyncData(null);
       return success;
@@ -176,6 +178,17 @@ class OrderController extends AsyncNotifier<void> {
       state = AsyncError(e, st);
       return false;
     }
+  }
+
+  Future<void> completeOrdersForOffer(String offerId) async {
+    try {
+      final repo = ref.read(orderRepositoryProvider);
+      await repo.completeOrdersForOffer(offerId);
+      ref.invalidate(customerOrdersProvider('demo-customer-id'));
+      ref.invalidate(restaurantOrdersProvider('res-blue-bell'));
+      ref.invalidate(restaurantOrdersProvider('res-1'));
+      ref.invalidate(restaurantOrdersProvider('demo-restaurant-id'));
+    } catch (_) {}
   }
 }
 
