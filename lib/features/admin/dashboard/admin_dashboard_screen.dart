@@ -62,7 +62,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   late List<Map<String, dynamic>> _verificationRequests;
   late List<Map<String, dynamic>> _staffMembers;
   String _selectedStaffRole = AppConstants.roleHeadAdmin;
-  int _systemMenuIndex = 0; // 0 = Staff, 1 = Vouchers, 2 = Telemetry, 3 = Security
+  int _systemMenuIndex = 0; // 0 = Staff, 1 = Vouchers, 2 = Rewards, 3 = Security
 
   @override
   void initState() {
@@ -3460,7 +3460,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 0 => _buildStaffManagementSection(context, profile, currentRole),
                 1 => _buildVouchersMenuSection(context),
                 2 => _buildRewardsMenuSection(context),
-                3 => _buildTelemetryMenuSection(),
                 _ => _buildSecurityGovernanceMenuSection(context, profile, currentRole),
               },
             ),
@@ -3649,12 +3648,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         Icons.card_giftcard_rounded,
         'Perks',
         const Color(0xFF7C3AED),
-      ),
-      (
-        'Telemetry',
-        Icons.insights_rounded,
-        '99.98%',
-        const Color(0xFF0284C7),
       ),
       (
         'Security',
@@ -5715,166 +5708,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  // ==============================================================================
-  // MENU 3: SYSTEM HEALTH & TELEMETRY
-  // ==============================================================================
-  Widget _buildTelemetryMenuSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader('SYSTEM HEALTH & TELEMETRY',
-            countBadge: 'LIVE • 99.98%'),
-        const SizedBox(height: 6),
-        const Text(
-          'Infrastructure telemetry, realtime database sync, and cryptographic security monitors.',
-          style: TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 11.5,
-            height: 1.35,
-          ),
-        ),
-        const SizedBox(height: 12),
 
-        // 4 KPI Telemetry Cards Grid
-        Row(
-          children: [
-            Expanded(
-              child: _buildHealthTile(
-                icon: Icons.sync_rounded,
-                label: 'Realtime Sync',
-                status: 'Connected',
-                color: const Color(0xFF16A34A),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildHealthTile(
-                icon: Icons.shield_rounded,
-                label: 'Security RLS',
-                status: 'Enforced',
-                color: const Color(0xFF0284C7),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildHealthTile(
-                icon: Icons.speed_rounded,
-                label: 'Platform SLA',
-                status: '99.98% Uptime',
-                color: const Color(0xFF7E22CE),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildHealthTile(
-                icon: Icons.cloud_done_rounded,
-                label: 'Cluster Latency',
-                status: '38ms (Dhaka)',
-                color: const Color(0xFFD97706),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-
-        // Architecture Telemetry Checklist Container
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.dns_rounded, size: 16, color: Color(0xFF0F172A)),
-                  SizedBox(width: 8),
-                  Text(
-                    'SUPABASE BACKEND ARCHITECTURE',
-                    style: TextStyle(
-                      color: Color(0xFF0F172A),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildTelemetryRow('Database Schema', '14 Relational Tables Active',
-                  Icons.storage_rounded, const Color(0xFF16A34A)),
-              _buildTelemetryRow(
-                  'Realtime WebSockets',
-                  'orders, notifications channels active',
-                  Icons.wifi_tethering_rounded,
-                  const Color(0xFF0284C7)),
-              _buildTelemetryRow(
-                  'Object Storage',
-                  '3 Public Buckets (restaurants, avatars, banners)',
-                  Icons.folder_shared_rounded,
-                  const Color(0xFF7E22CE)),
-              _buildTelemetryRow(
-                  'Authentication Provider',
-                  'Supabase Auth with 2FA / Session Refresh',
-                  Icons.lock_person_rounded,
-                  const Color(0xFFD97706)),
-              _buildTelemetryRow(
-                  'Security Audit',
-                  '100% Row Level Security Compliance',
-                  Icons.verified_user_rounded,
-                  const Color(0xFF16A34A)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Interactive Diagnostics Ping Action
-        Builder(
-          builder: (ctx) => SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        '⚡ System Ping: 38ms • All 14 Supabase tables responsive & online.'),
-                    backgroundColor: Color(0xFF16A34A),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.network_ping_rounded, size: 16),
-              label: const Text(
-                'Run Live Infrastructure Ping Diagnostic',
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF0F172A),
-                side: const BorderSide(color: Color(0xFFCBD5E1)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   // ==============================================================================
   // MENU 3: SECURITY, GOVERNANCE & ACCESS CONTROL
@@ -6043,88 +5877,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildTelemetryRow(
-      String label, String value, IconData icon, Color iconColor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, size: 14, color: iconColor),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildHealthTile({
-    required IconData icon,
-    required String label,
-    required String status,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF64748B),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            status,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
 
   (Color, Color, Color, String, IconData) _getRoleVisuals(String role) {
     return switch (role) {

@@ -151,13 +151,8 @@ void main() {
     expect(find.text('CUSTOMER REWARDS'), findsOneWidget);
     expect(find.text('+ Post Reward'), findsOneWidget);
 
-    // Test switching to Telemetry Menu
-    final telemetryMenuPill = find.text('Telemetry').first;
-    await tester.tap(telemetryMenuPill);
-    await tester.pumpAndSettle();
-    expect(find.text('SYSTEM HEALTH & TELEMETRY'), findsOneWidget);
-    expect(find.text('SUPABASE BACKEND ARCHITECTURE'), findsOneWidget);
-    expect(find.text('Realtime Sync'), findsOneWidget);
+    // Verify Telemetry is removed from System Menu
+    expect(find.text('Telemetry'), findsNothing);
 
     // Test switching to Security Menu
     final securityMenuPill = find.text('Security').first;
