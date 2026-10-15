@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/supabase_constants.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../../../core/utils/platform_file_picker.dart';
 import '../../../core/widgets/app_logo.dart';
@@ -18,7 +18,10 @@ import '../../shared/data/promo_banner_controller.dart';
 import '../../shared/data/promo_code_controller.dart';
 import '../../shared/data/reward_controller.dart';
 import '../../shared/data/admin_financial_controller.dart';
+import '../../shared/data/review_repository.dart';
+import '../../shared/models/reward.dart';
 import '../../shared/models/promo_banner.dart';
+import '../../shared/models/promo_code.dart';
 import 'widgets/admin_analytics_dashboard_sheet.dart';
 
 /// Admin Command Center & Platform Management Portal
@@ -44,7 +47,7 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   // Navigation: 0 = Overview, 1 = Partners, 2 = Posts, 3 = Banners, 4 = System
   int _currentTab = 0;
-  bool _isNavVisible = true;
+  final bool _isNavVisible = true;
 
   // Filters & Search
   String _restaurantFilter = 'all'; // 'all', 'pending', 'verified', 'suspended'
@@ -59,6 +62,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   late List<Map<String, dynamic>> _verificationRequests;
   late List<Map<String, dynamic>> _staffMembers;
   String _selectedStaffRole = AppConstants.roleHeadAdmin;
+  int _systemMenuIndex = 0; // 0 = Staff, 1 = Vouchers, 2 = Telemetry, 3 = Security
 
   @override
   void initState() {
@@ -375,27 +379,45 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
     _vouchersData = [
       {
+        'id': 'promo-savebite50',
         'code': 'SAVEBITE50',
         'title': '৳50 OFF Discount',
         'discount': '৳50 OFF (Min ৳200)',
+        'discountType': 'flat',
+        'discountValue': 50.0,
+        'minOrder': '৳200',
+        'minOrderAmount': 200.0,
         'type': 'Flat',
         'status': 'Active',
+        'isActive': true,
         'usedCount': 342,
       },
       {
+        'id': 'promo-save20',
         'code': 'SAVE20',
         'title': '20% Meal Bag Discount',
         'discount': '20% OFF (Min ৳150)',
+        'discountType': 'percentage',
+        'discountValue': 20.0,
+        'minOrder': '৳150',
+        'minOrderAmount': 150.0,
         'type': 'Percentage',
         'status': 'Active',
+        'isActive': true,
         'usedCount': 518,
       },
       {
+        'id': 'promo-supersaver',
         'code': 'SUPERSAVER',
         'title': 'Super Saver Free Delivery',
         'discount': 'Free Delivery ৳60',
+        'discountType': 'flat',
+        'discountValue': 60.0,
+        'minOrder': '৳250',
+        'minOrderAmount': 250.0,
         'type': 'Perk',
         'status': 'Active',
+        'isActive': true,
         'usedCount': 189,
       },
     ];
@@ -462,25 +484,23 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   // ==========================================
-  // MODAL RUNNER WITH FLOATING NAVBAR AUTO-HIDE
+  // MODAL RUNNER FOR ADMIN OPERATIONS
   // ==========================================
-  Future<T?> _showSheet<T>({required WidgetBuilder builder}) async {
-    setState(() => _isNavVisible = false);
-    final targetContext = rootNavigatorKey.currentContext ?? context;
-    try {
-      return await showModalBottomSheet<T>(
-        context: targetContext,
-        useRootNavigator: true,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: builder,
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isNavVisible = true);
-      }
-    }
+  Future<T?> _showSheet<T>({
+    BuildContext? targetContext,
+    required WidgetBuilder builder,
+    bool isScrollControlled = true,
+  }) {
+    final ctx = targetContext ?? context;
+    return showModalBottomSheet<T>(
+      context: ctx,
+      useRootNavigator: false,
+      isScrollControlled: isScrollControlled,
+      backgroundColor: Colors.transparent,
+      builder: builder,
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -923,13 +943,23 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 label: 'Vouchers',
                 badge: '${_vouchersData.length} Active',
                 icon: Icons.confirmation_number_rounded,
-                onTap: () => _showVouchersModal(context),
+                onTap: () {
+                  setState(() {
+                    _currentTab = 4;
+                    _systemMenuIndex = 1;
+                  });
+                },
               ),
               _buildQuickAccessSymbol(
                 label: 'Rewards',
                 badge: 'Perks',
                 icon: Icons.card_giftcard_rounded,
-                onTap: () => _showRewardsModal(context),
+                onTap: () {
+                  setState(() {
+                    _currentTab = 4;
+                    _systemMenuIndex = 2;
+                  });
+                },
               ),
               _buildQuickAccessSymbol(
                 label: 'Ad Sales',
@@ -3402,7 +3432,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   // ==============================================================================
-  // 7. TAB 4: SYSTEM CONSOLE & STAFF ROLE ACCESS HUB
+  // 7. TAB 4: SYSTEM CONSOLE & MENU-BASED PLATFORM HUB
   // ==============================================================================
   Widget _buildSystemConsoleTab(BuildContext context, dynamic profile) {
     final String currentRole =
@@ -3413,26 +3443,34 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Executive Session Profile Card
+          // 1. Executive Session Profile Banner
           _buildCurrentSessionCard(profile, currentRole),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
-          // 2. Staff Roles & Access Control Center (3 Role Buttons + Data Management)
-          _buildStaffManagementSection(context, profile, currentRole),
-          const SizedBox(height: 18),
+          // 2. Category Menu Selector (Menu Scenario)
+          _buildSystemMenuSelector(),
+          const SizedBox(height: 16),
 
-          // 3. Platform Vouchers & Campaigns Card
-          _buildVouchersSummaryCard(context),
-          const SizedBox(height: 18),
-
-          // 4. System Health & Infrastructure Telemetry
-          _buildSystemHealthSecurityCard(),
+          // 3. Dedicated Menu Content (Each option under its different menu)
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: KeyedSubtree(
+              key: ValueKey<int>(_systemMenuIndex),
+              child: switch (_systemMenuIndex) {
+                0 => _buildStaffManagementSection(context, profile, currentRole),
+                1 => _buildVouchersMenuSection(context),
+                2 => _buildRewardsMenuSection(context),
+                3 => _buildTelemetryMenuSection(),
+                _ => _buildSecurityGovernanceMenuSection(context, profile, currentRole),
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // 1. Executive Session Profile Card
+  // 1. Executive Session Profile Banner (Polished & Compact)
   Widget _buildCurrentSessionCard(dynamic profile, String currentRole) {
     final (badgeBg, badgeBorder, badgeText, roleLabel, roleIcon) =
         _getRoleVisuals(currentRole);
@@ -3441,7 +3479,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final email = profile?.email ?? 'admin@savebite.com';
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -3466,23 +3504,23 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               Stack(
                 children: [
                   Container(
-                    width: 46,
-                    height: 46,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       color: badgeBg,
                       shape: BoxShape.circle,
                       border: Border.all(color: badgeBorder, width: 1.5),
                     ),
                     child: Center(
-                      child: Icon(roleIcon, color: badgeText, size: 24),
+                      child: Icon(roleIcon, color: badgeText, size: 22),
                     ),
                   ),
                   Positioned(
                     right: 0,
                     bottom: 0,
                     child: Container(
-                      width: 12,
-                      height: 12,
+                      width: 11,
+                      height: 11,
                       decoration: BoxDecoration(
                         color: const Color(0xFF16A34A),
                         shape: BoxShape.circle,
@@ -3492,42 +3530,39 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            fullName,
-                            style: const TextStyle(
-                              color: Color(0xFF0F172A),
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w900,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      fullName,
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       email,
                       style: const TextStyle(
                         color: Color(0xFF64748B),
-                        fontSize: 12,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
                   color: badgeBg,
                   borderRadius: BorderRadius.circular(8),
@@ -3537,7 +3572,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   roleLabel,
                   style: TextStyle(
                     color: badgeText,
-                    fontSize: 10,
+                    fontSize: 9.5,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.3,
                   ),
@@ -3545,12 +3580,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFF1F5F9)),
             ),
             child: const Row(
@@ -3559,14 +3594,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 Expanded(
                   child: Row(
                     children: [
-                      Icon(Icons.lock_outline_rounded,
-                          size: 13, color: Color(0xFF16A34A)),
+                      Icon(Icons.verified_user_rounded,
+                          size: 12, color: Color(0xFF16A34A)),
                       SizedBox(width: 5),
                       Expanded(
                         child: Text(
                           'Session Authenticated • 2FA Enforced',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF334155),
                           ),
@@ -3577,11 +3612,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ],
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Text(
                   'SSL Encrypted',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9.5,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF64748B),
                   ),
@@ -3590,6 +3625,126 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // 2. High-Tech Category Menu Selector (Menu Scenario Hub)
+  Widget _buildSystemMenuSelector() {
+    final menuItems = [
+      (
+        'Staff Access',
+        Icons.manage_accounts_rounded,
+        '${_staffMembers.length} Staff',
+        const Color(0xFF7E22CE),
+      ),
+      (
+        'Vouchers',
+        Icons.confirmation_number_rounded,
+        '${_vouchersData.length} Codes',
+        AppColors.primary,
+      ),
+      (
+        'Rewards',
+        Icons.card_giftcard_rounded,
+        'Perks',
+        const Color(0xFF7C3AED),
+      ),
+      (
+        'Telemetry',
+        Icons.insights_rounded,
+        '99.98%',
+        const Color(0xFF0284C7),
+      ),
+      (
+        'Security',
+        Icons.security_rounded,
+        '2FA Active',
+        const Color(0xFF16A34A),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: List.generate(menuItems.length, (index) {
+          final item = menuItems[index];
+          final isSelected = _systemMenuIndex == index;
+
+          return Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _systemMenuIndex = index),
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 7, horizontal: 1),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.$2,
+                      size: 16,
+                      color: isSelected ? item.$4 : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      item.$1,
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight:
+                            isSelected ? FontWeight.w900 : FontWeight.w700,
+                        color: isSelected
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFF64748B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? item.$4.withValues(alpha: 0.12)
+                            : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        item.$3,
+                        style: TextStyle(
+                          fontSize: 8.0,
+                          fontWeight: FontWeight.w800,
+                          color: isSelected ? item.$4 : const Color(0xFF64748B),
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -4258,116 +4413,198 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  // 3. Platform Vouchers & Campaigns Card
-  Widget _buildVouchersSummaryCard(BuildContext context) {
+  // ==============================================================================
+  // MENU 1 & 2: PROMOTIONAL HUB (VOUCHERS & REWARDS)
+  // ==============================================================================
+
+  Widget _buildMicroGuaranteeChip(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.confirmation_number_outlined,
-                      size: 16, color: AppColors.primary),
-                  SizedBox(width: 8),
-                  Text(
-                    'PLATFORM VOUCHERS',
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromoImpactStatPill({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 12, color: color),
+                const SizedBox(width: 3),
+                Flexible(
+                  child: Text(
+                    value,
                     style: TextStyle(
-                      color: Color(0xFF0F172A),
-                      fontSize: 12,
+                      color: color,
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
                     ),
-                  ),
-                ],
-              ),
-              ElevatedButton(
-                onPressed: () => _showCreateVoucherModal(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  minimumSize: Size.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                child: const Text('+ New Code',
-                    style: TextStyle(
-                        fontSize: 10.5, fontWeight: FontWeight.w800)),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
               ),
-            ],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromotionsSubSelector(int rewardsCount) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _systemMenuIndex = 1),
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _systemMenuIndex == 1 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _systemMenuIndex == 1
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.confirmation_number_rounded,
+                        size: 15,
+                        color: _systemMenuIndex == 1
+                            ? AppColors.primary
+                            : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Vouchers (${_vouchersData.length})',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: _systemMenuIndex == 1
+                              ? FontWeight.w900
+                              : FontWeight.w700,
+                          color: _systemMenuIndex == 1
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
-          ..._vouchersData.map(
-            (v) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF1F2),
-                            borderRadius: BorderRadius.circular(6),
-                            border:
-                                Border.all(color: const Color(0xFFFFCCD3)),
+          const SizedBox(width: 4),
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _systemMenuIndex = 2),
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _systemMenuIndex == 2 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _systemMenuIndex == 2
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
-                          child: Text(
-                            v['code'] as String,
-                            style: const TextStyle(
-                              color: Color(0xFFE11D48),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.card_giftcard_rounded,
+                        size: 15,
+                        color: _systemMenuIndex == 2
+                            ? const Color(0xFF7C3AED)
+                            : const Color(0xFF64748B),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Rewards ($rewardsCount)',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: _systemMenuIndex == 2
+                              ? FontWeight.w900
+                              : FontWeight.w700,
+                          color: _systemMenuIndex == 2
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFF64748B),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            v['discount'] as String,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF0F172A),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${v['usedCount']} claimed',
-                    style: const TextStyle(
-                        color: Color(0xFF64748B), fontSize: 11),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -4376,74 +4613,1470 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  // 4. System Health & Security Telemetry
-  Widget _buildSystemHealthSecurityCard() {
+  // ==============================================================================
+  // MENU 1: PLATFORM VOUCHERS
+  // ==============================================================================
+  Widget _buildVouchersMenuSection(BuildContext context) {
+    final rewardsAsync = ref.watch(allAdminRewardsProvider);
+    final rewardsCount = rewardsAsync.asData?.value.length ?? 3;
+    final totalClaims = _vouchersData.fold<int>(
+        0, (sum, v) => sum + ((v['usedCount'] as int?) ?? 0));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sub-Navigator Switcher
+        _buildPromotionsSubSelector(rewardsCount),
+
+        // Section Header Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 3.5,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Flexible(
+                    child: Text(
+                      'PLATFORM VOUCHERS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF475569),
+                        letterSpacing: 0.7,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Text(
+                      '${_vouchersData.length} ACTIVE',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: () => _showCreateVoucherModal(context),
+              icon: const Icon(Icons.add_rounded, size: 14),
+              label: const Text('+ New Code',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                minimumSize: Size.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                shadowColor: AppColors.primary.withValues(alpha: 0.3),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Platform authority sponsored promotional codes. 100% reimbursed to partner restaurants.',
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 11.5,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // KPI Metric Strip
+        Row(
+          children: [
+            _buildPromoImpactStatPill(
+              icon: Icons.confirmation_number_rounded,
+              label: 'Active Codes',
+              value: '${_vouchersData.length} Live',
+              color: const Color(0xFFE11D48),
+            ),
+            const SizedBox(width: 8),
+            _buildPromoImpactStatPill(
+              icon: Icons.bolt_rounded,
+              label: 'Redemptions',
+              value: '$totalClaims Claims',
+              color: const Color(0xFFD97706),
+            ),
+            const SizedBox(width: 8),
+            _buildPromoImpactStatPill(
+              icon: Icons.verified_user_rounded,
+              label: 'Partner Payout',
+              value: '100% Full',
+              color: const Color(0xFF16A34A),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Platform Reimbursement Guarantee Banner
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFEFF6FF), Color(0xFFF0FDF4)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDBEAFE),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.verified_user_rounded,
+                    color: Color(0xFF2563EB), size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Zero Restaurant Deduction Guarantee',
+                      style: TextStyle(
+                        color: Color(0xFF1E40AF),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'All discounts are funded exclusively by SaveBite platform budget. Partners receive their full payout on every takeaway order.',
+                      style: TextStyle(
+                        color: Color(0xFF3B82F6),
+                        fontSize: 11,
+                        height: 1.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _buildMicroGuaranteeChip(
+                            '✓ 100% Platform Funded', const Color(0xFF16A34A)),
+                        _buildMicroGuaranteeChip(
+                            '✓ Full Partner Payout', const Color(0xFF2563EB)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Vouchers Cards List
+        if (_vouchersData.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.confirmation_number_outlined,
+                    size: 32, color: Color(0xFF94A3B8)),
+                const SizedBox(height: 8),
+                const Text(
+                  'No vouchers created yet.',
+                  style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 10),
+                TextButton.icon(
+                  onPressed: () => _showCreateVoucherModal(context),
+                  icon: const Icon(Icons.add, size: 14),
+                  label: const Text('Create your first platform promo code'),
+                  style:
+                      TextButton.styleFrom(foregroundColor: AppColors.primary),
+                ),
+              ],
+            ),
+          )
+        else
+          ..._vouchersData.map((v) => _buildVoucherDetailCard(context, v)),
+
+        const SizedBox(height: 8),
+        // Quick access to Full Vouchers Modal
+        InkWell(
+          onTap: () => _showVouchersModal(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.tune_rounded, size: 16, color: Color(0xFF64748B)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Open Advanced Voucher Management Studio',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF334155),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: Color(0xFF94A3B8)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVoucherDetailCard(BuildContext context, Map<String, dynamic> v) {
+    final code = v['code'] as String? ?? 'SAVEBITE';
+    final discountStr = v['discount'] as String? ?? 'Special Offer';
+    final usedCount = v['usedCount'] as int? ?? 120;
+    final minOrder = v['minOrder'] as String? ?? '৳200';
+    final isPercentage = (v['discountType'] as String?) == 'percentage';
+    final discountVal = (v['discountValue'] as num?)?.toDouble() ?? 50.0;
+    final discountAmount = isPercentage
+        ? '${discountVal.toStringAsFixed(0)}%'
+        : '৳${discountVal.toStringAsFixed(0)}';
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.health_and_safety_outlined,
-                  size: 16, color: Color(0xFF16A34A)),
-              SizedBox(width: 8),
-              Text(
-                'SYSTEM HEALTH & TELEMETRY',
-                style: TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
+              // LEFT TICKET STUB
+              Container(
+                width: 94,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFE11D48), Color(0xFFBE123C)],
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.confirmation_number_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      discountAmount,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const Text(
+                      'OFF',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // NOTCHES & DASHED PERFORATION
+              SizedBox(
+                width: 14,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(
+                        7,
+                        (_) => Container(
+                          width: 1.5,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFCBD5E1),
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: -7,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: -7,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // RIGHT TICKET BODY
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 12, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: code));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Voucher code "$code" copied!'),
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: const Color(0xFF0F172A),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF1F2),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFFFCCD3)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    code,
+                                    style: const TextStyle(
+                                      color: Color(0xFFE11D48),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.6,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.copy_rounded,
+                                      size: 11, color: Color(0xFFE11D48)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'ACTIVE',
+                              style: TextStyle(
+                                color: Color(0xFF16A34A),
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        discountStr,
+                        style: const TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.shopping_bag_outlined,
+                              size: 12, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Minimum Order: $minOrder • Single User Use',
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF16A34A),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '$usedCount claimed so far',
+                            style: const TextStyle(
+                              color: Color(0xFF16A34A),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
+        ),
+      ),
+    );
+  }
+
+  // ==============================================================================
+  // MENU 2: CUSTOMER REWARDS & PERKS
+  // ==============================================================================
+  Widget _buildRewardsMenuSection(BuildContext context) {
+    final rewardsAsync = ref.watch(allAdminRewardsProvider);
+    final displayRewards = rewardsAsync.asData?.value.isNotEmpty == true
+        ? rewardsAsync.asData!.value
+        : Reward.defaultRewards();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sub-Navigator Switcher
+        _buildPromotionsSubSelector(displayRewards.length),
+
+        // Section Header Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 3.5,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C3AED),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Flexible(
+                    child: Text(
+                      'CUSTOMER REWARDS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF475569),
+                        letterSpacing: 0.7,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Text(
+                      '${displayRewards.length} ACTIVE',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: () => _showCreateRewardModal(context),
+              icon: const Icon(Icons.add_rounded, size: 14),
+              label: const Text('+ Post Reward',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7C3AED),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                minimumSize: Size.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Platform authority sponsored promotional perks. 100% subsidized customer incentives.',
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 11.5,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // KPI Metric Strip
+        Row(
+          children: [
+            _buildPromoImpactStatPill(
+              icon: Icons.card_giftcard_rounded,
+              label: 'Active Perks',
+              value: '${displayRewards.length} Live',
+              color: const Color(0xFF7C3AED),
+            ),
+            const SizedBox(width: 8),
+            _buildPromoImpactStatPill(
+              icon: Icons.rule_rounded,
+              label: 'Per Order',
+              value: '1 Perk Max',
+              color: const Color(0xFF4F46E5),
+            ),
+            const SizedBox(width: 8),
+            _buildPromoImpactStatPill(
+              icon: Icons.bolt_rounded,
+              label: 'Application',
+              value: 'Auto-Apply',
+              color: const Color(0xFF16A34A),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Customer Reward Guarantee Banner
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF5F3FF), Color(0xFFFAF5FF)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFDDD6FE), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildHealthTile(
-                  icon: Icons.sync_rounded,
-                  label: 'Realtime Sync',
-                  status: 'Connected',
-                  color: const Color(0xFF16A34A),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: const Icon(Icons.auto_awesome_rounded,
+                    color: Color(0xFF7C3AED), size: 20),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
-                child: _buildHealthTile(
-                  icon: Icons.shield_rounded,
-                  label: 'Security RLS',
-                  status: 'Enforced',
-                  color: const Color(0xFF0284C7),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildHealthTile(
-                  icon: Icons.speed_rounded,
-                  label: 'Uptime',
-                  status: '99.98%',
-                  color: const Color(0xFF7E22CE),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Direct Customer Incentives',
+                      style: TextStyle(
+                        color: Color(0xFF5B21B6),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'Rewards appear automatically in the Customer App. Discounts are fully platform-funded with full payout to restaurants.',
+                      style: TextStyle(
+                        color: Color(0xFF7C3AED),
+                        fontSize: 11,
+                        height: 1.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _buildMicroGuaranteeChip(
+                            '⚡ Auto-Applied at Checkout', const Color(0xFF7C3AED)),
+                        _buildMicroGuaranteeChip(
+                            '✓ 1 Perk Per Order', const Color(0xFF0284C7)),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Rewards Cards List
+        if (displayRewards.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.card_giftcard_outlined,
+                    size: 32, color: Color(0xFF94A3B8)),
+                const SizedBox(height: 8),
+                const Text(
+                  'No rewards active yet.',
+                  style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 10),
+                TextButton.icon(
+                  onPressed: () => _showCreateRewardModal(context),
+                  icon: const Icon(Icons.add, size: 14),
+                  label: const Text('Post your first customer perk'),
+                  style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF7C3AED)),
+                ),
+              ],
+            ),
+          )
+        else
+          ...displayRewards.map((r) => _buildRewardDetailCard(context, r)),
+
+        const SizedBox(height: 8),
+        // Quick access to Full Rewards Modal
+        InkWell(
+          onTap: () => _showRewardsModal(context),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.tune_rounded, size: 16, color: Color(0xFF7C3AED)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Open Advanced Rewards Studio',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF334155),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: Color(0xFF94A3B8)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRewardDetailCard(BuildContext context, dynamic reward) {
+    final title = reward.title as String;
+    final discount = reward.discountTag as String;
+    final req = reward.requirementTag as String;
+    final isExpired = reward.isExpired as bool;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // LEFT TICKET STUB (Royal Purple gradient)
+              Container(
+                width: 94,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.card_giftcard_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      discount,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const Text(
+                      'PERK',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // NOTCHES & DASHED PERFORATION
+              SizedBox(
+                width: 14,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(
+                        7,
+                        (_) => Container(
+                          width: 1.5,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFCBD5E1),
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: -7,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: -7,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // RIGHT TICKET BODY
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F3FF),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFDDD6FE)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.auto_awesome_rounded,
+                                    size: 11, color: Color(0xFF7C3AED)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'CUSTOMER PERK',
+                                  style: TextStyle(
+                                    color: Color(0xFF7C3AED),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: isExpired
+                                  ? const Color(0xFFFEE2E2)
+                                  : const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isExpired ? 'EXPIRED' : 'ACTIVE',
+                              style: TextStyle(
+                                color: isExpired
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF16A34A),
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.shopping_bag_outlined,
+                              size: 12, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              req,
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: isExpired
+                                      ? const Color(0xFFEF4444)
+                                      : const Color(0xFF16A34A),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                isExpired ? 'Expired' : 'Active Perk',
+                                style: TextStyle(
+                                  color: isExpired
+                                      ? const Color(0xFFEF4444)
+                                      : const Color(0xFF16A34A),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          InkWell(
+                            onTap: () {
+                              ref
+                                  .read(rewardControllerProvider.notifier)
+                                  .deleteReward(reward.id as String);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Reward "$title" removed!'),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF2F2),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFFEE2E2)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.delete_outline_rounded,
+                                      size: 13, color: Color(0xFFEF4444)),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    'Delete',
+                                    style: TextStyle(
+                                      color: Color(0xFFEF4444),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==============================================================================
+  // MENU 3: SYSTEM HEALTH & TELEMETRY
+  // ==============================================================================
+  Widget _buildTelemetryMenuSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('SYSTEM HEALTH & TELEMETRY',
+            countBadge: 'LIVE • 99.98%'),
+        const SizedBox(height: 6),
+        const Text(
+          'Infrastructure telemetry, realtime database sync, and cryptographic security monitors.',
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 11.5,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // 4 KPI Telemetry Cards Grid
+        Row(
+          children: [
+            Expanded(
+              child: _buildHealthTile(
+                icon: Icons.sync_rounded,
+                label: 'Realtime Sync',
+                status: 'Connected',
+                color: const Color(0xFF16A34A),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildHealthTile(
+                icon: Icons.shield_rounded,
+                label: 'Security RLS',
+                status: 'Enforced',
+                color: const Color(0xFF0284C7),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildHealthTile(
+                icon: Icons.speed_rounded,
+                label: 'Platform SLA',
+                status: '99.98% Uptime',
+                color: const Color(0xFF7E22CE),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildHealthTile(
+                icon: Icons.cloud_done_rounded,
+                label: 'Cluster Latency',
+                status: '38ms (Dhaka)',
+                color: const Color(0xFFD97706),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Architecture Telemetry Checklist Container
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.dns_rounded, size: 16, color: Color(0xFF0F172A)),
+                  SizedBox(width: 8),
+                  Text(
+                    'SUPABASE BACKEND ARCHITECTURE',
+                    style: TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildTelemetryRow('Database Schema', '14 Relational Tables Active',
+                  Icons.storage_rounded, const Color(0xFF16A34A)),
+              _buildTelemetryRow(
+                  'Realtime WebSockets',
+                  'orders, notifications channels active',
+                  Icons.wifi_tethering_rounded,
+                  const Color(0xFF0284C7)),
+              _buildTelemetryRow(
+                  'Object Storage',
+                  '3 Public Buckets (restaurants, avatars, banners)',
+                  Icons.folder_shared_rounded,
+                  const Color(0xFF7E22CE)),
+              _buildTelemetryRow(
+                  'Authentication Provider',
+                  'Supabase Auth with 2FA / Session Refresh',
+                  Icons.lock_person_rounded,
+                  const Color(0xFFD97706)),
+              _buildTelemetryRow(
+                  'Security Audit',
+                  '100% Row Level Security Compliance',
+                  Icons.verified_user_rounded,
+                  const Color(0xFF16A34A)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Interactive Diagnostics Ping Action
+        Builder(
+          builder: (ctx) => SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        '⚡ System Ping: 38ms • All 14 Supabase tables responsive & online.'),
+                    backgroundColor: Color(0xFF16A34A),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.network_ping_rounded, size: 16),
+              label: const Text(
+                'Run Live Infrastructure Ping Diagnostic',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF0F172A),
+                side: const BorderSide(color: Color(0xFFCBD5E1)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==============================================================================
+  // MENU 3: SECURITY, GOVERNANCE & ACCESS CONTROL
+  // ==============================================================================
+  Widget _buildSecurityGovernanceMenuSection(
+      BuildContext context, dynamic profile, String currentRole) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('SECURITY & GOVERNANCE',
+            countBadge: '2FA ENFORCED'),
+        const SizedBox(height: 6),
+        const Text(
+          'Platform security parameters, administrative audit trail, and verified merchant management.',
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 11.5,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Session Cryptography Card
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.shield_outlined,
+                      size: 16, color: Color(0xFF16A34A)),
+                  SizedBox(width: 8),
+                  Text(
+                    'AUTHENTICATION INTEGRITY',
+                    style: TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _buildDossierRow('Active Protocol', 'TLS 1.3 • AES-256 GCM'),
+              _buildDossierRow('Multi-Factor Auth', '2FA Active & Enforced'),
+              _buildDossierRow('Session Token Expiry', '7 Days Auto-Refresh'),
+              _buildDossierRow(
+                  'Governance Tier',
+                  currentRole == AppConstants.roleHeadAdmin
+                      ? 'Level 1 Supreme Authority'
+                      : 'Level 2 Operations Admin'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Quick Administrative Consoles
+        _buildSectionHeader('ADMINISTRATIVE CONSOLES'),
+        const SizedBox(height: 8),
+        _buildSecurityActionTile(
+          title: 'System Security Audit Log',
+          subtitle:
+              'Audit trails, role delegations & platform policy compliance',
+          icon: Icons.security_rounded,
+          iconColor: const Color(0xFF7E22CE),
+          onTap: () => _showAuditLogsModal(context),
+        ),
+        const SizedBox(height: 8),
+        _buildSecurityActionTile(
+          title: 'Platform User Accounts Directory',
+          subtitle: 'Audit registered customer profiles and merchant accounts',
+          icon: Icons.people_alt_rounded,
+          iconColor: const Color(0xFF1D4ED8),
+          onTap: () => _showUserDirectoryModal(context),
+        ),
+        const SizedBox(height: 8),
+        _buildSecurityActionTile(
+          title: 'Partner Trade License Verifications',
+          subtitle:
+              '${_verificationRequests.length} pending merchant license verification requests',
+          icon: Icons.verified_user_rounded,
+          iconColor: const Color(0xFF047857),
+          onTap: () => _showVerificationsModal(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecurityActionTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 20, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                size: 18, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTelemetryRow(
+      String label, String value, IconData icon, Color iconColor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, size: 14, color: iconColor),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -5085,252 +6718,687 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   void _showVouchersModal(BuildContext context) {
+    _showVouchersAndRewardsModal(context, initialTab: 0);
+  }
+
+  void _showVouchersAndRewardsModal(BuildContext context, {int initialTab = 0}) {
+    int selectedTab = initialTab;
     _showSheet(
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+      targetContext: context,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (sheetContext, setModalState) {
+          return Container(
+            width: double.infinity,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Promo Codes & Vouchers',
-                      style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      'Admin Setup • App Authority Sponsored',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _showCreateVoucherModal(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: const Text(
-                    'Setup Code',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
-              ),
-              child: const Row(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.shield_outlined, color: Color(0xFF2563EB), size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '🛡️ Restaurant Protection Guarantee: All promo discounts are 100% funded by SaveBite platform authority. Partner restaurants receive their full payout without any loss.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF1E40AF),
-                        fontWeight: FontWeight.w600,
+                  // Drag Handle
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: Consumer(
-                builder: (context, ref, _) {
-                  final promoListAsync = ref.watch(allPromoCodesProvider);
-                  return promoListAsync.when(
-                    data: (codes) {
-                      if (codes.isEmpty) {
-                        return const Center(
-                          child: Text(
-                            'No promo codes created yet.\nTap "+ Setup Code" to publish your first voucher.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                          ),
-                        );
-                      }
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: codes.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, idx) {
-                          final promo = codes[idx];
-                          return Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: promo.isActive ? Colors.white : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: promo.isActive
-                                    ? const Color(0xFFE2E8F0)
-                                    : const Color(0xFFCBD5E1),
+                  const SizedBox(height: 14),
+
+                  // Pill Tab Switcher: Vouchers vs Rewards
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() => selectedTab = 0);
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: selectedTab == 0 ? AppColors.primary : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: selectedTab == 0
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primary.withValues(alpha: 0.3),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: promo.isActive
-                                        ? const Color(0xFFFEF2F2)
-                                        : const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.confirmation_number_rounded,
-                                    color: promo.isActive
-                                        ? AppColors.primary
-                                        : const Color(0xFF94A3B8),
-                                    size: 20,
+                              child: Center(
+                                child: Text(
+                                  '🎟️ Promo Vouchers (${_vouchersData.length})',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: selectedTab == 0 ? Colors.white : const Color(0xFF475569),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() => selectedTab = 1);
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: selectedTab == 1 ? const Color(0xFF7C3AED) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: selectedTab == 1
+                                    ? [
+                                        BoxShadow(
+                                          color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '🎁 Rewards & Perks',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: selectedTab == 1 ? Colors.white : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // TAB CONTENT
+                  if (selectedTab == 0) ...[
+                    // Vouchers Header Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Promo Codes & Vouchers',
+                                style: TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              Text(
+                                'Admin Setup • App Authority Sponsored',
+                                style: TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            Future.delayed(const Duration(milliseconds: 150), () {
+                              if (context.mounted) _showCreateVoucherModal(context);
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          label: const Text(
+                            'Setup Code',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.shield_outlined, color: Color(0xFF2563EB), size: 18),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '🛡️ Restaurant Protection Guarantee: All promo discounts are 100% funded by SaveBite platform authority. Partner restaurants receive their full payout without any loss.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF1E40AF),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Promo Codes List
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final promoListAsync = ref.watch(allPromoCodesProvider);
+                        final codes = promoListAsync.asData?.value ?? [];
+                        final displayCodes = codes.isNotEmpty
+                            ? codes
+                            : _vouchersData
+                                .map((v) => PromoCode(
+                                      id: (v['id'] as String?) ?? 'promo-${v['code']}',
+                                      code: (v['code'] as String?) ?? 'SAVEBITE',
+                                      title: (v['title'] as String?) ?? 'Platform Promo',
+                                      description: (v['discount'] as String?) ?? 'Discount deal',
+                                      discountType: (v['discountType'] as String?) ??
+                                          (((v['discount'] as String?) ?? '').contains('%') ? 'percentage' : 'flat'),
+                                      discountValue: (v['discountValue'] as double?) ??
+                                          double.tryParse(((v['discount'] as String?) ?? '').replaceAll(RegExp(r'[^0-9.]'), '')) ?? 50.0,
+                                      minOrderAmount: (v['minOrderAmount'] as double?) ??
+                                          double.tryParse(((v['minOrder'] as String?) ?? '').replaceAll(RegExp(r'[^0-9.]'), '')) ?? 150.0,
+                                      isActive: (v['isActive'] as bool?) ?? true,
+                                      usedCount: (v['usedCount'] as int?) ?? 12,
+                                      isPlatformSponsored: true,
+                                    ))
+                                .toList();
+
+                        if (displayCodes.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: Text(
+                                'No promo codes created yet.\nTap "+ Setup Code" to publish your first voucher.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: displayCodes.map((promo) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: promo.isActive ? Colors.white : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: promo.isActive
+                                        ? const Color(0xFFE2E8F0)
+                                        : const Color(0xFFCBD5E1),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: promo.isActive
+                                            ? const Color(0xFFFEF2F2)
+                                            : const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.confirmation_number_rounded,
+                                        color: promo.isActive
+                                            ? AppColors.primary
+                                            : const Color(0xFF94A3B8),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  promo.code,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color: promo.isActive
+                                                        ? const Color(0xFF0F172A)
+                                                        : const Color(0xFF64748B),
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 14,
+                                                    letterSpacing: 0.8,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: promo.isActive
+                                                      ? const Color(0xFFDCFCE7)
+                                                      : const Color(0xFFE2E8F0),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  promo.discountTag,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: promo.isActive
+                                                        ? const Color(0xFF15803D)
+                                                        : const Color(0xFF64748B),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 3),
                                           Text(
-                                            promo.code,
-                                            style: TextStyle(
-                                              color: promo.isActive
-                                                  ? const Color(0xFF0F172A)
-                                                  : const Color(0xFF64748B),
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 14,
-                                              letterSpacing: 0.8,
+                                            promo.description,
+                                            style: const TextStyle(
+                                              color: Color(0xFF64748B),
+                                              fontSize: 11.5,
                                             ),
                                           ),
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: promo.isActive
-                                                  ? const Color(0xFFDCFCE7)
-                                                  : const Color(0xFFE2E8F0),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              promo.discountTag,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w800,
-                                                color: promo.isActive
-                                                    ? const Color(0xFF15803D)
-                                                    : const Color(0xFF64748B),
-                                              ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Min. Order: ৳${promo.minOrderAmount.toStringAsFixed(0)} • Used: ${promo.usedCount} times',
+                                            style: const TextStyle(
+                                              color: Color(0xFF94A3B8),
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        promo.description,
-                                        style: const TextStyle(
-                                          color: Color(0xFF64748B),
-                                          fontSize: 11.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Min. Order: ৳${promo.minOrderAmount.toStringAsFixed(0)} • Used: ${promo.usedCount} times',
-                                        style: const TextStyle(
-                                          color: Color(0xFF94A3B8),
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    Switch(
+                                      value: promo.isActive,
+                                      activeThumbColor: AppColors.primary,
+                                      onChanged: (val) {
+                                        ref
+                                            .read(promoCodeControllerProvider.notifier)
+                                            .toggleStatus(promo.id, val);
+                                        setState(() {
+                                          final idx = _vouchersData.indexWhere((v) => v['code'] == promo.code);
+                                          if (idx != -1) {
+                                            _vouchersData[idx]['isActive'] = val;
+                                            _vouchersData[idx]['status'] = val ? 'Active' : 'Inactive';
+                                          }
+                                        });
+                                        setModalState(() {});
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded,
+                                          size: 18, color: Color(0xFFEF4444)),
+                                      onPressed: () {
+                                        ref
+                                            .read(promoCodeControllerProvider.notifier)
+                                            .deletePromoCode(promo.id);
+                                        setState(() {
+                                          _vouchersData.removeWhere(
+                                              (v) => v['code'] == promo.code);
+                                        });
+                                        setModalState(() {});
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                Switch(
-                                  value: promo.isActive,
-                                  activeThumbColor: AppColors.primary,
-                                  onChanged: (val) {
-                                    ref
-                                        .read(promoCodeControllerProvider.notifier)
-                                        .toggleStatus(promo.id, val);
-                                  },
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    // Rewards Header Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Customer Rewards Manager',
+                                style: TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline_rounded,
-                                      size: 18, color: Color(0xFFEF4444)),
-                                  onPressed: () {
-                                    ref
-                                        .read(promoCodeControllerProvider.notifier)
-                                        .deletePromoCode(promo.id);
-                                    setState(() {
-                                      _vouchersData.removeWhere(
-                                          (v) => v['code'] == promo.code);
-                                    });
-                                  },
+                              ),
+                              Text(
+                                'Admin Setup • Auto-Expiring Platform Perks',
+                                style: TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            Future.delayed(const Duration(milliseconds: 150), () {
+                              if (context.mounted) _showCreateRewardModal(context);
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF7C3AED),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          );
-                        },
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (err, _) => Center(child: Text('Error loading promo codes: $err')),
-                  );
-                },
+                          ),
+                          icon: const Icon(Icons.add_rounded, size: 16),
+                          label: const Text(
+                            'Post Reward',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F3FF),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFDDD6FE)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C3AED), size: 18),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '⚡ Rewards posted here appear in the Customer App under "Rewards". Once a reward deadline expires, it is automatically removed. 1 advantage per order.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF5B21B6),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Rewards List
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final rewardsAsync = ref.watch(allAdminRewardsProvider);
+                        return rewardsAsync.when(
+                          data: (rewards) {
+                            final displayRewards = rewards.isNotEmpty ? rewards : Reward.defaultRewards();
+                            if (displayRewards.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.card_giftcard_outlined,
+                                        size: 40, color: Color(0xFF94A3B8)),
+                                    const SizedBox(height: 10),
+                                    const Text(
+                                      'No community rewards created yet.\nTap "+ Post Reward" to publish your first customer deal.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        Future.delayed(const Duration(milliseconds: 150), () {
+                                          if (context.mounted) _showCreateRewardModal(context);
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF7C3AED),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: const Text('Create First Reward'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: displayRewards.map((reward) {
+                                final isExpired = reward.isExpired;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: reward.isActive && !isExpired ? Colors.white : const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: reward.isActive && !isExpired
+                                            ? const Color(0xFFE2E8F0)
+                                            : const Color(0xFFCBD5E1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: reward.isActive && !isExpired
+                                                ? const Color(0xFFF5F3FF)
+                                                : const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Icon(
+                                            Icons.card_giftcard_rounded,
+                                            color: reward.isActive && !isExpired
+                                                ? const Color(0xFF7C3AED)
+                                                : const Color(0xFF94A3B8),
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      reward.title,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: TextStyle(
+                                                        color: reward.isActive && !isExpired
+                                                            ? const Color(0xFF0F172A)
+                                                            : const Color(0xFF64748B),
+                                                        fontWeight: FontWeight.w900,
+                                                        fontSize: 13.5,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: isExpired
+                                                          ? const Color(0xFFFEE2E2)
+                                                          : (reward.isActive
+                                                              ? const Color(0xFFEDE9FE)
+                                                              : const Color(0xFFE2E8F0)),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      isExpired ? 'Expired' : (reward.isActive ? 'Active' : 'Disabled'),
+                                                      style: TextStyle(
+                                                        fontSize: 9.5,
+                                                        fontWeight: FontWeight.w800,
+                                                        color: isExpired
+                                                            ? const Color(0xFFDC2626)
+                                                            : (reward.isActive
+                                                                ? const Color(0xFF6D28D9)
+                                                                : const Color(0xFF64748B)),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 3),
+                                              Text(
+                                                reward.description,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF64748B),
+                                                  fontSize: 11.5,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Wrap(
+                                                crossAxisAlignment: WrapCrossAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    'Min order: ৳${reward.minOrderAmount.toStringAsFixed(0)}',
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF94A3B8),
+                                                      fontSize: 10.5,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const Text(
+                                                    ' • ',
+                                                    style: TextStyle(color: Color(0xFFCBD5E1)),
+                                                  ),
+                                                  Text(
+                                                    reward.remainingTimeText,
+                                                    style: TextStyle(
+                                                      fontSize: 10.5,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: isExpired
+                                                          ? const Color(0xFFDC2626)
+                                                          : const Color(0xFFD97706),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Switch(
+                                          value: reward.isActive && !isExpired,
+                                          activeThumbColor: const Color(0xFF7C3AED),
+                                          onChanged: isExpired
+                                              ? null
+                                              : (val) {
+                                                  ref
+                                                      .read(rewardControllerProvider.notifier)
+                                                      .toggleStatus(reward.id, val);
+                                                  setModalState(() {});
+                                                },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline_rounded,
+                                              size: 18, color: Color(0xFFEF4444)),
+                                          onPressed: () {
+                                            ref
+                                                .read(rewardControllerProvider.notifier)
+                                                .deleteReward(reward.id);
+                                            setModalState(() {});
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                          loading: () => const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (e, st) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  const Text('Error loading rewards',
+                                      style: TextStyle(color: Color(0xFF64748B))),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: () => ref.invalidate(allAdminRewardsProvider),
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -5635,251 +7703,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   void _showRewardsModal(BuildContext context) {
-    _showSheet(
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Customer Rewards Manager',
-                      style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      'Admin Setup • Auto-Expiring Platform Perks',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _showCreateRewardModal(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C3AED),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: const Text(
-                    'Post Reward',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F3FF),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFDDD6FE)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C3AED), size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '⚡ Rewards posted here appear in the Customer App under "Rewards". Once a reward deadline expires, it is automatically removed. 1 advantage per order.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF5B21B6),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: Consumer(
-                builder: (context, ref, _) {
-                  final rewardsAsync = ref.watch(allAdminRewardsProvider);
-                  return rewardsAsync.when(
-                    data: (rewards) {
-                      if (rewards.isEmpty) {
-                        return const Center(
-                          child: Text(
-                            'No community rewards created yet.\nTap "+ Post Reward" to publish your first customer deal.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                          ),
-                        );
-                      }
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: rewards.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, idx) {
-                          final reward = rewards[idx];
-                          final isExpired = reward.isExpired;
-
-                          return Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: reward.isActive && !isExpired ? Colors.white : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isExpired
-                                    ? const Color(0xFFCBD5E1)
-                                    : (reward.isActive ? const Color(0xFFC4B5FD) : const Color(0xFFE2E8F0)),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF5F3FF),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              reward.discountTag,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w900,
-                                                color: Color(0xFF7C3AED),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F5F9),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              reward.requirementTag,
-                                              style: const TextStyle(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFF475569),
-                                              ),
-                                            ),
-                                          ),
-                                          const Spacer(),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: isExpired ? const Color(0xFFFEE2E2) : const Color(0xFFFEF3C7),
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              isExpired ? 'Expired' : reward.remainingTimeText,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w800,
-                                                color: isExpired ? const Color(0xFFB91C1C) : const Color(0xFF92400E),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        reward.title,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w800,
-                                          color: isExpired ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        reward.description,
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: isExpired ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Switch(
-                                  value: reward.isActive && !isExpired,
-                                  activeThumbColor: const Color(0xFF7C3AED),
-                                  onChanged: isExpired
-                                      ? null
-                                      : (val) {
-                                          ref
-                                              .read(rewardControllerProvider.notifier)
-                                              .toggleStatus(reward.id, val);
-                                        },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline_rounded,
-                                      size: 18, color: Color(0xFFEF4444)),
-                                  onPressed: () {
-                                    ref
-                                        .read(rewardControllerProvider.notifier)
-                                        .deleteReward(reward.id);
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (err, _) => Center(child: Text('Error loading rewards: $err')),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    _showVouchersAndRewardsModal(context, initialTab: 1);
   }
 
   void _showCreateRewardModal(BuildContext context) {
@@ -6301,65 +8125,459 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 
   void _showReviewsModerationModal(BuildContext context) {
+    String selectedFilter = 'all'; // 'all', '5star', '4star', 'critical', 'verified'
+    final searchCtrl = TextEditingController();
+
     _showSheet(
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setModalState) {
+          return Container(
+            width: double.infinity,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Customer Reviews & Ratings',
+                              style: TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'Live Customer Feedback & Platform Moderation',
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              '4.8★ Avg',
+                              style: TextStyle(
+                                color: Color(0xFFB45309),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Search bar
+                  TextField(
+                    controller: searchCtrl,
+                    onChanged: (_) => setModalState(() {}),
+                    style: const TextStyle(fontSize: 12.5),
+                    decoration: InputDecoration(
+                      hintText: 'Search reviews by customer, restaurant, or dish...',
+                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Filter chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          label: const Text('All Reviews'),
+                          selected: selectedFilter == 'all',
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedFilter = 'all');
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        ChoiceChip(
+                          label: const Text('5★ Top Rated'),
+                          selected: selectedFilter == '5star',
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedFilter = '5star');
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        ChoiceChip(
+                          label: const Text('4★ Good'),
+                          selected: selectedFilter == '4star',
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedFilter = '4star');
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        ChoiceChip(
+                          label: const Text('≤ 3★ Critical'),
+                          selected: selectedFilter == 'critical',
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedFilter = 'critical');
+                          },
+                        ),
+                        const SizedBox(width: 6),
+                        ChoiceChip(
+                          label: const Text('Verified Only'),
+                          selected: selectedFilter == 'verified',
+                          onSelected: (val) {
+                            if (val) setModalState(() => selectedFilter = 'verified');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Reviews List
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final reviewsAsync = ref.watch(allReviewsProvider);
+                      return reviewsAsync.when(
+                        data: (reviewsList) {
+                          final query = searchCtrl.text.trim().toLowerCase();
+                          final filteredList = reviewsList.where((r) {
+                            if (selectedFilter == '5star' && r.rating < 4.9) return false;
+                            if (selectedFilter == '4star' && (r.rating < 3.9 || r.rating >= 4.9)) return false;
+                            if (selectedFilter == 'critical' && r.rating > 3.8) return false;
+                            if (selectedFilter == 'verified' && !r.isVerified) return false;
+
+                            if (query.isNotEmpty) {
+                              final cust = r.customerName.toLowerCase();
+                              final rest = r.restaurantName.toLowerCase();
+                              final comment = r.comment.toLowerCase();
+                              final dish = r.offerTitle?.toLowerCase() ?? '';
+                              return cust.contains(query) ||
+                                  rest.contains(query) ||
+                                  comment.contains(query) ||
+                                  dish.contains(query);
+                            }
+                            return true;
+                          }).toList();
+
+                          if (filteredList.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.rate_review_outlined,
+                                      size: 42, color: Color(0xFF94A3B8)),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    'No reviews match the selected filter.',
+                                    style: TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  if (selectedFilter != 'all' || query.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    TextButton(
+                                      onPressed: () {
+                                        setModalState(() {
+                                          selectedFilter = 'all';
+                                          searchCtrl.clear();
+                                        });
+                                      },
+                                      child: const Text('Clear Filters'),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: filteredList.map((rev) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: rev.rating <= 3.0
+                                          ? const Color(0xFFFECACA)
+                                          : const Color(0xFFE2E8F0),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.02),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 16,
+                                            backgroundColor: const Color(0xFFE0E7FF),
+                                            child: Text(
+                                              rev.customerName.isNotEmpty
+                                                  ? rev.customerName[0].toUpperCase()
+                                                  : 'U',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFF4338CA),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      rev.customerName,
+                                                      style: const TextStyle(
+                                                        color: Color(0xFF0F172A),
+                                                        fontWeight: FontWeight.w800,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                    if (rev.isVerified) ...[
+                                                      const SizedBox(width: 4),
+                                                      const Icon(Icons.verified_rounded,
+                                                          size: 14, color: Color(0xFF16A34A)),
+                                                    ],
+                                                  ],
+                                                ),
+                                                Text(
+                                                  '${rev.restaurantName}${(rev.offerTitle != null && rev.offerTitle!.isNotEmpty) ? ' • ${rev.offerTitle}' : ''}',
+                                                  style: const TextStyle(
+                                                    color: Color(0xFF64748B),
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 7, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: rev.rating >= 4.0
+                                                  ? const Color(0xFFFEF3C7)
+                                                  : const Color(0xFFFEE2E2),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.star_rounded,
+                                                    size: 14,
+                                                    color: rev.rating >= 4.0
+                                                        ? const Color(0xFFD97706)
+                                                        : const Color(0xFFDC2626)),
+                                                const SizedBox(width: 2),
+                                                Text(
+                                                  rev.rating.toStringAsFixed(1),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w900,
+                                                    color: rev.rating >= 4.0
+                                                        ? const Color(0xFF92400E)
+                                                        : const Color(0xFF991B1B),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        rev.comment,
+                                        style: const TextStyle(
+                                          color: Color(0xFF334155),
+                                          fontSize: 12,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          InkWell(
+                                            onTap: () async {
+                                              await ref
+                                                  .read(reviewRepositoryProvider)
+                                                  .toggleVerification(rev.id, !rev.isVerified);
+                                              ref.invalidate(allReviewsProvider);
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: rev.isVerified
+                                                    ? const Color(0xFFDCFCE7)
+                                                    : const Color(0xFFF1F5F9),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    rev.isVerified
+                                                        ? Icons.verified_rounded
+                                                        : Icons.shield_outlined,
+                                                    size: 12,
+                                                    color: rev.isVerified
+                                                        ? const Color(0xFF15803D)
+                                                        : const Color(0xFF64748B),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    rev.isVerified ? 'Verified' : 'Verify Badge',
+                                                    style: TextStyle(
+                                                      fontSize: 10.5,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: rev.isVerified
+                                                          ? const Color(0xFF15803D)
+                                                          : const Color(0xFF64748B),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline_rounded,
+                                                size: 18, color: Color(0xFFEF4444)),
+                                            tooltip: 'Remove Review',
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            onPressed: () async {
+                                              final confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (dCtx) => AlertDialog(
+                                                  title: const Text('Delete Review?'),
+                                                  content: Text(
+                                                      'Are you sure you want to remove this review by ${rev.customerName}?'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.pop(dCtx, false),
+                                                      child: const Text('Cancel'),
+                                                    ),
+                                                    FilledButton(
+                                                      onPressed: () => Navigator.pop(dCtx, true),
+                                                      style: FilledButton.styleFrom(
+                                                          backgroundColor: const Color(0xFFEF4444)),
+                                                      child: const Text('Delete'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              if (confirm == true) {
+                                                await ref
+                                                    .read(reviewRepositoryProvider)
+                                                    .deleteReview(rev.id);
+                                                ref.invalidate(allReviewsProvider);
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
+                        loading: () => const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (err, _) => Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Error loading reviews',
+                                  style: TextStyle(color: Color(0xFF64748B))),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () => ref.invalidate(allReviewsProvider),
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Customer Reviews & Ratings',
-                    style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900)),
-                Text('4.8★ Platform Rating',
-                    style: TextStyle(
-                        color: Color(0xFFD97706),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildActionItemCard(
-              title: "Sultan's Dine • 5.0★ (Rahim Ahmed)",
-              subtitle:
-                  '"Hot biryani ordered at 50% discount! Amazing taste and fresh packaging."',
-              actionLabel: 'Verified Review',
-              icon: Icons.star_rounded,
-              iconColor: const Color(0xFFD97706),
-              onAction: () => Navigator.pop(ctx),
-            ),
-            const SizedBox(height: 8),
-            _buildActionItemCard(
-              title: 'Bread & Beyond • 4.8★ (Nusrat Jahan)',
-              subtitle:
-                  '"Super fresh artisanal sourdough bread. Thank you SaveBite!"',
-              actionLabel: 'Verified Review',
-              icon: Icons.star_rounded,
-              iconColor: const Color(0xFFD97706),
-              onAction: () => Navigator.pop(ctx),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

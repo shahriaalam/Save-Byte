@@ -13,11 +13,21 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
   return ReviewRepository(supabase);
 });
 
+/// Provider for all platform customer reviews for Admin moderation.
+final allReviewsProvider = FutureProvider<List<Review>>((ref) async {
+  final repo = ref.watch(reviewRepositoryProvider);
+  return repo.getAllReviews();
+});
+
 /// Repository handling customer reviews, ratings, and verified review badges.
 class ReviewRepository {
   ReviewRepository(this._supabase);
 
   final SupabaseClient _supabase;
+
+  bool get _isLocalOnly =>
+      _supabase.rest.url.contains('placeholder') ||
+      _supabase.rest.url.contains('test');
 
   static const String _storageKey = 'sb_customer_reviews_cache';
 
@@ -132,6 +142,10 @@ class ReviewRepository {
   /// Loads reviews from SharedPreferences into memory cache
   Future<void> _ensureCacheLoaded() async {
     if (_hasLoadedFromPrefs) return;
+    if (_isLocalOnly) {
+      _hasLoadedFromPrefs = true;
+      return;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_storageKey);
@@ -152,6 +166,7 @@ class ReviewRepository {
 
   /// Saves user-submitted reviews to SharedPreferences
   Future<void> _saveCache() async {
+    if (_isLocalOnly) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final encoded = jsonEncode(_memoryReviews.map((r) => r.toJson()).toList());
@@ -164,29 +179,31 @@ class ReviewRepository {
   /// Fetches all reviews for a specific restaurant
   Future<List<Review>> getReviewsForRestaurant(String restaurantId) async {
     await _ensureCacheLoaded();
-    try {
-      final response = await _supabase
-          .from('reviews')
-          .select()
-          .eq('restaurant_id', restaurantId)
-          .order('created_at', ascending: false);
+    if (!_isLocalOnly) {
+      try {
+        final response = await _supabase
+            .from('reviews')
+            .select()
+            .eq('restaurant_id', restaurantId)
+            .order('created_at', ascending: false);
 
-      if (response.isNotEmpty) {
-        final liveReviews = (response as List<dynamic>)
-            .map((json) => Review.fromJson(json as Map<String, dynamic>))
-            .toList();
+        if (response.isNotEmpty) {
+          final liveReviews = (response as List<dynamic>)
+              .map((json) => Review.fromJson(json as Map<String, dynamic>))
+              .toList();
 
-        // Merge live with any newly posted local memory reviews not yet synced
-        for (final mem in _memoryReviews) {
-          if (mem.restaurantId == restaurantId &&
-              !liveReviews.any((r) => r.id == mem.id || r.orderId == mem.orderId)) {
-            liveReviews.insert(0, mem);
+          // Merge live with any newly posted local memory reviews not yet synced
+          for (final mem in _memoryReviews) {
+            if (mem.restaurantId == restaurantId &&
+                !liveReviews.any((r) => r.id == mem.id || r.orderId == mem.orderId)) {
+              liveReviews.insert(0, mem);
+            }
           }
+          return liveReviews;
         }
-        return liveReviews;
+      } catch (e) {
+        debugPrint('[ReviewRepository] Live fetch error (using fallback): $e');
       }
-    } catch (e) {
-      debugPrint('[ReviewRepository] Live fetch error (using fallback): $e');
     }
 
     // Fallback: match by ID or normalize alias ('res-1' vs 'demo-restaurant-id' vs 'res-blue-bell')
@@ -353,5 +370,65 @@ class ReviewRepository {
       oneStarCount: one,
       verifiedRescueCount: verifiedCount,
     );
+  }
+
+  /// Fetches all reviews across the platform for Admin moderation
+  Future<List<Review>> getAllReviews() async {
+    await _ensureCacheLoaded();
+    if (!_isLocalOnly) {
+      try {
+        final response = await _supabase
+            .from('reviews')
+            .select()
+            .order('created_at', ascending: false);
+
+        if (response.isNotEmpty) {
+          final liveReviews = (response as List<dynamic>)
+              .map((json) => Review.fromJson(json as Map<String, dynamic>))
+              .toList();
+
+          for (final mem in _memoryReviews) {
+            if (!liveReviews.any((r) => r.id == mem.id)) {
+              liveReviews.add(mem);
+            }
+          }
+          liveReviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return liveReviews;
+        }
+      } catch (e) {
+        debugPrint('[ReviewRepository] Live fetch all reviews error: $e');
+      }
+    }
+
+    final list = List<Review>.from(_memoryReviews);
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
+  }
+
+  /// Deletes a review from memory and backend
+  Future<void> deleteReview(String reviewId) async {
+    await _ensureCacheLoaded();
+    _memoryReviews.removeWhere((r) => r.id == reviewId);
+    await _saveCache();
+    try {
+      await _supabase.from('reviews').delete().eq('id', reviewId);
+    } catch (e) {
+      debugPrint('[ReviewRepository] Remote delete error: $e');
+    }
+  }
+
+  /// Toggles verified badge status for a review
+  Future<void> toggleVerification(String reviewId, bool isVerified) async {
+    await _ensureCacheLoaded();
+    final idx = _memoryReviews.indexWhere((r) => r.id == reviewId);
+    if (idx != -1) {
+      _memoryReviews[idx] = _memoryReviews[idx].copyWith(isVerified: isVerified);
+      await _saveCache();
+    }
+    try {
+      await _supabase.from('reviews').update({'is_verified': isVerified}).eq('id', reviewId);
+    } catch (e) {
+      debugPrint('[ReviewRepository] Remote toggle error: $e');
+    }
   }
 }
